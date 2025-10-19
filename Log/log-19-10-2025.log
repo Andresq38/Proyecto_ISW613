@@ -1,4 +1,9 @@
 [19-10-2025 08:19:03] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 20 - Message: require_once(models/RolModel.php): Failed to open stream: No such file or directory
  [19-10-2025 08:48:44] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'id' in 'where clause'
  [19-10-2025 08:50:35] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'id' in 'where clause'
+ [19-10-2025 08:57:25] [Andr‚s Castillo] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'id' in 'where clause'
+ [19-10-2025 08:58:38] [Andr‚s Castillo] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'id' in 'where clause'
+ [19-10-2025 09:00:17] [Andr‚s Castillo] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'id' in 'where clause'
+ [19-10-2025 09:00:19] [Andr‚s Castillo] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'id' in 'where clause'
+ [19-10-2025 09:04:45] [Andr‚s Castillo] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'id' in 'where clause'
  

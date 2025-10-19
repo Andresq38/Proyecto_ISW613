@@ -26,7 +26,7 @@ class Categoria_ticketModel
     {
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM categoria_ticket where id=$id";
+			$vSql = "SELECT * FROM categoria_ticket where id_categoria=$id";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
