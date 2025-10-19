@@ -1,12 +1,12 @@
 <?php
-class Categoria_ticketController 
+class categoria_ticket
 {
     public function index()
     {
         try {
             $response = new Response();
             //Obtener el listado del Modelo
-            $genero = new Categoria_ticketModel;
+            $genero = new Categoria_ticketModel();
             $result = $genero->all();
             //Dar respuesta
             $response->toJSON($result);
@@ -18,7 +18,7 @@ class Categoria_ticketController
     {
         try {
             $response = new Response();
-            $categoria = new Categoria_ticketModel;
+            $categoria = new Categoria_ticketModel();
             $result = $categoria->get($param);
             //Dar respuesta
             $response->toJSON($result);

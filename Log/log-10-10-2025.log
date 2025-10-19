@@ -1,0 +1,5 @@
+[10-10-2025 04:55:37] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'filter' in 'where clause'
+ [10-10-2025 04:55:37] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'filter' in 'where clause'
+ [10-10-2025 04:56:11] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'filter' in 'where clause'
+ [10-10-2025 04:56:12] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'filter' in 'where clause'
+ 
