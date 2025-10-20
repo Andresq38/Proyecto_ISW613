@@ -1,5 +1,5 @@
 <?php
-class EsqpecialidadModel
+class EspecialidadModel
 {
     public $enlace;
     public function __construct()

@@ -1,13 +1,13 @@
 <?php
-class categoria_ticket
+class ticket_imagen
 {
     public function index()
     {
         try {
             $response = new Response();
             //Obtener el listado del Modelo
-            $categoria = new Categoria_ticketModel();
-            $result = $categoria->all();
+            $timagen = new Ticket_ImagenModel();
+            $result = $timagen->all();
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
@@ -18,8 +18,8 @@ class categoria_ticket
     {
         try {
             $response = new Response();
-            $categoria = new Categoria_ticketModel();
-            $result = $categoria->get($param);
+            $timagen = new Ticket_ImagenModel();
+            $result = $timagen->get($param);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {

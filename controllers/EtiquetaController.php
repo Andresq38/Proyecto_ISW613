@@ -1,13 +1,13 @@
 <?php
-class categoria_ticket
+class etiqueta
 {
     public function index()
     {
         try {
             $response = new Response();
             //Obtener el listado del Modelo
-            $categoria = new Categoria_ticketModel();
-            $result = $categoria->all();
+            $etiqueta = new EtiquetaModel();
+            $result = $etiqueta->all();
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
@@ -18,8 +18,8 @@ class categoria_ticket
     {
         try {
             $response = new Response();
-            $categoria = new Categoria_ticketModel();
-            $result = $categoria->get($param);
+            $etiqueta = new EtiquetaModel();
+            $result = $etiqueta->get($param);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
