@@ -1,0 +1,5 @@
+[20-10-2025 05:53:25] [Andr‚s Castillo] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'especialidades' in 'where clause'
+ [20-10-2025 06:04:11] [Andr‚s Castillo] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'especialidad' in 'where clause'
+ [20-10-2025 06:08:32] [Andr‚s Castillo] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'especialidad' in 'where clause'
+ [20-10-2025 06:09:43] [Andr‚s Castillo] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'especialidades' in 'where clause'
+ 

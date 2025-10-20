@@ -1,56 +1,57 @@
 {
     "info": {
-		"_postman_id": "6b03e9f5-ea6f-4f2c-8744-409a21bfbb87",
-		"name": "ticket_system",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "7418211"
-	},
-
-	"item": [
-		{
-			"name": "Categoria Ticket",
-			"item": [
-				{
-					"name": "Listar Categorias",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "localhost:81/apiticket/categoria_ticket",
-							"host": [
-								"localhost"
-							],
-							"port": "81",
-							"path": [
-								"apiticket",
-								"categoria_ticket"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Obtener Categoria",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "localhost:81/apiticket/categoria_ticket/1",
-							"host": [
-								"localhost"
-							],
-							"port": "81",
-							"path": [
-								"apiticket",
-								"categoria_ticket",
-								"1"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		}
-
+        "_postman_id": "6b03e9f5-ea6f-4f2c-8744-409a21bfbb87",
+        "name": "ticket_system",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+        "_exporter_id": "7418211"
+    },
+    "item": [
+        {
+            "name": "Categoria Ticket",
+            "item": [
+                {
+                    "name": "Listar Categorias",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "localhost:81/apiticket/categoria_ticket",
+                            "host": ["localhost"],
+                            "port": "81",
+                            "path": ["apiticket", "categoria_ticket"]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Obtener Categoria",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "localhost:81/apiticket/categoria_ticket/1",
+                            "host": ["localhost"],
+                            "port": "81",
+                            "path": ["apiticket", "categoria_ticket", "1"]
+                        }
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Obtener Especialidades por Categoria",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "localhost:81/apiticket/categoria_ticket/getEspecialidades/1",
+                            "host": ["localhost"],
+                            "port": "81",
+                            "path": ["apiticket", "categoria_ticket", "getEspecialidades", "1"]
+                        }
+                    },
+                    "response": []
+                }
+            ]
+        }
     ]
 }

@@ -14,6 +14,7 @@ class RoutesController
         // Registrar rutas protegidas
         //---------------------  Metodo,path (en minuscula),controlador, accion, array de nombres de roles
         $this->addProtectedRoute('GET', '/apiticket/ticket', 'ticket', 'index', ['Administrador']);
+        
     }
 
     public function routes() {
