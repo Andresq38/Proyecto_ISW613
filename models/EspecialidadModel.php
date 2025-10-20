@@ -1,5 +1,5 @@
 <?php
-class slaModel
+class EsqpecialidadModel
 {
     public $enlace;
     public function __construct()
@@ -10,7 +10,7 @@ class slaModel
     public function all(){
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM sla;";
+			$vSql = "SELECT * FROM especialidad;";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ($vSql);
@@ -26,7 +26,7 @@ class slaModel
     {
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM sla where id_sla=$id";
+			$vSql = "SELECT * FROM especialidad where id_especialidad=$id";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
