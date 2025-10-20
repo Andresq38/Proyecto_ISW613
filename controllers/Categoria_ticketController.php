@@ -39,6 +39,18 @@ class categoria_ticket
         }
     }
 
+     public function getEtiquetas($param)
+    {
+        try {
+            $response = new Response();
+            $especialidadModel = new Categoria_ticketModel;
+            $result = $especialidadModel->getEtiquetasByCategoria($param);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
     //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
     /*public function getActorMovie($id)
     {

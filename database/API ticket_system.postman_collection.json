@@ -50,6 +50,20 @@
                         }
                     },
                     "response": []
+                },
+                {
+                    "name": "Obtener Etiquetas por Categoria",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "localhost:81/apiticket/categoria_ticket/getEtiquetas/1",
+                            "host": ["localhost"],
+                            "port": "81",
+                            "path": ["apiticket", "categoria_ticket", "getEtiquetas", "1"]
+                        }
+                    },
+                    "response": []
                 }
             ]
         }

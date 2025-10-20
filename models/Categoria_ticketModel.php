@@ -53,6 +53,26 @@ class Categoria_ticketModel
         }
     }
 
+    public function getEtiquetasByCategoria($id_categoria)
+    {
+        try {
+            $vSql =     "SELECT 
+                        c.id_categoria AS categoria,
+                        e.id_etiqueta,
+                        e.nombre AS etiqueta
+                FROM categoria_ticket c
+                JOIN categoria_etiqueta ce ON c.id_categoria = ce.id_categoria_ticket
+                JOIN etiqueta e ON e.id_etiqueta = ce.id_etiqueta
+                WHERE c.id_categoria = 3
+                ORDER BY e.id_etiqueta;";
+
+            $vResultado = $this->enlace->ExecuteSQL($vSql);
+            return $vResultado;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
     /*Obtener detalle de categoría según selección del usuario*/
 
     //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
