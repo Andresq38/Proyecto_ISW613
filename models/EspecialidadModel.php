@@ -1,5 +1,5 @@
 <?php
-class ActorModel
+class slaModel
 {
     public $enlace;
     public function __construct()
@@ -10,7 +10,7 @@ class ActorModel
     public function all(){
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM actor;";
+			$vSql = "SELECT * FROM sla;";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ($vSql);
@@ -26,7 +26,7 @@ class ActorModel
     {
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM actor where id=$id";
+			$vSql = "SELECT * FROM sla where id_sla=$id";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
@@ -36,8 +36,9 @@ class ActorModel
             handleException($e);
         }
     }
+     //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
     /*Obtener los actores de una pelicula */
-    public function getActorMovie($idMovie)
+    /*/public function getActorMovie($idMovie)
     {
         try {
             //Consulta SQL
@@ -53,6 +54,6 @@ class ActorModel
         } catch (Exception $e) {
             handleException($e);
         }
-    }
+    }*/
     
 }
