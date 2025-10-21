@@ -63,7 +63,7 @@ class Categoria_ticketModel
                 FROM categoria_ticket c
                 JOIN categoria_etiqueta ce ON c.id_categoria = ce.id_categoria_ticket
                 JOIN etiqueta e ON e.id_etiqueta = ce.id_etiqueta
-                WHERE c.id_categoria = 3
+                WHERE c.id_categoria = $id_categoria
                 ORDER BY e.id_etiqueta;";
 
             $vResultado = $this->enlace->ExecuteSQL($vSql);
@@ -72,6 +72,8 @@ class Categoria_ticketModel
             handleException($e);
         }
     }
+
+
 
     /*Obtener detalle de categoría según selección del usuario*/
 

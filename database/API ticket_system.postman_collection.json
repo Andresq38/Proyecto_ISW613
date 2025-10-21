@@ -46,7 +46,10 @@
                             "raw": "localhost:81/apiticket/categoria_ticket/getEspecialidades/1",
                             "host": ["localhost"],
                             "port": "81",
-                            "path": ["apiticket", "categoria_ticket", "getEspecialidades", "1"]
+                            "path": ["apiticket", 
+                                    "categoria_ticket",
+                                     "getEspecialidades",
+                                      "1"]
                         }
                     },
                     "response": []
@@ -69,3 +72,4 @@
         }
     ]
 }
+ 

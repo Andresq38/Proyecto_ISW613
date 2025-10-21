@@ -10,7 +10,26 @@ class TicketModel
     public function all(){
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM ticket;";
+			$vSql = "SELECT 
+                        t.id_ticket AS 'Identificador del Ticket',
+                        c.nombre AS 'Categoría',
+                        e.nombre AS 'Estado actual',
+                        CONCAT(
+                        FLOOR((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, t.fecha_creacion, NOW())) / 60), 
+                         'h ',
+                        MOD((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, t.fecha_creacion, NOW())), 60),
+                         'm'
+                         ) AS 'Tiempo restante SLA (máx)'
+                        FROM 
+                            ticket t
+                        JOIN 
+                            categoria_ticket c ON t.id_categoria = c.id_categoria
+                        JOIN 
+                            estado e ON t.id_estado = e.id_estado
+                        JOIN 
+                            sla s ON c.id_sla = s.id_sla
+                        ORDER BY 
+                            t.id_ticket;";
 			
             //Ejecutar la consulta
 			$vResultado = $this->enlace->ExecuteSQL ($vSql);

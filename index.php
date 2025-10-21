@@ -18,11 +18,11 @@ require_once "controllers/core/Response.php";
 
 /***--- Agregar todos los modelos*/
 require_once "models/Categoria_ticketModel.php";
-
+require_once "models/TicketModel.php";
 
 /***--- Agregar todos los controladores*/
 require_once "controllers/Categoria_ticketController.php";
-
+require_once "controllers/TicketController.php";
 
 
 //Enrutador
