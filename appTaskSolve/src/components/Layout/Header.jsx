@@ -61,7 +61,7 @@ const Header = () => {
             variant="subtitle1"
             sx={{ display: { xs: 'none', md: 'flex' }, fontWeight: 700, ml: 1, color: 'var(--brand)', letterSpacing: 0.2 }}
           >
-            TaskSolve
+            
           </Typography>
         </Box>
         <Typography
@@ -69,7 +69,7 @@ const Header = () => {
           sx={{ flexGrow: 1, cursor: 'pointer' }}
           onClick={() => navigate('/')}
         >
-          SISTEMA DE TICKETS
+          Home
         </Typography>
 
         <Button color="inherit" onClick={handleMenuClick}>TICKETS</Button>
