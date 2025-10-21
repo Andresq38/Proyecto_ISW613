@@ -1,0 +1,51 @@
+:root{
+  --bg: #f7f9fc;
+  --surface: #ffffff;
+  --muted: #6b7280;
+  --primary: #1976d2; /* MUI default blue */
+  --brand: #1fb6d1; /* brand accent (teal/cyan) */
+  --card-shadow: 0 6px 18px rgba(16,24,40,0.06);
+}
+
+html, body, #root{
+  height: 100%;
+}
+
+body{ 
+  margin: 0; 
+  padding: 0; 
+  min-height: 100vh; 
+  background: linear-gradient(180deg, #ffffff 0%, var(--bg) 100%);
+  font-family: 'Roboto', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+  color: #111827;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+main{ 
+  padding: 48px 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+h1, h2, h3, h4 { 
+  font-weight: 500;
+}
+
+.MuiCard-root{
+  transition: transform 180ms ease, box-shadow 180ms ease;
+  box-shadow: var(--card-shadow);
+}
+.MuiCard-root:hover{
+  transform: translateY(-6px);
+  box-shadow: 0 10px 30px rgba(16,24,40,0.12);
+}
+
+/* Footer spacing */
+footer{
+  padding: 24px 0;
+}
+
+/* Small utilities */
+.muted{ color: var(--muted); }
+.center{ text-align: center; }

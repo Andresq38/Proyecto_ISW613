@@ -1,35 +1,23 @@
-import React from "react";
-import { Container, Typography } from "@mui/material";
-import Grid from "@mui/material/Grid";
-import Toolbar from "@mui/material/Toolbar";
-export function Footer() {
-    return ( 
-        <Toolbar 
-            sx={{ 
-                px: 2, 
-                position: "fixed", 
-                bottom: 0, width: "100%", 
-                height: "4.5rem", 
-                backgroundColor: "primary.main", 
-                paddingTop: "1rem", 
-                paddingBottom: "1rem", 
-            }} 
-        >
-            {/* Comentario */} 
-            <Container> 
-                <Grid container rowSpacing={1}> 
-                    <Grid size={12}> 
-                        <Typography align="center" color="white" variant="subtitle1">
-                            ISW-613 
-                        </Typography> 
-                    </Grid> 
-                    <Grid size={12}> 
-                        <Typography align="center" color="secondary.main" variant="body1"> 
-                            {`${new Date().getFullYear()}`} 
-                        </Typography> 
-                    </Grid> 
-                </Grid> 
-            </Container> 
-        </Toolbar> 
-    ); 
-}
+import React from 'react';
+import { Box, Typography } from '@mui/material';
+
+const Footer = () => {
+  return (
+    <Box 
+      component="footer" 
+      sx={{ 
+        py: 2, 
+        textAlign: 'center', 
+        bgcolor: '#f5f5f5', 
+        borderTop: '1px solid #e0e0e0',
+        mt: 'auto'
+      }}
+    >
+      <Typography variant="body2" color="text.secondary">
+        © {new Date().getFullYear()} Sistema de Tickets
+      </Typography>
+    </Box>
+  );
+};
+
+export default Footer;
