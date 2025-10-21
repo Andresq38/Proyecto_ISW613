@@ -11,9 +11,9 @@ class TicketModel
         try {
             //Consulta sql
 			$vSql = "SELECT 
-                        t.id_ticket AS 'Identificador del Ticket',
-                        c.nombre AS 'Categoría',
-                        e.nombre AS 'Estado actual',
+                        t.id_ticket AS id_ticket,
+                        c.nombre AS categoria,
+                        e.nombre AS estado_actual,
                         CONCAT(
                             FLOOR((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, 
                                 CONVERT_TZ(t.fecha_creacion, '+00:00', '-06:00'), 
@@ -25,7 +25,7 @@ class TicketModel
                                 NOW()
                             )), 60),
                             'm'
-                        ) AS 'Tiempo restante SLA (máx)'
+                        ) AS tiempo_restante_sla
                     FROM 
                         ticket t
                     JOIN 
@@ -50,15 +50,15 @@ class TicketModel
         try {
             //Consulta sql
 			$vSql = "SELECT 
-                        t.id_ticket AS 'Identificador del Ticket',
-                        c.nombre AS 'Categoría',
-                        e.nombre AS 'Estado actual',
+                        t.id_ticket AS id_ticket,
+                        c.nombre AS categoria,
+                        e.nombre AS estado_actual,
                         CONCAT(
                         FLOOR((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, t.fecha_creacion, NOW())) / 60), 
                          'h ',
                         MOD((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, t.fecha_creacion, NOW())), 60),
                          'm'
-                         ) AS 'Tiempo restante SLA (máx)'
+                         ) AS tiempo_restante_sla
                         FROM 
                             ticket t
                         JOIN 
