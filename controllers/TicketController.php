@@ -39,4 +39,20 @@ class ticket
             handleException($e);
         }
     }
+
+    public function getTicketCompletoById($idTicket)
+    {
+        try {
+            $response = new Response();
+            $ticket = new TicketModel();
+            $result = $ticket->getTicketCompletoById($idTicket);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+
+    
 }
