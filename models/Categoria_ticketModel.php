@@ -28,12 +28,12 @@ class Categoria_ticketModel
     {
         try {
             //Consulta sql
-            $vSql = "SELECT * FROM categoria_ticket where id_categoria=$id";
+            $vSql = "SELECT * FROM categoria_ticket WHERE id_categoria = ?";
 
             //Ejecutar la consulta
-            $vResultado = $this->enlace->ExecuteSQL($vSql);
+            $vResultado = $this->enlace->executePrepared($vSql, 'i', [ (int)$id ]);
             // Retornar el objeto
-            return $vResultado[0];
+            return $vResultado[0] ?? null;
         } catch (Exception $e) {
             handleException($e);
         }

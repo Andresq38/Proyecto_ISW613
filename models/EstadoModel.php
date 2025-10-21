@@ -26,12 +26,12 @@ class EstadoModel
     {
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM estado where id_estado=$id";
+			$vSql = "SELECT * FROM estado WHERE id_estado = ?";
 			
             //Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
+			$vResultado = $this->enlace->executePrepared($vSql, 'i', [ (int)$id ]);
 			// Retornar el objeto
-			return $vResultado[0];
+			return $vResultado[0] ?? null;
 		} catch (Exception $e) {
             handleException($e);
         }

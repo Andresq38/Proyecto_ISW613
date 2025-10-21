@@ -17,7 +17,9 @@ class Logger implements LoggerInterface
         // Build the message with the current date, log level, 
         // and the string from the arguments
         
-        $user=preg_replace('/\r\n|\r|\n/', '',shell_exec("echo %username%"));
+    // Obtener usuario de forma segura y multiplataforma
+    $user = getenv('USERNAME') ?: getenv('USER') ?: get_current_user();
+    $user = is_string($user) ? trim($user) : 'unknown';
         $message = sprintf(
             '[%s] [%s] %s: %s%s ',
             $dateFormatted,$user,

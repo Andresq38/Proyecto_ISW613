@@ -26,10 +26,10 @@ public function get($id)
     {
         try {
             //Consulta sql
-            $vSql = "SELECT * FROM usuario WHERE id_usuario = '$id'";
+            $vSql = "SELECT * FROM usuario WHERE id_usuario = ?";
             
             //Ejecutar la consulta
-            $vResultado = $this->enlace->ExecuteSQL($vSql);
+            $vResultado = $this->enlace->executePrepared($vSql, 's', [ (string)$id ]);
             
             // Verificar si hay resultados antes de retornar
             if (!empty($vResultado)) {

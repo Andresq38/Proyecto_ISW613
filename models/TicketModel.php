@@ -68,12 +68,12 @@ class TicketModel
                         JOIN 
                             sla s ON c.id_sla = s.id_sla
                         WHERE 
-                            t.id_tecnico = $idTecnico
+                            t.id_tecnico = ?
                         ORDER BY 
                             t.id_ticket;";
-			
-            //Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL ($vSql);
+
+            //Ejecutar la consulta con prepared statements
+			$vResultado = $this->enlace->executePrepared($vSql, 'i', [ (int)$idTecnico ]);
 				
 			// Retornar el objeto
 			return $vResultado;
@@ -88,12 +88,12 @@ class TicketModel
     {
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM ticket where id_ticket=$id";
+			$vSql = "SELECT * FROM ticket WHERE id_ticket = ?";
 			
             //Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
+			$vResultado = $this->enlace->executePrepared($vSql, 'i', [ (int)$id ]);
 			// Retornar el objeto
-			return $vResultado[0];
+			return $vResultado[0] ?? null;
 		} catch (Exception $e) {
             handleException($e);
         }
@@ -111,8 +111,8 @@ public function getTicketCompletoById($idTicket) {
         $etiquetaM = new EtiquetaModel();
 
         // Traer el ticket principal (solo datos básicos y IDs relacionados)
-        $sql = "SELECT * FROM ticket WHERE id_ticket = $idTicket";
-        $resultado = $this->enlace->executeSQL($sql);
+    $sql = "SELECT * FROM ticket WHERE id_ticket = ?";
+    $resultado = $this->enlace->executePrepared($sql, 'i', [ (int)$idTicket ]);
 
         if (empty($resultado) || !isset($resultado[0])) {
             return null; // No existe el ticket

@@ -25,15 +25,15 @@ class TecnicoModel
  public function get($id)
     {
         try {
-            $vSql = "SELECT t.*, 
+        $vSql = "SELECT t.*, 
                             u.nombre AS nombre_usuario, 
                             /*u.apellidos AS apellidos_usuario,*/
                             u.correo AS correo_usuario
                     FROM tecnico t
                     JOIN usuario u ON t.id_usuario = u.id_usuario
-                    WHERE t.id_tecnico = '$id'";
+            WHERE t.id_tecnico = ?";
 
-            $vResultado = $this->enlace->ExecuteSQL($vSql);
+        $vResultado = $this->enlace->executePrepared($vSql, 'i', [ (int)$id ]);
 
             if (!empty($vResultado)) {
                 return $vResultado[0];

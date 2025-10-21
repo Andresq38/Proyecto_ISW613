@@ -73,6 +73,76 @@ class MySqlConnect {
 			handleException($e);
 		}
 	}
+
+	/**
+	 * Ejecutar SELECT usando prepared statements
+	 * @param string $sql Consulta con placeholders '?'
+	 * @param string $types Cadena de tipos para bind_param (ej: 'is')
+	 * @param array $params Valores a enlazar
+	 * @param string $resultType Formato del resultado (obj, asoc, num)
+	 * @return array|null
+	 */
+	public function executePrepared($sql, $types = "", $params = [], $resultType = "obj") {
+		$lista = NULL;
+		try {
+			$this->connect();
+			$stmt = $this->link->prepare($sql);
+			if (!$stmt) {
+				throw new \Exception('Error al preparar la sentencia: ' . $this->link->error);
+			}
+			if (!empty($types) && !empty($params)) {
+				$stmt->bind_param($types, ...$params);
+			}
+			$stmt->execute();
+			$result = $stmt->get_result();
+			if ($result) {
+				while ($row = $result->fetch_assoc()) {
+					switch ($resultType) {
+						case "obj":
+							$lista[] = (object)$row;
+							break;
+						case "asoc":
+							$lista[] = $row;
+							break;
+						case "num":
+							$lista[] = array_values($row);
+							break;
+						default:
+							$lista[] = (object)$row;
+					}
+				}
+			}
+			$stmt->close();
+			$this->link->close();
+			return $lista;
+		} catch ( Exception $e ) {
+			handleException($e);
+		}
+	}
+
+	/**
+	 * Ejecutar INSERT/UPDATE/DELETE usando prepared statements
+	 * @return int número de filas afectadas
+	 */
+	public function executePrepared_DML($sql, $types = "", $params = []) {
+		try {
+			$this->connect();
+			$stmt = $this->link->prepare($sql);
+			if (!$stmt) {
+				throw new \Exception('Error al preparar la sentencia: ' . $this->link->error);
+			}
+			if (!empty($types) && !empty($params)) {
+				$stmt->bind_param($types, ...$params);
+			}
+			$stmt->execute();
+			$affected = $stmt->affected_rows;
+			$stmt->close();
+			$this->link->close();
+			return $affected;
+		} catch ( Exception $e ) {
+			handleException($e);
+		}
+	}
 	/**
 	 * Ejecutar una setencia SQL tipo INSERT,UPDATE
 	 * @param $sql - string sentencia SQL

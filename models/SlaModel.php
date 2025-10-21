@@ -26,12 +26,12 @@ class SlaModel
     {
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM sla where id_sla=$id";
+			$vSql = "SELECT * FROM sla WHERE id_sla = ?";
 			
             //Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
+			$vResultado = $this->enlace->executePrepared($vSql, 'i', [ (int)$id ]);
 			// Retornar el objeto
-			return $vResultado[0];
+			return $vResultado[0] ?? null;
 		} catch (Exception $e) {
             handleException($e);
         }
