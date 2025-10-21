@@ -114,30 +114,48 @@ public function getTicketCompletoById($idTicket) {
         $sql = "SELECT * FROM ticket WHERE id_ticket = $idTicket";
         $resultado = $this->enlace->executeSQL($sql);
 
-        if (empty($resultado)) {
+        if (empty($resultado) || !isset($resultado[0])) {
             return null; // No existe el ticket
         }
 
         $ticket = $resultado[0];
 
-        // Obtener datos relacionados
-        $ticket->usuario = $usuarioM->get($ticket->id_usuario);
-        $ticket->tecnico = $tecnicoM->get($ticket->id_tecnico);
-        $ticket->categoria = $categoriaM->get($ticket->id_categoria);
-        $ticket->sla = $slaM->get($ticket->categoria->id_sla);
-        $ticket->estado = $estadoM->get($ticket->id_estado);
-        $ticket->etiquetas = $etiquetaM->get($ticket->id_categoria);
+        // Obtener datos relacionados con comprobaciones de existencia
+        $ticket->usuario = $usuarioM->get($ticket->id_usuario) ?? null;
+        $ticket->tecnico = isset($ticket->id_tecnico) ? ($tecnicoM->get($ticket->id_tecnico) ?? null) : null;
+        $ticket->categoria = $categoriaM->get($ticket->id_categoria) ?? null;
+        // Obtener SLA usando la categoria si existe
+        if ($ticket->categoria && isset($ticket->categoria->id_sla)) {
+            $ticket->sla = $slaM->get($ticket->categoria->id_sla) ?? null;
+        } else {
+            $ticket->sla = null;
+        }
+        $ticket->estado = $estadoM->get($ticket->id_estado) ?? null;
 
-        // Calcular tiempo restante SLA (puedes hacerlo aquí o en SLA)
-        $fechaCreacion = new DateTime($ticket->fecha_creacion);
-        $ahora = new DateTime();
-        $minutosPasados = $fechaCreacion->diff($ahora)->days * 24 * 60
-                         + $fechaCreacion->diff($ahora)->h * 60
-                         + $fechaCreacion->diff($ahora)->i;
-        $tiempoRestanteMin = max(0, $ticket->sla->tiempo_resolucion_max - $minutosPasados);
-        $horas = floor($tiempoRestanteMin / 60);
-        $minutos = $tiempoRestanteMin % 60;
-        $ticket->sla->tiempo_restante = "{$horas}h {$minutos}m";
+        // Obtener etiquetas asociadas a la categoria usando el método adecuado
+        if ($ticket->categoria && method_exists($categoriaM, 'getEtiquetasByCategoria')) {
+            $ticket->etiquetas = $categoriaM->getEtiquetasByCategoria($ticket->categoria->id_categoria);
+        } else {
+            $ticket->etiquetas = [];
+        }
+
+        // Calcular tiempo restante SLA (si existe SLA y tiempo_resolucion_max es numérico)
+        if ($ticket->sla && isset($ticket->sla->tiempo_resolucion_max) && is_numeric($ticket->sla->tiempo_resolucion_max)) {
+            try {
+                $fechaCreacion = new DateTime($ticket->fecha_creacion);
+                $ahora = new DateTime();
+                $interval = $fechaCreacion->diff($ahora);
+                $minutosPasados = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
+                $tiempoRestanteMin = max(0, $ticket->sla->tiempo_resolucion_max - $minutosPasados);
+                $horas = floor($tiempoRestanteMin / 60);
+                $minutos = $tiempoRestanteMin % 60;
+                $ticket->sla->tiempo_restante = "{$horas}h {$minutos}m";
+            } catch (Exception $e) {
+                $ticket->sla->tiempo_restante = null;
+            }
+        } else {
+            $ticket->sla->tiempo_restante = null;
+        }
 
         return $ticket;
 
