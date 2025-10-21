@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Menu, MenuItem, Box } from '@mui/material';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 import { useNavigate } from 'react-router-dom';
 
 const Header = () => {
@@ -66,15 +67,44 @@ const Header = () => {
             
           </Typography>
         </Box>
-        <Typography
-          variant="h6"
-          sx={{ flexGrow: 1, cursor: 'pointer' }}
-          onClick={() => navigate('/')}
-        >
-          Home
-        </Typography>
+        {/* Left-aligned nav group: Home + Tickets */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <Button
+            variant="text"
+            color="inherit"
+            onClick={() => navigate('/')}
+            sx={{
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              fontSize: '1.25rem',
+              letterSpacing: 0.3,
+              px: 1,
+              minWidth: 'auto'
+            }}
+          >
+            Home
+          </Button>
 
-        <Button color="inherit" onClick={handleMenuClick}>TICKETS</Button>
+          <Button
+            variant="text"
+            color="inherit"
+            onClick={handleMenuClick}
+            endIcon={<ArrowDropDownIcon />}
+            sx={{
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              fontSize: '1.25rem',
+              letterSpacing: 0.3,
+              px: 1,
+              minWidth: 'auto'
+            }}
+          >
+            Tickets
+          </Button>
+        </Box>
+
+        {/* Spacer to push any future items to the right */}
+        <Box sx={{ flexGrow: 1 }} />
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
           <MenuItem onClick={() => handleTicketOption('Administrador')}>Administrador</MenuItem>

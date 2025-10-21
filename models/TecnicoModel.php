@@ -9,15 +9,34 @@ class TecnicoModel
     /*Listar */
     public function all(){
         try {
-            //Consulta sql
-			$vSql = "SELECT * FROM tecnico;";
-			
+            // Listado completo de técnicos con su nombre de usuario
+            $vSql = "SELECT t.id_tecnico, u.nombre AS nombre, u.id_usuario
+                     FROM tecnico t
+                     JOIN usuario u ON t.id_usuario = u.id_usuario
+                     ORDER BY u.nombre";
+
             //Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL ($vSql);
-				
-			// Retornar el objeto
-			return $vResultado;
-		} catch (Exception $e) {
+            $vResultado = $this->enlace->ExecuteSQL($vSql);
+
+            // Retornar el objeto
+            return $vResultado;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    /* Listar técnicos que tienen al menos un ticket asignado */
+    public function withTickets(){
+        try {
+            $vSql = "SELECT t.id_tecnico, u.nombre AS nombre, u.id_usuario
+                     FROM tecnico t
+                     JOIN usuario u ON t.id_usuario = u.id_usuario
+                     WHERE EXISTS (SELECT 1 FROM ticket tk WHERE tk.id_tecnico = t.id_tecnico)
+                     ORDER BY u.nombre";
+
+            $vResultado = $this->enlace->ExecuteSQL($vSql);
+            return $vResultado;
+        } catch (Exception $e) {
             handleException($e);
         }
     }

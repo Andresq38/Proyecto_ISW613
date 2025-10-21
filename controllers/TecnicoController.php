@@ -14,6 +14,18 @@ class tecnico
             handleException($e);
         }
     }
+
+    public function withTickets()
+    {
+        try {
+            $response = new Response();
+            $tecnico = new TecnicoModel();
+            $result = $tecnico->withTickets();
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
     public function get($param)
     {
         try {

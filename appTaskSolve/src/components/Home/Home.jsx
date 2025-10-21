@@ -1,35 +1,30 @@
-import React, { useState } from 'react';
-import { Container, Typography, Grid, Card, CardContent, Box, useTheme } from '@mui/material';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Container, Typography, Grid, Card, CardContent, Box, useTheme, Chip, Divider, CircularProgress, Alert } from '@mui/material';
 import axios from 'axios';
 import { Button } from '@mui/material';
 // La importación de datos se elimina porque el entorno no puede resolver rutas relativas.
 // import { TICKET_DATA_HOME } from '../../data/Data'; 
 
-// Datos simulados movidos directamente al componente para asegurar la ejecución
-const TICKET_DATA_HOME = [
-  { id_ticket: 1, titulo: "Error en inicio de sesión", fecha_creacion: "2025-10-18", estado: "Abierto" },
-  { id_ticket: 2, titulo: "Actualización de software", fecha_creacion: "2025-10-17", estado: "En progreso" },
-  { id_ticket: 3, titulo: "Problemas con impresora", fecha_creacion: "2025-10-16", estado: "Cerrado" },
-];
+// Datos simulados (solo fallback)
+const TICKET_DATA_HOME = [];
 
 
 const Home = () => {
-  // Start with local sample data so the page shows something even if the backend is down
+  // Estado principal
   const [tickets, setTickets] = useState(TICKET_DATA_HOME);
-  // Don't show a loading screen on first render; user can click "Recargar" to fetch live data
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
-  const apiBase = ''; // leave blank to use same origin, or set to full host if backend is on different port
+  const apiBase = 'http://localhost'; // backend PHP corre en Apache local
   const theme = useTheme(); // Hook para acceder al tema
 
   const getStatusColor = (estado) => {
-    switch (estado) {
-      case "Abierto": return theme.palette.success.main;
-      case "En progreso": return theme.palette.warning.main;
-      case "Cerrado": return theme.palette.grey[500];
-      default: return theme.palette.grey[700];
-    }
+    const e = (estado || '').toLowerCase();
+    if (e.includes('abierto') || e.includes('asignado')) return theme.palette.info.main;
+    if (e.includes('proceso')) return theme.palette.warning.main;
+    if (e.includes('resuelto')) return theme.palette.success.main;
+    if (e.includes('cerrado')) return theme.palette.grey[500];
+    return theme.palette.grey[700];
   };
 
   const fetchTickets = async () => {
@@ -37,11 +32,21 @@ const Home = () => {
     setError(null);
     try {
       const res = await axios.get(`${apiBase}/apiticket/ticket`);
-      // backend may return { status:..., result: [...] } or directly an array
-      const data = res.data?.result ?? res.data ?? [];
-      // If backend returns an empty array or null, keep the local sample data
+      // El backend devuelve un arreglo de objetos con llaves específicas
+      const data = res.data ?? [];
       if (Array.isArray(data) && data.length > 0) {
-        setTickets(data);
+        // Mapear a la forma que usa la UI de Home
+        const mapped = data.map((t) => ({
+          id_ticket: parseInt(t['Identificador del Ticket'], 10),
+          titulo: t['Categoría'], // usamos categoría como título visible
+          fecha_creacion: '', // no está disponible en este endpoint
+          estado: t['Estado actual'],
+          sla: t['Tiempo restante SLA (máx)']
+        }));
+        // Orden por estado (Asignado, En Proceso, Resuelto, Cerrado)
+        const order = ['Asignado', 'En Proceso', 'Resuelto', 'Cerrado'];
+        const sorted = mapped.sort((a, b) => order.indexOf(a.estado) - order.indexOf(b.estado));
+        setTickets(sorted);
       }
     } catch (err) {
       console.error(err);
@@ -51,8 +56,23 @@ const Home = () => {
     }
   };
 
-  // Note: we intentionally do not auto-fetch on mount so the test tickets appear instantly.
-  // Call fetchTickets() via the Recargar button to attempt loading real data from the backend.
+  // Cargar automáticamente al montar
+  useEffect(() => {
+    fetchTickets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Agrupar por estado para una mejor organización visual
+  const grupos = useMemo(() => {
+    const g = tickets.reduce((acc, t) => {
+      const estado = t.estado || 'Otros';
+      if (!acc[estado]) acc[estado] = [];
+      acc[estado].push(t);
+      return acc;
+    }, {});
+    const order = ['Asignado', 'En Proceso', 'Resuelto', 'Cerrado'];
+    return order.filter((e) => g[e]?.length).map((e) => ({ titulo: e, items: g[e] }));
+  }, [tickets]);
 
   return (
     <Container sx={{ py: 4 }}>
@@ -75,38 +95,42 @@ const Home = () => {
 
       <Box textAlign="center" mb={3}>
         <Typography variant="h4" color="primary">🎟️ Tiquetes Recientes</Typography>
-        <Typography variant="caption" color="text.secondary" display="block">Fila en verde = seleccionado / agente OK</Typography>
       </Box>
 
-      {loading ? (
-        <Typography align="center">Cargando...</Typography>
-      ) : error ? (
-        <Typography color="error" align="center">{error}</Typography>
-      ) : (
-        <Grid container spacing={3} justifyContent="center">
-          {tickets.map((ticket) => {
-            const id = ticket.id_ticket || ticket.id;
-            const isSelected = selectedIds.includes(id);
-            return (
-              <Grid item xs={12} sm={6} md={4} key={id}>
-                <Card elevation={3} sx={{ borderRadius: 2, bgcolor: isSelected ? 'rgba(200,255,200,0.4)' : 'background.paper' }}>
-                  <CardContent>
-                    <Box display="flex" alignItems="center" justifyContent="space-between">
-                      <Box>
-                        <Typography variant="h6">#{id} — {ticket.titulo || ticket.subject || ticket.short_description}</Typography>
-                        <Typography color="text.secondary" sx={{ mb: 1 }}>📅 {ticket.fecha_creacion || ticket.created_at}</Typography>
-                        <Typography
-                          sx={{
-                            mt: 1,
-                            fontWeight: 'bold',
-                            color: getStatusColor(ticket.estado || ticket.state),
-                            p: 0.5,
-                            borderRadius: 1,
-                            display: 'inline-block'
-                          }}
-                        >
-                          Estado: {ticket.estado || ticket.state}
-                        </Typography>
+      {loading && (
+        <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
+          <CircularProgress />
+        </Box>
+      )}
+      {!!error && !loading && (
+        <Alert severity="error" sx={{ maxWidth: 800, mx: 'auto' }}>{error}</Alert>
+      )}
+
+      {!loading && !error && grupos.map((grupo, gi) => (
+        <Box key={grupo.titulo} sx={{ mt: gi === 0 ? 0 : 4 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Chip label={grupo.titulo} color={
+              grupo.titulo === 'Asignado' ? 'info' :
+              grupo.titulo === 'En Proceso' ? 'warning' :
+              grupo.titulo === 'Resuelto' ? 'success' : 'default'
+            } />
+            <Divider sx={{ flex: 1, ml: 2 }} />
+          </Box>
+          <Grid container spacing={3}>
+            {grupo.items.map((ticket) => {
+              const id = ticket.id_ticket || ticket.id;
+              const isSelected = selectedIds.includes(id);
+              return (
+                <Grid item xs={12} sm={6} md={4} key={id}>
+                  <Card elevation={2} sx={{ borderRadius: 2, height: '100%', bgcolor: isSelected ? 'rgba(200,255,200,0.4)' : 'background.paper' }}>
+                    <CardContent>
+                      <Typography variant="subtitle2" color="text.secondary">ID #{id}</Typography>
+                      <Typography variant="h6" sx={{ mb: 1 }}>{ticket.titulo}</Typography>
+                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
+                        <Chip size="small" label={ticket.estado} sx={{ bgcolor: getStatusColor(ticket.estado), color: '#fff' }} />
+                        {ticket.sla && (
+                          <Chip size="small" variant="outlined" label={`SLA: ${ticket.sla}`} />
+                        )}
                       </Box>
                       <Box>
                         <input
@@ -119,14 +143,14 @@ const Home = () => {
                           }}
                         />
                       </Box>
-                    </Box>
-                  </CardContent>
-                </Card>
-              </Grid>
-            );
-          })}
-        </Grid>
-      )}
+                    </CardContent>
+                  </Card>
+                </Grid>
+              );
+            })}
+          </Grid>
+        </Box>
+      ))}
     </Container>
   );
 };
