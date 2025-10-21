@@ -97,123 +97,53 @@ class TicketModel
 // Obtener ticket completo por ID
 public function getTicketCompletoById($idTicket) {
     try {
-        $vSql = "
-            SELECT 
-                t.id_ticket AS 'ID Ticket',
-                t.titulo AS 'Título',
-                t.descripcion AS 'Descripción',
-                t.fecha_creacion AS 'Fecha de Creación',
-                t.fecha_cierre AS 'Fecha de Cierre',
-                t.prioridad AS 'Prioridad',
-                t.puntaje AS 'Puntaje',
-                t.comentario AS 'Comentario',
-                
-                u.id_usuario AS 'ID Usuario',
-                u.nombre AS 'Nombre Usuario',
-                u.correo AS 'Correo Usuario',
-                r.descripcion AS 'Rol Usuario',
-                
-                tec.id_tecnico AS 'ID Técnico',
-                u_tec.nombre AS 'Nombre Técnico',
-                
-                c.nombre AS 'Categoría',
-                
-                s.nombre AS 'Nombre SLA',
-                s.tiempo_respuesta_min,
-                s.tiempo_respuesta_max,
-                s.tiempo_resolucion_min,
-                s.tiempo_resolucion_max,
-                
-                e.nombre AS 'Estado Actual',
-                
-                CONCAT(
-                    FLOOR((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, t.fecha_creacion, NOW())) / 60), 
-                    'h ',
-                    MOD((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, t.fecha_creacion, NOW())), 60),
-                    'm'
-                ) AS 'Tiempo Restante SLA',
-                
-                GROUP_CONCAT(DISTINCT et.nombre SEPARATOR ', ') AS 'Etiquetas'
-                
-            FROM ticket t
-            JOIN usuario u ON t.id_usuario = u.id_usuario
-            JOIN rol r ON u.id_rol = r.id_rol
-            JOIN categoria_ticket c ON t.id_categoria = c.id_categoria
-            JOIN sla s ON c.id_sla = s.id_sla
-            JOIN estado e ON t.id_estado = e.id_estado
-            LEFT JOIN tecnico tec ON t.id_tecnico = tec.id_tecnico
-            LEFT JOIN usuario u_tec ON tec.id_usuario = u_tec.id_usuario
-            LEFT JOIN categoria_etiqueta ce ON c.id_categoria = ce.id_categoria_ticket
-            LEFT JOIN etiqueta et ON ce.id_etiqueta = et.id_etiqueta
-            WHERE t.id_ticket = $idTicket
-            GROUP BY t.id_ticket;
-        ";
-        return $this->enlace->ExecuteSQL($vSql);
+        // Instancias de los modelos (tendrás que tener estas clases definidas con métodos get())
+        $usuarioM = new UsuarioModel();
+        $tecnicoM = new TecnicoModel();
+        $categoriaM = new Categoria_ticketModel();
+        $slaM = new SlaModel();
+        $estadoM = new EstadoModel();
+        $etiquetaM = new EtiquetaModel();
+
+        // Traer el ticket principal (solo datos básicos y IDs relacionados)
+        $sql = "SELECT * FROM ticket WHERE id_ticket = $idTicket";
+        $resultado = $this->enlace->executeSQL($sql);
+
+        if (empty($resultado)) {
+            return null; // No existe el ticket
+        }
+
+        $ticket = $resultado[0];
+
+        // Obtener datos relacionados
+        $ticket->usuario = $usuarioM->get($ticket->id_usuario);
+        $ticket->tecnico = $tecnicoM->get($ticket->id_tecnico);
+        $ticket->categoria = $categoriaM->get($ticket->id_categoria);
+        $ticket->sla = $slaM->get($ticket->categoria->id_sla);
+        $ticket->estado = $estadoM->get($ticket->id_estado);
+        $ticket->etiquetas = $etiquetaM->get($ticket->id_categoria);
+
+        // Calcular tiempo restante SLA (puedes hacerlo aquí o en SLA)
+        $fechaCreacion = new DateTime($ticket->fecha_creacion);
+        $ahora = new DateTime();
+        $minutosPasados = $fechaCreacion->diff($ahora)->days * 24 * 60
+                         + $fechaCreacion->diff($ahora)->h * 60
+                         + $fechaCreacion->diff($ahora)->i;
+        $tiempoRestanteMin = max(0, $ticket->sla->tiempo_resolucion_max - $minutosPasados);
+        $horas = floor($tiempoRestanteMin / 60);
+        $minutos = $tiempoRestanteMin % 60;
+        $ticket->sla->tiempo_restante = "{$horas}h {$minutos}m";
+
+        return $ticket;
+
     } catch (Exception $e) {
         handleException($e);
     }
 }
+
+
 
 // Obtener todos los tickets completos
-public function getTicketsCompletos() {
-    try {
-        $vSql = "
-            SELECT 
-                t.id_ticket AS 'ID Ticket',
-                t.titulo AS 'Título',
-                t.descripcion AS 'Descripción',
-                t.fecha_creacion AS 'Fecha de Creación',
-                t.fecha_cierre AS 'Fecha de Cierre',
-                t.prioridad AS 'Prioridad',
-                t.puntaje AS 'Puntaje',
-                t.comentario AS 'Comentario',
-                
-                u.id_usuario AS 'ID Usuario',
-                u.nombre AS 'Nombre Usuario',
-                u.correo AS 'Correo Usuario',
-                r.descripcion AS 'Rol Usuario',
-                
-                tec.id_tecnico AS 'ID Técnico',
-                u_tec.nombre AS 'Nombre Técnico',
-                
-                c.nombre AS 'Categoría',
-                
-                s.nombre AS 'Nombre SLA',
-                s.tiempo_respuesta_min,
-                s.tiempo_respuesta_max,
-                s.tiempo_resolucion_min,
-                s.tiempo_resolucion_max,
-                
-                e.nombre AS 'Estado Actual',
-                
-                CONCAT(
-                    FLOOR((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, t.fecha_creacion, NOW())) / 60), 
-                    'h ',
-                    MOD((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, t.fecha_creacion, NOW())), 60),
-                    'm'
-                ) AS 'Tiempo Restante SLA',
-                
-                GROUP_CONCAT(DISTINCT et.nombre SEPARATOR ', ') AS 'Etiquetas'
-                
-            FROM ticket t
-            JOIN usuario u ON t.id_usuario = u.id_usuario
-            JOIN rol r ON u.id_rol = r.id_rol
-            JOIN categoria_ticket c ON t.id_categoria = c.id_categoria
-            JOIN sla s ON c.id_sla = s.id_sla
-            JOIN estado e ON t.id_estado = e.id_estado
-            LEFT JOIN tecnico tec ON t.id_tecnico = tec.id_tecnico
-            LEFT JOIN usuario u_tec ON tec.id_usuario = u_tec.id_usuario
-            LEFT JOIN categoria_etiqueta ce ON c.id_categoria = ce.id_categoria_ticket
-            LEFT JOIN etiqueta et ON ce.id_etiqueta = et.id_etiqueta
-            GROUP BY t.id_ticket
-            ORDER BY t.fecha_creacion DESC;
-        ";
-        return $this->enlace->ExecuteSQL($vSql);
-    } catch (Exception $e) {
-        handleException($e);
-    }
-}
-
 
 
 }
