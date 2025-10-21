@@ -1,0 +1,12 @@
+[21-10-2025 09:05:09] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: You have an error in your SQL syntax; check the manual that corresponds to your MariaDB server version for the right syntax to use near 'SELECT 
+    -- Campos del ticket
+    t.id_ticket AS 'ID Ticket',
+    t.tit...' at line 49
+ [21-10-2025 09:06:28] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 't.sla_respuesta_asignado' in 'field list'
+ [21-10-2025 09:06:30] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 't.sla_respuesta_asignado' in 'field list'
+ [21-10-2025 09:16:42] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 't.estadoTiqueteId' in 'field list'
+ [21-10-2025 10:03:34] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 25 - Message: require_once(models/Historial_EstadoM.php): Failed to open stream: No such file or directory
+ [21-10-2025 10:05:00] [PC] error: File: C:\xampp\htdocs\apiticket\models\UsuarioModel.php - line: 34 - Message: Trying to access array offset on value of type null
+ [21-10-2025 10:06:28] [PC] error: File: C:\xampp\htdocs\apiticket\models\UsuarioModel.php - line: 34 - Message: Trying to access array offset on value of type null
+ [21-10-2025 10:25:25] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 46 - Message: Unknown column 'u.apellidos' in 'field list'
+ 

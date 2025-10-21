@@ -22,20 +22,27 @@ class UsuarioModel
         }
     }
     /*Obtener */
-    public function get($id)
+public function get($id)
     {
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM usuario where id_usuario=$id";
-			
+            $vSql = "SELECT * FROM usuario WHERE id_usuario = '$id'";
+            
             //Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
-			// Retornar el objeto
-			return $vResultado[0];
-		} catch (Exception $e) {
+            $vResultado = $this->enlace->ExecuteSQL($vSql);
+            
+            // Verificar si hay resultados antes de retornar
+            if (!empty($vResultado)) {
+                return $vResultado[0];
+            }
+            return null; // o lanzar una excepción, depende de cómo manejes la app
+            
+        } catch (Exception $e) {
             handleException($e);
         }
     }
+
+    
      //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
     /*Obtener los actores de una pelicula */
     /*/public function getActorMovie($idMovie)

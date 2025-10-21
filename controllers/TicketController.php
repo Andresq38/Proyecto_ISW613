@@ -26,18 +26,33 @@ class ticket
             handleException($e);
         }
     }
-    //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
-    /*public function getActorMovie($id)
+
+    public function getTicketByTecnico($idTecnico)
     {
         try {
             $response = new Response();
-            $genero = new Categoria_ticketModel;
-            $result = $genero->getActorMovie($id);
+            $ticket = new TicketModel();
+            $result = $ticket->getTicketByTecnico($idTecnico);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
             handleException($e);
         }
     }
-    */
+
+    public function getTicketCompletoById($idTicket)
+    {
+        try {
+            $response = new Response();
+            $ticket = new TicketModel();
+            $result = $ticket->getTicketCompletoById($idTicket);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+
+    
 }
