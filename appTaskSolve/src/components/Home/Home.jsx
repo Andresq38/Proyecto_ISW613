@@ -2,9 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Container,
   Typography,
-  Grid,
-  Card,
-  CardContent,
   Box,
   useTheme,
   Chip,
@@ -12,7 +9,19 @@ import {
   CircularProgress,
   Alert,
   Button,
-  Badge
+  TextField,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TablePagination,
+  TableRow,
+  TableSortLabel,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem
 } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -27,7 +36,12 @@ const Home = () => {
   const [tickets, setTickets] = useState(TICKET_DATA_HOME);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedIds, setSelectedIds] = useState([]);
+  const [search, setSearch] = useState('');
+  const [estadoFilter, setEstadoFilter] = useState('');
+  const [orderBy, setOrderBy] = useState('fecha_creacion');
+  const [order, setOrder] = useState('desc');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
   // Detectar automáticamente la base del API o tomarla de variables de entorno
   const apiBase = (import.meta?.env?.VITE_API_BASE)
     || (typeof window !== 'undefined'
@@ -75,16 +89,34 @@ const Home = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`${apiBase}/apiticket/ticket`);
-      const data = res.data ?? [];
+      // 1) Intentar obtener tickets completos (incluye fecha_creacion y SLA detallado)
+      let res = await axios.get(`${apiBase}/apiticket/ticket/getTicketsCompletos`);
+      let data = res.data ?? [];
+
+      if (!Array.isArray(data) || data.length === 0) {
+        // 2) Fallback al listado simple
+        res = await axios.get(`${apiBase}/apiticket/ticket`);
+        data = res.data ?? [];
+      }
+
       if (Array.isArray(data) && data.length > 0) {
-        const mapped = data.map((t) => ({
-          id_ticket: parseInt(t['Identificador del Ticket'], 10),
-          titulo: t['Categoría'],
-          fecha_creacion: t['Fecha de creación'] || '',
-          estado: t['Estado actual'],
-          sla: t['Tiempo restante SLA (máx)'] || ''
-        }));
+        const mapped = data.map((t) => {
+          // Soportar ambos formatos: "completos" (propiedades directas y objetos anidados)
+          // y "simple" (alias de columnas)
+          const id = t.id_ticket ?? t['Identificador del Ticket'];
+          const titulo = t.titulo || t['Título'] || t['Categoría'] || '';
+          const fecha = t.fecha_creacion || t['Fecha de creación'] || '';
+          const estado = (t.estado && (t.estado.nombre || t.estado)) || t['Estado actual'] || '';
+          const sla = (t.sla && t.sla.tiempo_restante) || t['Tiempo restante SLA'] || t['Tiempo restante SLA (máx)'] || '';
+
+          return {
+            id_ticket: parseInt(id, 10),
+            titulo,
+            fecha_creacion: fecha,
+            estado,
+            sla
+          };
+        });
         const order = ['Asignado', 'En Proceso', 'Resuelto', 'Cerrado'];
         const sorted = mapped.sort((a, b) => order.indexOf(a.estado) - order.indexOf(b.estado));
         setTickets(sorted);
@@ -104,17 +136,43 @@ const Home = () => {
     fetchTickets();
   }, []);
 
-  // Agrupar por estado
-  const grupos = useMemo(() => {
-    const g = tickets.reduce((acc, t) => {
-      const estado = t.estado || 'Otros';
-      if (!acc[estado]) acc[estado] = [];
-      acc[estado].push(t);
-      return acc;
-    }, {});
-    const order = ['Asignado', 'En Proceso', 'Resuelto', 'Cerrado'];
-    return order.filter((e) => g[e]?.length).map((e) => ({ titulo: e, items: g[e] }));
-  }, [tickets]);
+  // Filtros + ordenamiento + búsqueda
+  const filtered = useMemo(() => {
+    let rows = tickets.slice();
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      rows = rows.filter(r =>
+        String(r.id_ticket).includes(q) ||
+        (r.titulo || '').toLowerCase().includes(q) ||
+        (r.estado || '').toLowerCase().includes(q)
+      );
+    }
+    if (estadoFilter) {
+      rows = rows.filter(r => (r.estado || '') === estadoFilter);
+    }
+    rows.sort((a, b) => {
+      const dir = order === 'asc' ? 1 : -1;
+      const av = a[orderBy] ?? '';
+      const bv = b[orderBy] ?? '';
+      if (orderBy === 'fecha_creacion') {
+        return (new Date(av) - new Date(bv)) * dir;
+      }
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av).localeCompare(String(bv)) * dir;
+    });
+    return rows;
+  }, [tickets, search, estadoFilter, orderBy, order]);
+
+  const paginated = useMemo(() => {
+    const start = page * rowsPerPage;
+    return filtered.slice(start, start + rowsPerPage);
+  }, [filtered, page, rowsPerPage]);
+
+  const handleRequestSort = (property) => {
+    const isAsc = orderBy === property && order === 'asc';
+    setOrder(isAsc ? 'desc' : 'asc');
+    setOrderBy(property);
+  };
 
   return (
     <Container sx={{ py: 4 }}>
@@ -122,35 +180,39 @@ const Home = () => {
         Gestión de Tickets de Soporte
       </Typography>
 
-      {/* Toolbar */}
-      <Box display="flex" justifyContent="center" alignItems="center" sx={{ mb: 1 }}>
-        <Box sx={{ mr: 2 }}>
-          <Typography variant="body2" color="text.secondary">
-            Seleccionados: <strong>{selectedIds.length}</strong>
-          </Typography>
-        </Box>
-        <Box>
-          <Button
-            size="small"
-            color="error"
-            variant="outlined"
-            disabled={selectedIds.length === 0}
-            sx={{ mr: 1 }}
+      {/* Toolbar: búsqueda, filtro y acciones */}
+      <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center', mb: 3, justifyContent: 'center' }}>
+        <TextField
+          size="small"
+          label="Buscar"
+          placeholder="ID, título o estado"
+          value={search}
+          onChange={(e) => { setSearch(e.target.value); setPage(0); }}
+        />
+        <FormControl size="small" sx={{ minWidth: 180 }}>
+          <InputLabel id="estado-filter-label">Estado</InputLabel>
+          <Select
+            labelId="estado-filter-label"
+            value={estadoFilter}
+            label="Estado"
+            onChange={(e) => { setEstadoFilter(e.target.value); setPage(0); }}
           >
-            Borrar
-          </Button>
-          <Button size="small" variant="outlined" onClick={fetchTickets} disabled={loading}>
-            Recargar
-          </Button>
-        </Box>
+            <MenuItem value=""><em>Todos</em></MenuItem>
+            <MenuItem value="Asignado">Asignado</MenuItem>
+            <MenuItem value="En Proceso">En Proceso</MenuItem>
+            <MenuItem value="Resuelto">Resuelto</MenuItem>
+            <MenuItem value="Cerrado">Cerrado</MenuItem>
+          </Select>
+        </FormControl>
+        <Button size="small" variant="outlined" onClick={fetchTickets} disabled={loading}>Recargar</Button>
       </Box>
 
       <Typography variant="h5" align="center" color="text.secondary" mb={6}>
         Consulta el estado de los tickets de soporte activos y recientes.
       </Typography>
 
-      <Box textAlign="center" mb={3}>
-        <Typography variant="h4" color="primary">🎟️ Tiquetes Recientes</Typography>
+      <Box textAlign="center" mb={2}>
+        <Typography variant="h5" color="primary">🎟️ Tickets</Typography>
       </Box>
 
       {loading && (
@@ -162,119 +224,105 @@ const Home = () => {
         <Alert severity="error" sx={{ maxWidth: 800, mx: 'auto' }}>{error}</Alert>
       )}
 
-      {!loading && !error && grupos.map((grupo, gi) => (
-        <Box key={grupo.titulo} sx={{ mt: gi === 0 ? 0 : 4 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <Chip
-              label={grupo.titulo}
-              color={
-                grupo.titulo === 'Asignado' ? 'info' :
-                grupo.titulo === 'En Proceso' ? 'warning' :
-                grupo.titulo === 'Resuelto' ? 'success' : 'default'
-              }
-            />
-            <Divider sx={{ flex: 1, ml: 2 }} />
-          </Box>
-
-          <Grid container spacing={3}>
-            {grupo.items.map((ticket) => {
-              const id = ticket.id_ticket;
-              const isSelected = selectedIds.includes(id);
-
-              return (
-                <Grid item xs={12} sm={6} md={4} key={id}>
-                  <Card
-                    elevation={3}
-                    sx={{
-                      borderRadius: 2,
-                      height: "100%",
-                      bgcolor: isSelected ? "rgba(200,255,200,0.4)" : "background.paper",
-                      cursor: "pointer",
-                      transition: "0.2s ease",
-                      "&:hover": { transform: "scale(1.02)", boxShadow: 6 },
-                    }}
-                    onClick={() => navigate(`/tickets/${id}`)} // navega al detalle
+      {!loading && !error && (
+        <TableContainer sx={{ maxWidth: 1200, mx: 'auto' }}>
+          <Table size="small" aria-label="Tabla de tickets">
+            <TableHead>
+              <TableRow>
+                <TableCell sortDirection={orderBy === 'id_ticket' ? order : false}>
+                  <TableSortLabel
+                    active={orderBy === 'id_ticket'}
+                    direction={orderBy === 'id_ticket' ? order : 'asc'}
+                    onClick={() => handleRequestSort('id_ticket')}
                   >
-                    <CardContent>
-                      <Typography variant="subtitle2" color="text.secondary">ID #{id}</Typography>
-                      <Typography variant="h6" sx={{ mb: 1 }}>{ticket.titulo}</Typography>
-
-                      <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
-                        <Chip size="small" label={ticket.estado} sx={{ bgcolor: getStatusColor(ticket.estado), color: '#fff' }} />
-                      </Box>
-
-                      {/* Alerta SLA prominente */}
-                      {ticket.sla && (() => {
-                        const urgency = getSlaUrgency(ticket.sla);
-                        if (!urgency) {
-                          return (
-                            <Chip size="small" variant="outlined" label={`SLA: ${ticket.sla}`} />
-                          );
-                        }
-
-                        const Icon = urgency.icon;
-                        
-                        return (
-                          <Box 
-                            sx={{ 
-                              mt: 1, 
-                              p: 1, 
-                              bgcolor: urgency.bgColor,
-                              borderRadius: 1,
-                              borderLeft: `4px solid ${urgency.color}`,
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 1
-                            }}
-                          >
-                            <Icon sx={{ fontSize: 20, color: urgency.color }} />
-                            <Box sx={{ flex: 1 }}>
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  fontWeight: 700, 
-                                  color: urgency.color,
-                                  display: 'block',
-                                  lineHeight: 1.2
-                                }}
-                              >
-                                {urgency.label}
-                              </Typography>
-                              <Typography 
-                                variant="caption" 
-                                sx={{ 
-                                  color: 'text.secondary',
-                                  display: 'block',
-                                  lineHeight: 1.2
-                                }}
-                              >
-                                SLA: {ticket.sla}
-                              </Typography>
-                            </Box>
+                    ID
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sortDirection={orderBy === 'titulo' ? order : false} sx={{ minWidth: 260 }}>
+                  <TableSortLabel
+                    active={orderBy === 'titulo'}
+                    direction={orderBy === 'titulo' ? order : 'asc'}
+                    onClick={() => handleRequestSort('titulo')}
+                  >
+                    Título
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sortDirection={orderBy === 'estado' ? order : false}>
+                  <TableSortLabel
+                    active={orderBy === 'estado'}
+                    direction={orderBy === 'estado' ? order : 'asc'}
+                    onClick={() => handleRequestSort('estado')}
+                  >
+                    Estado
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sortDirection={orderBy === 'fecha_creacion' ? order : false}>
+                  <TableSortLabel
+                    active={orderBy === 'fecha_creacion'}
+                    direction={orderBy === 'fecha_creacion' ? order : 'asc'}
+                    onClick={() => handleRequestSort('fecha_creacion')}
+                  >
+                    Creado
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>
+                  SLA
+                </TableCell>
+                <TableCell align="right">Acciones</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {paginated.map((t) => {
+                const urgency = getSlaUrgency(t.sla);
+                return (
+                  <TableRow key={t.id_ticket} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/tickets/${t.id_ticket}`)}>
+                    <TableCell width={90}>#{t.id_ticket}</TableCell>
+                    <TableCell>{t.titulo}</TableCell>
+                    <TableCell width={160}>
+                      <Chip size="small" label={t.estado} sx={{ bgcolor: getStatusColor(t.estado), color: '#fff', fontWeight: 600 }} />
+                    </TableCell>
+                    <TableCell width={160}>{t.fecha_creacion || ''}</TableCell>
+                    <TableCell width={220}>
+                      {t.sla ? (
+                        urgency ? (
+                          <Box sx={{ display: 'inline-flex', alignItems: 'center', gap: 1, p: 0.5, px: 1, bgcolor: urgency.bgColor, borderRadius: 1, borderLeft: `4px solid ${urgency.color}` }}>
+                            <Typography variant="caption" sx={{ color: urgency.color, fontWeight: 700 }}>{urgency.label}</Typography>
+                            <Typography variant="caption" color="text.secondary">{t.sla}</Typography>
                           </Box>
-                        );
-                      })()}
-
-                      {/* Checkbox independiente */}
-                      <Box onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          aria-label={`Seleccionar ticket ${id}`}
-                          checked={isSelected}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedIds(prev => [...prev, id]);
-                            else setSelectedIds(prev => prev.filter(x => x !== id));
-                          }}
-                        />
-                      </Box>
-                    </CardContent>
-                  </Card>
-                </Grid>
-              );
-            })}
-          </Grid>
-        </Box>
-      ))}
+                        ) : (
+                          <Chip size="small" variant="outlined" label={t.sla} />
+                        )
+                      ) : (
+                        <Typography variant="caption" color="text.secondary">N/A</Typography>
+                      )}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); navigate(`/tickets/${t.id_ticket}`); }}>Ver</Button>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+              {paginated.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={6} align="center">
+                    <Typography variant="body2" color="text.secondary">Sin resultados</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          <TablePagination
+            component="div"
+            count={filtered.length}
+            page={page}
+            onPageChange={(e, newPage) => setPage(newPage)}
+            rowsPerPage={rowsPerPage}
+            onRowsPerPageChange={(e) => { setRowsPerPage(parseInt(e.target.value, 10)); setPage(0); }}
+            rowsPerPageOptions={[5, 10, 25, 50]}
+            labelRowsPerPage="Filas por página"
+          />
+        </TableContainer>
+      )}
     </Container>
   );
 };
