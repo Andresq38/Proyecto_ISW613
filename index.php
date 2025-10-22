@@ -15,6 +15,7 @@ require_once "controllers/core/Logger.php";
 require_once "controllers/core/MySqlConnect.php";
 require_once "controllers/core/Request.php";
 require_once "controllers/core/Response.php";
+require_once "controllers/core/AuthMiddleware.php";
 
 /***--- Agregar todos los modelos*/
 require_once "models/Categoria_etiquetaModel.php";
@@ -50,6 +51,7 @@ require_once "controllers/TecnicoController.php";
 require_once "controllers/Ticket_ImagenController.php";
 require_once "controllers/TicketController.php";
 require_once "controllers/UsuarioController.php";
+require_once "controllers/AuthController.php";
 
 
 

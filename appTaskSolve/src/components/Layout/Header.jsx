@@ -1,11 +1,15 @@
 import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, Menu, MenuItem, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Menu, MenuItem, Box, IconButton, Chip } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import LogoutIcon from '@mui/icons-material/Logout';
+import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, logout } = useAuth();
   const [anchorEl, setAnchorEl] = useState(null);
   const [message, setMessage] = useState('');
 
@@ -150,6 +154,38 @@ const Header = () => {
 
         {/* Spacer to push any future items to the right */}
         <Box sx={{ flexGrow: 1 }} />
+
+        {/* User info and logout */}
+        {user && (
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Chip
+              icon={<PersonIcon />}
+              label={`${user.nombre || user.email} (${user.rol})`}
+              sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)', fontWeight: 600 }}
+            />
+            <IconButton
+              color="inherit"
+              onClick={() => {
+                logout();
+                navigate('/login');
+              }}
+              title="Cerrar sesión"
+              sx={{ color: 'white' }}
+            >
+              <LogoutIcon />
+            </IconButton>
+          </Box>
+        )}
+        {!user && (
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={() => navigate('/login')}
+            sx={{ borderColor: 'white', color: 'white' }}
+          >
+            Iniciar sesión
+          </Button>
+        )}
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
           <MenuItem onClick={() => handleTicketOption('Administrador')}>Administrador</MenuItem>

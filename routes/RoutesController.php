@@ -5,15 +5,18 @@ class RoutesController
     private $protectedRoutes = [];
 
     public function __construct() {
-        // $this->authMiddleware = new AuthMiddleware();
-        // $this->registerRoutes();
+        $this->authMiddleware = new AuthMiddleware();
+        $this->registerRoutes();
         $this->routes();
     }
 
     private function registerRoutes() {
-        // Registrar rutas protegidas
-        //---------------------  Metodo,path (en minuscula),controlador, accion, array de nombres de roles
-        $this->addProtectedRoute('GET', '/apiticket/ticket', 'ticket', 'index', ['Administrador']);
+        // Registrar rutas protegidas (por prefijo)
+        //---------------------  Metodo,pathPrefix (en minuscula),controlador, accion, array de nombres de roles
+        $this->addProtectedRoute('GET', '/apiticket/ticket', 'ticket', 'index', ['Administrador','Tecnico','Cliente']);
+        $this->addProtectedRoute('POST', '/apiticket/ticket', 'ticket', 'create', ['Administrador','Tecnico','Cliente']);
+        $this->addProtectedRoute('GET', '/apiticket/tecnico', 'tecnico', 'index', ['Administrador','Tecnico']);
+        $this->addProtectedRoute('GET', '/apiticket/categoria_ticket', 'categoria_ticket', 'index', ['Administrador','Tecnico','Cliente']);
         
     }
 
@@ -22,26 +25,31 @@ class RoutesController
         $path = strtolower($_SERVER['REQUEST_URI']);
 
         // Si la ruta es protegida, aplicar autenticación
-        if ($this->isProtectedRoute($method, $path)) {
-            $route = $this->protectedRoutes["$method:$path"];
-            //Verifica los roles autorizados con los del usuario del token
-            if(!$this->authMiddleware->handle($route['requiredRole'])){
+        $matched = $this->matchProtectedRoute($method, $path);
+        if ($matched) {
+            if(!$this->authMiddleware->handle($matched['requiredRole'])){
                 return;
             }
-           
-        } 
+        }
     }
 
     private function addProtectedRoute($method, $path, $controllerName, $action, $requiredRole) {
-        $this->protectedRoutes["$method:$path"] = [
+        $this->protectedRoutes[] = [
             'controller' => $controllerName,
             'action' => $action,
-            'requiredRole' => $requiredRole
+            'requiredRole' => $requiredRole,
+            'method' => $method,
+            'path' => $path
         ];
     }
 
-    private function isProtectedRoute($method, $path) {
-        return isset($this->protectedRoutes["$method:$path"]);
+    private function matchProtectedRoute($method, $path) {
+        foreach ($this->protectedRoutes as $r) {
+            if ($r['method'] === $method && strpos($path, $r['path']) === 0) {
+                return $r;
+            }
+        }
+        return null;
     }
     public function index()
     {

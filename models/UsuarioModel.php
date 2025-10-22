@@ -42,6 +42,42 @@ public function get($id)
         }
     }
 
+    /** Buscar por email */
+    public function findByEmail($email)
+    {
+        try {
+            // La tabla usuario actual solo tiene 'password' (SHA-256), no password_hash
+            // Devolvemos password como legacy_password para compatibilidad con AuthController
+            $sql = "SELECT u.id_usuario, u.nombre, u.correo, u.id_rol, r.descripcion AS rol, 
+                           u.password AS legacy_password
+                    FROM usuario u
+                    LEFT JOIN rol r ON r.id_rol = u.id_rol
+                    WHERE u.correo = ?
+                    LIMIT 1";
+            $res = $this->enlace->executePrepared($sql, 's', [ (string)$email ], 'asoc');
+            if (!empty($res)) {
+                return (object)$res[0];
+            }
+            return null;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    /** Actualiza último inicio de sesión */
+    public function actualizarUltimoLogin($idUsuario)
+    {
+        try {
+            // La tabla usuario actual no tiene la columna ultimo_login
+            // Comentamos temporalmente hasta que se agregue la columna
+            // $sql = "UPDATE usuario SET ultimo_login = NOW() WHERE id_usuario = ?";
+            // return $this->enlace->executePrepared_DML($sql, 'i', [ (int)$idUsuario ]);
+            return true;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
     
      //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
     /*Obtener los actores de una pelicula */

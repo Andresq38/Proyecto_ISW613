@@ -1,0 +1,7 @@
+[22-10-2025 21:32:45] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Unknown column 'u.password_hash' in 'field list'
+ [22-10-2025 21:33:12] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Unknown column 'u.password_hash' in 'field list'
+ [22-10-2025 21:34:09] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Unknown column 'u.password_hash' in 'field list'
+ [22-10-2025 21:36:48] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Unknown column 'u.password_hash' in 'field list'
+ [22-10-2025 21:38:08] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Unknown column 'u.password_hash' in 'field list'
+ [22-10-2025 21:38:28] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 130 - Message: Unknown column 'ultimo_login' in 'field list'
+ 
