@@ -7,7 +7,7 @@ class RoutesController
     public function __construct() {
         $this->authMiddleware = new AuthMiddleware();
         $this->registerRoutes();
-        $this->routes();
+        // No llamar routes() aquí, se llamará en index()
     }
 
     private function registerRoutes() {
@@ -20,7 +20,7 @@ class RoutesController
         
     }
 
-    public function routes() {
+    private function checkAuth() {
         $method = $_SERVER['REQUEST_METHOD'];
         $path = strtolower($_SERVER['REQUEST_URI']);
 
@@ -28,9 +28,10 @@ class RoutesController
         $matched = $this->matchProtectedRoute($method, $path);
         if ($matched) {
             if(!$this->authMiddleware->handle($matched['requiredRole'])){
-                return;
+                return false;
             }
         }
+        return true;
     }
 
     private function addProtectedRoute($method, $path, $controllerName, $action, $requiredRole) {
@@ -53,6 +54,11 @@ class RoutesController
     }
     public function index()
     {
+        // Verificar autenticación ANTES de procesar cualquier ruta
+        if (!$this->checkAuth()) {
+            return; // Si la autenticación falla, die() ya se ejecutó en el middleware
+        }
+        
         //include "routes/routes.php";
         if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
             //Gestion de imagenes

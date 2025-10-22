@@ -6,9 +6,9 @@ export default function TecnicosHub() {
   const location = useLocation();
 
   const tabs = [
-    { label: 'Listado', to: '/tecnicos/listado', value: 'listado' },
+    { label: 'Equipo', to: '/tecnicos/listado', value: 'listado' },
     { label: 'Asignaciones', to: '/tecnicos/asignaciones', value: 'asignaciones' },
-    { label: 'Tickets por Técnico', to: '/tecnicos/tickets', value: 'tickets' },
+    { label: 'Bandeja del Técnico', to: '/tecnicos/tickets', value: 'tickets' },
   ];
 
   const current = tabs.find(t => location.pathname.includes(`/tecnicos/${t.value}`))?.value || 'listado';

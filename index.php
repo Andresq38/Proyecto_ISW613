@@ -1,4 +1,7 @@
 <?php
+// Iniciar buffer de salida para poder limpiarlo si hay errores de autenticación
+ob_start();
+
 // Composer autoloader
 require_once 'vendor/autoload.php';
 /*Encabezada de las solicitudes*/
@@ -59,6 +62,9 @@ require_once "controllers/AuthController.php";
 require_once "routes/RoutesController.php";
 $index = new RoutesController();
 $index->index();
+
+// Enviar el buffer de salida
+ob_end_flush();
 
 
 

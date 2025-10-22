@@ -29,9 +29,12 @@ class AuthMiddleware
     {
         $authHeader = $this->getAuthHeader();
         if (!$authHeader || stripos($authHeader, 'Bearer ') !== 0) {
+            while (ob_get_level()) ob_end_clean(); // Limpiar todos los buffers
             http_response_code(401);
-            echo json_encode(['error' => 'Unauthorized: missing Bearer token']);
-            return false;
+            $error = json_encode(['error' => 'Unauthorized: missing Bearer token']);
+            header('Content-Length: ' . strlen($error));
+            echo $error;
+            die(); // Terminar COMPLETAMENTE la ejecución
         }
 
         $token = trim(substr($authHeader, 7));
@@ -40,9 +43,9 @@ class AuthMiddleware
             $keyClass = '\\Firebase\\JWT\\Key';
             $decoded = $jwtClass::decode($token, new $keyClass($this->secret, 'HS256'));
         } catch (\Throwable $e) {
+            while (ob_get_level()) ob_end_clean(); // Limpiar todos los buffers
             http_response_code(401);
-            echo json_encode(['error' => 'Unauthorized: invalid token']);
-            return false;
+            die(json_encode(['error' => 'Unauthorized: invalid token']));
         }
 
         // Guardar user en servidor para usos posteriores
@@ -68,9 +71,9 @@ class AuthMiddleware
             $userRoleN = $norm((string)$userRole);
             $allowed = array_map($norm, $requiredRoles);
             if (!$userRoleN || !in_array($userRoleN, $allowed)) {
+                while (ob_get_level()) ob_end_clean(); // Limpiar todos los buffers
                 http_response_code(403);
-                echo json_encode(['error' => 'Forbidden: insufficient role']);
-                return false;
+                die(json_encode(['error' => 'Forbidden: insufficient role']));
             }
         }
 

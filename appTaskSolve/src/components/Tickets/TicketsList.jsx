@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUser } from '../../context/UserContext';
+import { useAuth } from '../../context/AuthContext';
+import axios from 'axios';
 import {
   Container,
   Typography,
@@ -16,13 +17,12 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
-// Detectar base del API automáticamente o por variable de entorno
-const API_BASE = (
-  (import.meta?.env?.VITE_API_BASE && `${import.meta.env.VITE_API_BASE}/apiticket`) ||
-  (typeof window !== 'undefined'
-    ? `${window.location.origin.replace(/:\d+$/, '')}/apiticket`
-    : 'http://localhost/apiticket')
-);
+const getApiBase = () => {
+  const candidate = import.meta?.env?.VITE_API_BASE;
+  if (candidate) return candidate.replace(/\/$/, '');
+  const { protocol, hostname } = window.location;
+  return `${protocol}//${hostname}/apiticket`;
+};
 
 const statusColor = (estado) => {
   const map = {
@@ -60,7 +60,7 @@ export default function TicketsList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const navigate = useNavigate();
-  const { role, ids } = useUser();
+  const { user } = useAuth();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -68,28 +68,41 @@ export default function TicketsList() {
       try {
         setLoading(true);
         setError('');
-        let url = `${API_BASE}/ticket`;
-        if (role?.toLowerCase() === 'cliente' && ids?.idUsuario) {
-          url = `${API_BASE}/ticket/getTicketByUsuario/${encodeURIComponent(ids.idUsuario)}`;
-        } else if (role?.toLowerCase() === 'técnico' || role?.toLowerCase() === 'tecnico') {
-          if (ids?.idTecnico) url = `${API_BASE}/ticket/getTicketByTecnico/${ids.idTecnico}`;
+        
+        const apiBase = getApiBase();
+        let url = `${apiBase}/ticket`;
+        
+        // Filtrar por rol
+        if (user) {
+          if (user.rol?.toLowerCase() === 'cliente' && user.id_usuario) {
+            url = `${apiBase}/ticket/getTicketByUsuario/${user.id_usuario}`;
+          } else if (user.rol?.toLowerCase() === 'técnico' || user.rol?.toLowerCase() === 'tecnico') {
+            if (user.id_tecnico) {
+              url = `${apiBase}/ticket/getTicketByTecnico/${user.id_tecnico}`;
+            }
+          }
         }
-        const res = await fetch(url, {
-          headers: { 'Accept': 'application/json' },
+        
+        console.log('Fetching tickets from:', url);
+        const res = await axios.get(url, {
           signal: controller.signal
         });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
+        
+        console.log('Tickets response:', res.data);
+        const data = res.data;
         setTickets(Array.isArray(data) ? data : []);
       } catch (e) {
-        if (e.name !== 'AbortError') setError(e.message || 'Error al cargar');
+        if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
+          console.error('Error cargando tickets:', e);
+          setError(e.response?.data?.message || e.message || 'Error al cargar tickets');
+        }
       } finally {
         setLoading(false);
       }
     }
     load();
     return () => controller.abort();
-  }, []);
+  }, [user]);
 
   return (
     <Container sx={{ py: 4 }}>
@@ -163,7 +176,6 @@ export default function TicketsList() {
                     <Chip size="small" label={t['Estado actual']} color={statusColor(t['Estado actual'])} />
                   </Box>
 
-                  {/* Alerta SLA */}
                   {urgency && (
                     <Box 
                       sx={{ 

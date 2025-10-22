@@ -5,18 +5,19 @@ import {
   Typography,
   Card,
   CardContent,
-  CardActionArea,
   Grid,
   Alert,
   CircularProgress,
   Chip,
   Box,
-  Avatar
+  Paper,
+  Divider
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import CategoryIcon from '@mui/icons-material/Category';
-import TimerIcon from '@mui/icons-material/Timer';
-import LabelIcon from '@mui/icons-material/Label';
+import FolderSpecialIcon from '@mui/icons-material/FolderSpecial';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 
 const CategoriasList = () => {
   const [categorias, setCategorias] = useState([]);
@@ -39,7 +40,14 @@ const CategoriasList = () => {
   useEffect(() => {
     const fetchCategorias = async () => {
       try {
+        setLoading(true);
+        setError(null);
+        
         const apiBase = getApiBase();
+        
+        // Verificar que axios tiene el token configurado
+        console.log('Authorization header:', axios.defaults.headers.common['Authorization']);
+        
         const response = await axios.get(`${apiBase}/apiticket/categoria_ticket`);
         
         console.log('Datos de categorías:', response.data); // Para debug
@@ -47,11 +55,12 @@ const CategoriasList = () => {
         // Manejar diferentes formatos de respuesta
         const categoriasData = Array.isArray(response.data) ? response.data : (response.data?.data || []);
         setCategorias(categoriasData);
-        setLoading(false);
       } catch (err) {
         console.error('Error al cargar categorías:', err);
+        const errorMsg = err.response?.data?.error || err.message || 'Error al cargar categorías';
         const status = err.response?.status || 'desconocido';
-        setError(`Error al cargar categorías. Código de estado: ${status}`);
+        setError(`${errorMsg} (Código: ${status})`);
+      } finally {
         setLoading(false);
       }
     };
@@ -88,9 +97,27 @@ const CategoriasList = () => {
 
   return (
     <Container sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 700, color: 'text.primary' }}>
-        📁 Categorías de Tickets
-      </Typography>
+      {/* Header */}
+      <Box sx={{ mb: 4 }}>
+        <Typography 
+          variant="h4" 
+          gutterBottom 
+          sx={{ 
+            mb: 1, 
+            fontWeight: 700, 
+            color: 'text.primary',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1
+          }}
+        >
+          <FolderSpecialIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+          Categorías de Tickets
+        </Typography>
+        <Typography variant="body1" color="text.secondary">
+          Gestiona y organiza los diferentes tipos de tickets del sistema
+        </Typography>
+      </Box>
 
       {categorias.length === 0 ? (
         <Alert severity="info">No hay categorías disponibles.</Alert>
@@ -99,73 +126,154 @@ const CategoriasList = () => {
           {categorias.map((cat) => (
             <Grid item xs={12} sm={6} md={4} key={cat.id_categoria}>
               <Card 
-                elevation={3}
+                elevation={2}
                 sx={{ 
                   height: '100%',
                   cursor: 'pointer',
-                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  position: 'relative',
+                  overflow: 'visible',
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  border: '1px solid',
+                  borderColor: 'divider',
                   '&:hover': {
-                    transform: 'translateY(-4px)',
-                    boxShadow: 6
+                    transform: 'translateY(-8px)',
+                    boxShadow: '0 12px 24px rgba(25, 118, 210, 0.15)',
+                    borderColor: 'primary.main',
+                    '& .arrow-icon': {
+                      transform: 'translateX(4px)',
+                      opacity: 1
+                    }
                   }
                 }}
                 onClick={() => handleCategoriaClick(cat.id_categoria)}
               >
+                {/* Barra superior de color */}
+                <Box 
+                  sx={{ 
+                    height: 6, 
+                    background: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)'
+                  }} 
+                />
+                
                 <CardContent sx={{ p: 3 }}>
-                  {/* Avatar y nombre */}
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
-                    <Avatar 
+                  {/* ID Badge */}
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 2 }}>
+                    <Chip 
+                      label={`ID: ${cat.id_categoria}`} 
+                      size="small" 
                       sx={{ 
-                        bgcolor: 'primary.main', 
-                        width: 48, 
-                        height: 48,
-                        mr: 2 
+                        bgcolor: 'primary.main',
+                        color: 'white',
+                        fontWeight: 700,
+                        fontSize: '0.75rem'
                       }}
-                    >
-                      <CategoryIcon />
-                    </Avatar>
-                    <Box sx={{ flex: 1 }}>
+                    />
+                    <ArrowForwardIcon 
+                      className="arrow-icon"
+                      sx={{ 
+                        color: 'primary.main', 
+                        fontSize: 24,
+                        transition: 'all 0.3s ease',
+                        opacity: 0.5
+                      }} 
+                    />
+                  </Box>
+
+                  {/* Nombre de categoría */}
+                  <Typography 
+                    variant="h6" 
+                    sx={{ 
+                      fontWeight: 700, 
+                      color: 'text.primary',
+                      mb: 2.5,
+                      lineHeight: 1.3,
+                      minHeight: 56,
+                      display: 'flex',
+                      alignItems: 'center'
+                    }}
+                  >
+                    {cat.nombre}
+                  </Typography>
+
+                  <Divider sx={{ mb: 2 }} />
+
+                  {/* Información de SLA */}
+                  <Paper 
+                    elevation={0} 
+                    sx={{ 
+                      p: 1.5, 
+                      mb: 2,
+                      bgcolor: 'rgba(25, 118, 210, 0.05)',
+                      borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: 'rgba(25, 118, 210, 0.1)'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <AccessTimeIcon sx={{ color: 'primary.main', fontSize: 20 }} />
+                      <Box sx={{ flex: 1 }}>
+                        <Typography 
+                          variant="caption" 
+                          sx={{ 
+                            color: 'text.secondary',
+                            fontWeight: 600,
+                            textTransform: 'uppercase',
+                            fontSize: '0.65rem',
+                            letterSpacing: 0.5
+                          }}
+                        >
+                          Acuerdo de Servicio
+                        </Typography>
+                        <Typography 
+                          variant="body2" 
+                          sx={{ 
+                            color: 'primary.main',
+                            fontWeight: 600,
+                            mt: 0.25
+                          }}
+                        >
+                          {cat.sla_nombre}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Paper>
+
+                  {/* Contador de etiquetas */}
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'space-between',
+                      p: 1.5,
+                      bgcolor: 'rgba(156, 39, 176, 0.05)',
+                      borderRadius: 1.5,
+                      border: '1px solid',
+                      borderColor: 'rgba(156, 39, 176, 0.1)'
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <LocalOfferIcon sx={{ color: 'secondary.main', fontSize: 20 }} />
                       <Typography 
-                        variant="h6" 
+                        variant="body2" 
                         sx={{ 
-                          fontWeight: 600, 
-                          color: 'text.primary',
-                          lineHeight: 1.3,
-                          mb: 0.5
+                          color: 'text.secondary',
+                          fontWeight: 600
                         }}
                       >
-                        {cat.nombre}
-                      </Typography>
-                      <Chip 
-                        label={`ID: ${cat.id_categoria}`} 
-                        size="small" 
-                        color="primary" 
-                        variant="outlined"
-                      />
-                    </Box>
-                  </Box>
-
-                  {/* SLA */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5 }}>
-                    <TimerIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
-                    <Typography variant="body2" color="text.secondary">
-                      {cat.sla_nombre}
-                    </Typography>
-                  </Box>
-
-                  {/* Etiquetas */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <LabelIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Etiquetas:
+                        Etiquetas disponibles
                       </Typography>
                     </Box>
                     <Chip 
                       label={cat.num_etiquetas}
-                      color="secondary"
                       size="small"
-                      sx={{ fontWeight: 700 }}
+                      sx={{ 
+                        bgcolor: 'secondary.main',
+                        color: 'white',
+                        fontWeight: 700,
+                        minWidth: 32,
+                        height: 28
+                      }}
                     />
                   </Box>
                 </CardContent>

@@ -5,13 +5,11 @@ import {
   Container, Typography, CircularProgress, Box, Alert, 
   TextField, Button, Paper, Chip, Grid, Rating, 
   Dialog, DialogTitle, DialogContent, DialogActions,
-  FormControl, InputLabel, Select, MenuItem, Snackbar, IconButton
+  FormControl, InputLabel, Select, MenuItem, Snackbar
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ImageIcon from '@mui/icons-material/Image';
+// Se removieron iconos de carga/eliminación de imágenes para modo solo lectura
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -22,7 +20,6 @@ export default function DetalleTicket() {
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [comentario, setComentario] = useState('');
   
   // Estados para el diálogo de cambio de estado
   const [openDialog, setOpenDialog] = useState(false);
@@ -31,11 +28,7 @@ export default function DetalleTicket() {
   const [estadosDisponibles, setEstadosDisponibles] = useState([]);
   const [loadingEstados, setLoadingEstados] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  
-  // Estados para upload de imágenes
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploadProgress, setUploadProgress] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState(null);
+
 
   const getApiBase = () => {
     return (import.meta?.env?.VITE_API_BASE)
@@ -125,78 +118,7 @@ export default function DetalleTicket() {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const handleFileSelect = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      // Validar tamaño (5MB)
-      if (file.size > 5 * 1024 * 1024) {
-        setSnackbar({ open: true, message: 'El archivo es demasiado grande. Máximo 5MB', severity: 'error' });
-        return;
-      }
-
-      // Validar tipo
-      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
-      if (!allowedTypes.includes(file.type)) {
-        setSnackbar({ open: true, message: 'Tipo de archivo no permitido', severity: 'error' });
-        return;
-      }
-
-      setSelectedFile(file);
-
-      // Crear preview para imágenes
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          setPreviewUrl(reader.result);
-        };
-        reader.readAsDataURL(file);
-      } else {
-        setPreviewUrl(null);
-      }
-    }
-  };
-
-  const handleUploadImage = async () => {
-    if (!selectedFile) {
-      setSnackbar({ open: true, message: 'Por favor selecciona un archivo', severity: 'warning' });
-      return;
-    }
-
-    setUploadProgress(true);
-
-    try {
-      const apiBase = getApiBase();
-      const formData = new FormData();
-      formData.append('imagen', selectedFile);
-      formData.append('id_ticket', id);
-      formData.append('id_usuario', '2-0901-0847'); // TODO: obtener del contexto
-      formData.append('descripcion', 'Imagen adjunta al ticket');
-
-      const response = await axios.post(`${apiBase}/apiticket/imagen/upload`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      if (response.data.success) {
-        setSnackbar({ open: true, message: 'Imagen subida correctamente', severity: 'success' });
-        setSelectedFile(null);
-        setPreviewUrl(null);
-        
-        // Recargar ticket para ver la nueva imagen
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      } else {
-        setSnackbar({ open: true, message: response.data.message || 'Error al subir imagen', severity: 'error' });
-      }
-    } catch (err) {
-      console.error('Error al subir imagen:', err);
-      setSnackbar({ open: true, message: 'Error al subir la imagen', severity: 'error' });
-    } finally {
-      setUploadProgress(false);
-    }
-  };
+  // Se removieron manejadores de carga de imágenes para modo solo lectura
 
   if (loading) return <Box textAlign="center" mt={5}><CircularProgress /></Box>;
   if (error) return <Alert severity="error">{error}</Alert>;
@@ -613,7 +535,7 @@ export default function DetalleTicket() {
         )}
       </Paper>
 
-      {/* Imágenes del ticket */}
+      {/* Imágenes del ticket (solo lectura) */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" color="primary" gutterBottom>Imágenes adjuntas al ticket</Typography>
         {Array.isArray(ticket.imagenes) && ticket.imagenes.length > 0 ? (
@@ -627,106 +549,24 @@ export default function DetalleTicket() {
         )}
       </Paper>
 
-      {/* Upload de imágenes */}
-      {ticket?.estado?.nombre !== 'Cerrado' && (
-        <Paper sx={{ p: 3, mb: 4, bgcolor: '#f5f5f5' }}>
-          <Typography variant="h6" color="primary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <CloudUploadIcon />
-            Adjuntar Nueva Imagen
-          </Typography>
-
-          <Box sx={{ mt: 2 }}>
-            <input
-              accept="image/*,.pdf"
-              style={{ display: 'none' }}
-              id="upload-image-button"
-              type="file"
-              onChange={handleFileSelect}
-            />
-            <label htmlFor="upload-image-button">
-              <Button
-                variant="outlined"
-                component="span"
-                startIcon={<ImageIcon />}
-                disabled={uploadProgress}
-              >
-                Seleccionar Archivo
-              </Button>
-            </label>
-
-            {selectedFile && (
-              <Box sx={{ mt: 2 }}>
-                <Paper sx={{ p: 2, bgcolor: 'white' }} elevation={2}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                      {selectedFile.name}
-                    </Typography>
-                    <IconButton 
-                      size="small" 
-                      onClick={() => {
-                        setSelectedFile(null);
-                        setPreviewUrl(null);
-                      }}
-                      disabled={uploadProgress}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                  <Typography variant="caption" color="text.secondary">
-                    Tamaño: {(selectedFile.size / 1024).toFixed(2)} KB
+      {/* Comentarios (solo lectura) */}
+      {Array.isArray(ticket.comentarios) && ticket.comentarios.length > 0 && (
+        <Paper sx={{ p: 3, mb: 4 }}>
+          <Typography variant="h6" color="primary" gutterBottom>Comentarios</Typography>
+          <Grid container spacing={2}>
+            {ticket.comentarios.map((c, idx) => (
+              <Grid item xs={12} key={c.id_comentario || idx}>
+                <Paper sx={{ p: 2 }} elevation={1}>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    {c.autor || 'Usuario'} — {c.fecha || ''}
                   </Typography>
-
-                  {previewUrl && (
-                    <Box sx={{ mt: 2 }}>
-                      <img 
-                        src={previewUrl} 
-                        alt="Preview" 
-                        style={{ 
-                          maxWidth: '100%', 
-                          maxHeight: 200, 
-                          borderRadius: 4,
-                          border: '1px solid #ddd'
-                        }} 
-                      />
-                    </Box>
-                  )}
-
-                  <Box sx={{ mt: 2 }}>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      startIcon={<CloudUploadIcon />}
-                      onClick={handleUploadImage}
-                      disabled={uploadProgress}
-                      fullWidth
-                    >
-                      {uploadProgress ? 'Subiendo...' : 'Subir Imagen'}
-                    </Button>
-                  </Box>
+                  <Typography variant="body1">{c.texto || c.comentario || ''}</Typography>
                 </Paper>
-              </Box>
-            )}
-
-            <Alert severity="info" sx={{ mt: 2 }}>
-              Formatos permitidos: JPG, PNG, GIF, PDF. Tamaño máximo: 5MB
-            </Alert>
-          </Box>
+              </Grid>
+            ))}
+          </Grid>
         </Paper>
       )}
-
-      {/* Comentario */}
-      <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>Agregar Comentario</Typography>
-        <TextField
-          fullWidth
-          multiline
-          minRows={3}
-          value={comentario}
-          onChange={(e) => setComentario(e.target.value)}
-          placeholder="Escribí tu comentario aquí..."
-        />
-        <Button variant="contained" sx={{ mt: 2 }}>Enviar comentario</Button>
-      </Paper>
 
       {/* Diálogo para cambiar estado */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>

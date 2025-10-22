@@ -11,18 +11,25 @@ const getApiBase = () => {
 };
 
 export function AuthProvider({ children }) {
-  const [token, setToken] = useState(() => localStorage.getItem('authToken'));
+  const [token, setToken] = useState(() => {
+    const storedToken = localStorage.getItem('authToken');
+    console.log('🔐 Token inicial desde localStorage:', storedToken ? 'EXISTE' : 'NO EXISTE');
+    return storedToken;
+  });
   const [user, setUser] = useState(() => {
     const raw = localStorage.getItem('authUser');
     return raw ? JSON.parse(raw) : null;
   });
 
-  // Sync axios header
+  // Sync axios header - ejecutar INMEDIATAMENTE cuando el componente se monta
   useEffect(() => {
+    console.log('🔧 Configurando axios headers. Token:', token ? 'PRESENTE' : 'AUSENTE');
     if (token) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      console.log('✅ Header configurado:', axios.defaults.headers.common['Authorization']);
     } else {
       delete axios.defaults.headers.common['Authorization'];
+      console.log('❌ Header eliminado');
     }
   }, [token]);
 

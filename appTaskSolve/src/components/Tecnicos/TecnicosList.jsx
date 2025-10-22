@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Typography, Grid, Card, CardContent, Chip, Box, CircularProgress, Alert, Avatar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import AssignmentIcon from '@mui/icons-material/Assignment';
@@ -30,23 +31,20 @@ export default function TecnicosList() {
         setLoading(true);
         setError('');
         const apiBase = getApiBase();
-        const res = await fetch(`${apiBase}/apiticket/tecnico`, { 
-          headers: { Accept: 'application/json' }, 
+        
+        const res = await axios.get(`${apiBase}/apiticket/tecnico`, { 
           signal: controller.signal 
         });
         
-        if (!res.ok) throw new Error(`Error HTTP ${res.status}`);
-        
-        const data = await res.json();
-        console.log('Datos de técnicos:', data); // Para debug
+        console.log('Datos de técnicos:', res.data); // Para debug
         
         // Manejar diferentes formatos de respuesta
-        const tecnicosData = Array.isArray(data) ? data : (data?.data || []);
+        const tecnicosData = Array.isArray(res.data) ? res.data : (res.data?.data || []);
         setItems(tecnicosData);
       } catch (e) {
-        if (e.name !== 'AbortError') {
+        if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
           console.error('Error al cargar técnicos:', e);
-          setError(e.message || 'Error al cargar técnicos');
+          setError(e.response?.data?.error || e.message || 'Error al cargar técnicos');
         }
       } finally {
         setLoading(false);

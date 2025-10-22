@@ -1,6 +1,5 @@
-import React, { useState } from 'react';
-import { AppBar, Toolbar, Typography, Button, Menu, MenuItem, Box, IconButton, Chip } from '@mui/material';
-import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import React from 'react';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton, Chip } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonIcon from '@mui/icons-material/Person';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -10,11 +9,6 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuth();
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [message, setMessage] = useState('');
-
-  // Color de advertencia fuerte
-  const WARNING_COLOR = '#e65100';
 
   // Función para verificar si una ruta está activa
   const isActive = (path) => {
@@ -38,22 +32,7 @@ const Header = () => {
     },
   });
 
-  const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
-  const handleClose = () => setAnchorEl(null);
-
-  const handleTicketOption = (role) => {
-    handleClose();
-    if (role === 'Tecnico') {
-      navigate('/tickets/tecnico');
-    } else if (role === 'Administrador') {
-      navigate('/tickets');
-    } else {
-      const msg = `Navegación a ${role} aún no implementada.`;
-      console.log(msg);
-      setMessage(msg);
-      setTimeout(() => setMessage(''), 3000);
-    }
-  };
+  
 
   return (
     <AppBar position="sticky">
@@ -94,62 +73,53 @@ const Header = () => {
             
           </Typography>
         </Box>
-        {/* Left-aligned nav group: Home + Dashboard + Tickets + Técnicos + Categorías */}
+        {/* Left-aligned nav group: Home + Dashboard + Técnicos + Categorías */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* HOME - visible para todos */}
           <Button
             variant="text"
             color="inherit"
             onClick={() => navigate('/')}
               sx={getButtonStyles('/')}
           >
-            Home
+            Inicio
           </Button>
 
-          <Button
-            variant="text"
-            color="inherit"
-            onClick={() => navigate('/dashboard')}
-              sx={getButtonStyles('/dashboard')}
-          >
-            Dashboard
-          </Button>
+          {/* DASHBOARD - solo Administrador */}
+          {user && user.rol === 'Administrador' && (
+            <Button
+              variant="text"
+              color="inherit"
+              onClick={() => navigate('/dashboard')}
+                sx={getButtonStyles('/dashboard')}
+            >
+              Panel Ejecutivo
+            </Button>
+          )}
 
-          <Button
-            variant="text"
-            color="inherit"
-            onClick={handleMenuClick}
-            endIcon={<ArrowDropDownIcon />}
-              sx={getButtonStyles('/tickets')}
-          >
-            Tickets
-          </Button>
+          {/* TÉCNICOS - solo Administrador y Técnico */}
+          {user && (user.rol === 'Administrador' || user.rol === 'Técnico' || user.rol === 'Tecnico') && (
+            <Button
+              variant="text"
+              color="inherit"
+              onClick={() => navigate('/tecnicos')}
+                sx={getButtonStyles('/tecnicos')}
+            >
+              Equipo Técnico
+            </Button>
+          )}
 
-          <Button
-            variant="text"
-            color="inherit"
-            onClick={() => navigate('/tecnicos')}
-              sx={getButtonStyles('/tecnicos')}
-          >
-            Técnicos
-          </Button>
-
+          {/* CATEGORÍAS - visible para todos */}
           <Button
             variant="text"
             color="inherit"
             onClick={() => navigate('/categorias')}
               sx={getButtonStyles('/categorias')}
           >
-            Categorías
+            Catálogo
           </Button>
 
-          <Button
-            variant="text"
-            color="inherit"
-            onClick={() => navigate('/asignaciones')}
-              sx={getButtonStyles('/asignaciones')}
-          >
-            Asignaciones
-          </Button>
+          {/* ASIGNACIONES - removido de la barra superior; sigue disponible en Técnicos > Asignaciones */}
         </Box>
 
         {/* Spacer to push any future items to the right */}
@@ -187,17 +157,7 @@ const Header = () => {
           </Button>
         )}
 
-        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
-          <MenuItem onClick={() => handleTicketOption('Administrador')}>Administrador</MenuItem>
-          <MenuItem onClick={() => handleTicketOption('Cliente')}>Cliente</MenuItem>
-          <MenuItem onClick={() => handleTicketOption('Tecnico')}>Técnico</MenuItem>
-        </Menu>
       </Toolbar>
-      {message && (
-        <Box sx={{ bgcolor: WARNING_COLOR, color: 'white', p: 1, textAlign: 'center' }}>
-          {message}
-        </Box>
-      )}
     </AppBar>
   );
 };
