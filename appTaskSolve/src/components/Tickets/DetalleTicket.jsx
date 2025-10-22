@@ -11,19 +11,21 @@ export default function DetalleTicket() {
   const [error, setError] = useState(null);
   const [comentario, setComentario] = useState('');
 
-  useEffect(() => {
-    const fetchTicket = async () => {
-      try {
-        const res = await axios.get(`http://localhost:81/apiticket/ticket/${id}`);
-        setTicket(res.data);
-      } catch (err) {
-        setError('No se pudo cargar la información del ticket.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchTicket();
-  }, [id]);
+ useEffect(() => {
+  const fetchTicket = async () => {
+    try {
+      const res = await axios.get(`http://localhost:81/apiticket/ticket/${id}`);
+      console.log('Respuesta API:', res.data); // <-- revisar en consola
+      setTicket(res.data); 
+    } catch (err) {
+      console.error(err);
+      setError('No se pudo cargar la información del ticket.');
+    } finally {
+      setLoading(false);
+    }
+  };
+  fetchTicket();
+}, [id]);
 
   if (loading) return <Box textAlign="center" mt={5}><CircularProgress /></Box>;
   if (error) return <Alert severity="error">{error}</Alert>;
@@ -43,11 +45,19 @@ export default function DetalleTicket() {
           Información general
         </Typography>
 
-        <Typography><strong>Categoría:</strong> {ticket.categoria || 'N/A'}</Typography>
+        <Typography><strong>Usuario:</strong> {ticket.categoria || 'N/A'}</Typography>
         <Typography><strong>Estado:</strong> {ticket.estado || 'N/A'}</Typography>
         <Typography><strong>Descripción:</strong> {ticket.descripcion || 'N/A'}</Typography>
         <Typography><strong>Fecha creación:</strong> {ticket.fecha_creacion || 'N/A'}</Typography>
         <Typography><strong>SLA:</strong> {ticket.sla || 'N/A'}</Typography>
+      </Paper>
+
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" color="primary" gutterBottom>
+          Usuario Afectado
+        </Typography>
+        <Typography><strong>Nombre:</strong> {ticket.usuario?.nombre}</Typography>
+        <Typography><strong>Correo:</strong> {ticket.usuario?.correo}</Typography>
       </Paper>
 
       <Paper sx={{ p: 3 }}>
