@@ -5,6 +5,8 @@ import Home from './components/Home/Home';
 import PageNotFound from './components/Home/PageNotFound';
 import TicketsPorTecnico from './components/Tickets/TicketsPorTecnico';
 import TicketsList from './components/Tickets/TicketsList';
+import DetalleTicket from './components/Tickets/DetalleTicket';
+
 
 export default function App() {
   return (
@@ -14,7 +16,8 @@ export default function App() {
           <Route path="/" element={<Home />} />
           <Route path="/tickets" element={<TicketsList />} />
           <Route path="/tickets/tecnico" element={<TicketsPorTecnico />} />
-          <Route path="*" element={<PageNotFound />} />
+          <Route path="/tickets/:id" element={<DetalleTicket />} />
+                    <Route path="*" element={<PageNotFound />} />
         </Routes>
       </Layout>
     </Router>

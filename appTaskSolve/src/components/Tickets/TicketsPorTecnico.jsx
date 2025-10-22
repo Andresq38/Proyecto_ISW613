@@ -6,7 +6,7 @@ import {
 import axios from 'axios';
 
 const TicketsPorTecnico = () => {
-  const apiBase = 'http://localhost';
+  const apiBase = 'http://localhost:81';
   const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState(''); // id_tecnico
   const [tecnicos, setTecnicos] = useState([]); // [{id_tecnico, nombre}]
   const [tickets, setTickets] = useState([]);

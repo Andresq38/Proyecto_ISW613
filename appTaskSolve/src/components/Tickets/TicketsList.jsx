@@ -11,7 +11,7 @@ import {
   Alert
 } from '@mui/material';
 
-const API_BASE = 'http://localhost/apiticket';
+const API_BASE = 'http://localhost:81/apiticket';
 
 const statusColor = (estado) => {
   const map = {
