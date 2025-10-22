@@ -82,6 +82,44 @@ class TicketModel
         }
     }
 
+    public function getTicketByUsuario($idUsuario){
+        try {
+            $vSql = "SELECT 
+                        t.id_ticket AS 'Identificador del Ticket',
+                        c.nombre AS 'Categoría',
+                        e.nombre AS 'Estado actual',
+                        CONCAT(
+                            FLOOR((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, 
+                                CONVERT_TZ(t.fecha_creacion, '+00:00', '-06:00'), 
+                                NOW()
+                            )) / 60), 
+                            'h ',
+                            MOD((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, 
+                                CONVERT_TZ(t.fecha_creacion, '+00:00', '-06:00'), 
+                                NOW()
+                            )), 60),
+                            'm'
+                        ) AS 'Tiempo restante SLA (máx)'
+                    FROM 
+                        ticket t
+                    JOIN 
+                        categoria_ticket c ON t.id_categoria = c.id_categoria
+                    JOIN 
+                        estado e ON t.id_estado = e.id_estado
+                    JOIN 
+                        sla s ON c.id_sla = s.id_sla
+                    WHERE 
+                        t.id_usuario = ?
+                    ORDER BY 
+                        t.id_ticket;";
+
+            $vResultado = $this->enlace->executePrepared($vSql, 's', [ (string)$idUsuario ]);
+            return $vResultado;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
 
     /*Obtener */
     public function get($id)
@@ -156,6 +194,38 @@ public function getTicketCompletoById($idTicket) {
         } else {
             $ticket->sla->tiempo_restante = null;
         }
+
+        // Historial de estados
+        $sqlHist = "SELECT he.id_historial, he.fecha_cambio, he.observaciones, e.nombre AS estado
+                    FROM historial_estados he
+                    JOIN estado e ON e.id_estado = he.id_estado
+                    WHERE he.id_ticket = ?
+                    ORDER BY he.fecha_cambio ASC";
+        $historial = $this->enlace->executePrepared($sqlHist, 'i', [ (int)$idTicket ]);
+
+        // Imágenes asociadas directamente al ticket
+        $sqlImgsTicket = "SELECT i.id_imagen, i.url
+                          FROM imagen i
+                          JOIN ticket_imagen ti ON ti.id_imagen = i.id_imagen
+                          WHERE ti.id_ticket = ?";
+        $imagenesTicket = $this->enlace->executePrepared($sqlImgsTicket, 'i', [ (int)$idTicket ]);
+
+        // Imágenes por cada item de historial
+        $imagenesHistorial = [];
+        if (!empty($historial)) {
+            $sqlImgsHist = "SELECT i.id_imagen, i.url
+                            FROM historial_imagen hi
+                            JOIN imagen i ON i.id_imagen = hi.id_imagen
+                            WHERE hi.id_historial_estado = ?";
+            foreach ($historial as $h) {
+                $imgs = $this->enlace->executePrepared($sqlImgsHist, 'i', [ (int)$h->id_historial ]);
+                $imagenesHistorial[$h->id_historial] = $imgs ?: [];
+            }
+        }
+
+        $ticket->historial_estados = $historial ?: [];
+        $ticket->imagenes = $imagenesTicket ?: [];
+        $ticket->imagenes_por_historial = $imagenesHistorial;
 
         return $ticket;
 

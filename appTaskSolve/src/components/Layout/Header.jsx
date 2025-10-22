@@ -67,7 +67,7 @@ const Header = () => {
             
           </Typography>
         </Box>
-        {/* Left-aligned nav group: Home + Tickets */}
+        {/* Left-aligned nav group: Home + Dashboard + Tickets + Técnicos + Categorías */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Button
             variant="text"
@@ -88,6 +88,22 @@ const Header = () => {
           <Button
             variant="text"
             color="inherit"
+            onClick={() => navigate('/dashboard')}
+            sx={{
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              fontSize: '1.25rem',
+              letterSpacing: 0.3,
+              px: 1,
+              minWidth: 'auto'
+            }}
+          >
+            Dashboard
+          </Button>
+
+          <Button
+            variant="text"
+            color="inherit"
             onClick={handleMenuClick}
             endIcon={<ArrowDropDownIcon />}
             sx={{
@@ -100,6 +116,54 @@ const Header = () => {
             }}
           >
             Tickets
+          </Button>
+
+          <Button
+            variant="text"
+            color="inherit"
+            onClick={() => navigate('/tecnicos')}
+            sx={{
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              fontSize: '1.25rem',
+              letterSpacing: 0.3,
+              px: 1,
+              minWidth: 'auto'
+            }}
+          >
+            Técnicos
+          </Button>
+
+          <Button
+            variant="text"
+            color="inherit"
+            onClick={() => navigate('/categorias')}
+            sx={{
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              fontSize: '1.25rem',
+              letterSpacing: 0.3,
+              px: 1,
+              minWidth: 'auto'
+            }}
+          >
+            Categorías
+          </Button>
+
+          <Button
+            variant="text"
+            color="inherit"
+            onClick={() => navigate('/asignaciones')}
+            sx={{
+              textTransform: 'uppercase',
+              fontWeight: 700,
+              fontSize: '1.25rem',
+              letterSpacing: 0.3,
+              px: 1,
+              minWidth: 'auto'
+            }}
+          >
+            Asignaciones
           </Button>
         </Box>
 

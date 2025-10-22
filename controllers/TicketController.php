@@ -53,6 +53,18 @@ class ticket
         }
     }
 
+    public function getTicketByUsuario($idUsuario)
+    {
+        try {
+            $response = new Response();
+            $ticket = new TicketModel();
+            $result = $ticket->getTicketByUsuario($idUsuario);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
     public function getTicketsCompletos()
     {
         try {

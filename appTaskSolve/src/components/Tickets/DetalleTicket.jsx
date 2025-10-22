@@ -16,7 +16,10 @@ export default function DetalleTicket() {
 
   useEffect(() => {
     const fetchTicket = async () => {
-      const apiBase = 'http://localhost:81';
+      const apiBase = (import.meta?.env?.VITE_API_BASE)
+        || (typeof window !== 'undefined'
+            ? window.location.origin.replace(/:\d+$/, '')
+            : 'http://localhost');
       try {
         // Use the endpoint that returns the ticket with related objects (usuario, tecnico, categoria, sla, etiquetas)
         const res = await axios.get(`${apiBase}/apiticket/ticket/getTicketCompletoById/${id}`);
@@ -109,6 +112,49 @@ export default function DetalleTicket() {
           </Grid>
         ) : (
           <Typography>No hay etiquetas asociadas</Typography>
+        )}
+      </Paper>
+
+      {/* Historial de estados */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" color="primary" gutterBottom>Historial de estados</Typography>
+        {Array.isArray(ticket.historial_estados) && ticket.historial_estados.length > 0 ? (
+          <Grid container spacing={2}>
+            {ticket.historial_estados.map((h) => (
+              <Grid item xs={12} key={h.id_historial}>
+                <Paper sx={{ p: 2 }}>
+                  <Typography variant="subtitle2">{h.estado} — {h.fecha_cambio}</Typography>
+                  {h.observaciones && (
+                    <Typography variant="body2" color="text.secondary">{h.observaciones}</Typography>
+                  )}
+                  {/* Imágenes asociadas a este item de historial */}
+                  {ticket.imagenes_por_historial?.[h.id_historial]?.length > 0 && (
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1 }}>
+                      {ticket.imagenes_por_historial[h.id_historial].map((img) => (
+                        <Box key={img.id_imagen} component="img" src={img.url} alt={`img-${img.id_imagen}`} sx={{ width: 120, height: 90, objectFit: 'cover', borderRadius: 1, border: '1px solid #eee' }} />
+                      ))}
+                    </Box>
+                  )}
+                </Paper>
+              </Grid>
+            ))}
+          </Grid>
+        ) : (
+          <Typography color="text.secondary">Sin historial</Typography>
+        )}
+      </Paper>
+
+      {/* Imágenes del ticket */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" color="primary" gutterBottom>Imágenes adjuntas al ticket</Typography>
+        {Array.isArray(ticket.imagenes) && ticket.imagenes.length > 0 ? (
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            {ticket.imagenes.map((img) => (
+              <Box key={img.id_imagen} component="img" src={img.url} alt={`ticket-img-${img.id_imagen}`} sx={{ width: 140, height: 100, objectFit: 'cover', borderRadius: 1, border: '1px solid #eee' }} />
+            ))}
+          </Box>
+        ) : (
+          <Typography color="text.secondary">Sin imágenes adjuntas</Typography>
         )}
       </Paper>
 

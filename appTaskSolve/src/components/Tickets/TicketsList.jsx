@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useUser } from '../../context/UserContext';
 import {
   Container,
   Typography,
@@ -33,6 +35,8 @@ export default function TicketsList() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { role, ids } = useUser();
 
   useEffect(() => {
     const controller = new AbortController();
@@ -40,7 +44,13 @@ export default function TicketsList() {
       try {
         setLoading(true);
         setError('');
-        const res = await fetch(`${API_BASE}/ticket`, {
+        let url = `${API_BASE}/ticket`;
+        if (role?.toLowerCase() === 'cliente' && ids?.idUsuario) {
+          url = `${API_BASE}/ticket/getTicketByUsuario/${encodeURIComponent(ids.idUsuario)}`;
+        } else if (role?.toLowerCase() === 'técnico' || role?.toLowerCase() === 'tecnico') {
+          if (ids?.idTecnico) url = `${API_BASE}/ticket/getTicketByTecnico/${ids.idTecnico}`;
+        }
+        const res = await fetch(url, {
           headers: { 'Accept': 'application/json' },
           signal: controller.signal
         });
@@ -78,7 +88,7 @@ export default function TicketsList() {
       <Grid container spacing={3} sx={{ mt: 1 }}>
         {tickets.map((t, idx) => (
           <Grid item xs={12} md={6} lg={4} key={idx}>
-            <Card elevation={2} sx={{ borderRadius: 2 }}>
+            <Card elevation={2} sx={{ borderRadius: 2, cursor: 'pointer' }} onClick={() => navigate(`/tickets/${t['Identificador del Ticket']}`)}>
               <CardContent>
                 <Typography variant="subtitle2" color="text.secondary">ID #{t['Identificador del Ticket']}</Typography>
                 <Typography variant="h6" sx={{ mb: 1 }}>{t['Categoría']}</Typography>

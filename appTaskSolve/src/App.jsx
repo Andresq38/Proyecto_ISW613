@@ -6,7 +6,12 @@ import PageNotFound from './components/Home/PageNotFound';
 import TicketsPorTecnico from './components/Tickets/TicketsPorTecnico';
 import TicketsList from './components/Tickets/TicketsList';
 import DetalleTicket from './components/Tickets/DetalleTicket';
-
+import TecnicosList from './components/Tecnicos/TecnicosList';
+import TecnicoDetalle from './components/Tecnicos/TecnicoDetalle';
+import CategoriasList from './components/Categorias/CategoriasList';
+import CategoriaDetalle from './components/Categorias/CategoriaDetalle';
+import Dashboard from './components/Dashboard/Dashboard';
+import AsignacionesTecnicos from './components/Asignaciones/AsignacionesTecnicos';
 
 export default function App() {
   return (
@@ -14,10 +19,16 @@ export default function App() {
       <Layout>
         <Routes>
           <Route path="/" element={<Home />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/asignaciones" element={<AsignacionesTecnicos />} />
           <Route path="/tickets" element={<TicketsList />} />
           <Route path="/tickets/tecnico" element={<TicketsPorTecnico />} />
           <Route path="/tickets/:id" element={<DetalleTicket />} />
-                    <Route path="*" element={<PageNotFound />} />
+          <Route path="/tecnicos" element={<TecnicosList />} />
+          <Route path="/tecnicos/:id" element={<TecnicoDetalle />} />
+          <Route path="/categorias" element={<CategoriasList />} />
+          <Route path="/categorias/:id" element={<CategoriaDetalle />} />
+          <Route path="*" element={<PageNotFound />} />
         </Routes>
       </Layout>
     </Router>

@@ -10,13 +10,17 @@ class Categoria_ticketModel
     public function all()
     {
         try {
-            //Consulta sql
-            $vSql = "SELECT * FROM categoria_ticket;";
+            // Listado con nombre, SLA y conteo de etiquetas (máx 3 campos)
+            $vSql = "SELECT 
+                        c.id_categoria,
+                        c.nombre,
+                        s.nombre AS sla_nombre,
+                        (SELECT COUNT(*) FROM categoria_etiqueta ce WHERE ce.id_categoria_ticket = c.id_categoria) AS num_etiquetas
+                     FROM categoria_ticket c
+                     JOIN sla s ON s.id_sla = c.id_sla
+                     ORDER BY c.nombre";
 
-            //Ejecutar la consulta
             $vResultado = $this->enlace->ExecuteSQL($vSql);
-
-            // Retornar el objeto
             return $vResultado;
         } catch (Exception $e) {
             handleException($e);
@@ -27,13 +31,26 @@ class Categoria_ticketModel
     public function get($id)
     {
         try {
-            //Consulta sql
-            $vSql = "SELECT * FROM categoria_ticket WHERE id_categoria = ?";
+            // Datos básicos de la categoría
+            $vSql = "SELECT c.*, s.nombre AS sla_nombre, 
+                            s.tiempo_respuesta_min, s.tiempo_respuesta_max,
+                            s.tiempo_resolucion_min, s.tiempo_resolucion_max
+                     FROM categoria_ticket c
+                     JOIN sla s ON s.id_sla = c.id_sla
+                     WHERE c.id_categoria = ?";
 
-            //Ejecutar la consulta
             $vResultado = $this->enlace->executePrepared($vSql, 'i', [ (int)$id ]);
-            // Retornar el objeto
-            return $vResultado[0] ?? null;
+            if (empty($vResultado)) return null;
+
+            $cat = $vResultado[0];
+
+            // Etiquetas asociadas
+            $cat->etiquetas = $this->getEtiquetasByCategoria($id);
+
+            // Especialidades asociadas
+            $cat->especialidades = $this->getEspecialidadesByCategoria($id);
+
+            return $cat;
         } catch (Exception $e) {
             handleException($e);
         }
