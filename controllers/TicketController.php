@@ -53,6 +53,18 @@ class ticket
         }
     }
 
+    public function getTicketsCompletos()
+    {
+        try {
+            $response = new Response();
+            $ticket = new TicketModel();
+            $result = $ticket->getTicketsCompletos();
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 
     
 }

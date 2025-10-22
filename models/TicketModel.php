@@ -167,6 +167,79 @@ public function getTicketCompletoById($idTicket) {
 
 
 // Obtener todos los tickets completos
+public function getTicketsCompletos() {
+    try {
+        // Instancias de los modelos relacionados
+        $usuarioM = new UsuarioModel();
+        $tecnicoM = new TecnicoModel();
+        $categoriaM = new Categoria_ticketModel();
+        $slaM = new SlaModel();
+        $estadoM = new EstadoModel();
+        $etiquetaM = new EtiquetaModel();
+
+        // Traer todos los tickets
+        $sql = "SELECT * FROM ticket";
+        $resultado = $this->enlace->executeSQL($sql);
+
+        /** @var array<object> $resultado */
+        if (!is_array($resultado) || empty($resultado)) {
+            return []; // No hay tickets
+        }
+
+        $ticketsCompletos = [];
+
+        foreach ($resultado as $ticket) {
+            // Obtener datos relacionados con comprobaciones de existencia
+            $ticket->usuario = $usuarioM->get($ticket->id_usuario) ?? null;
+            $ticket->tecnico = isset($ticket->id_tecnico) ? ($tecnicoM->get($ticket->id_tecnico) ?? null) : null;
+            $ticket->categoria = $categoriaM->get($ticket->id_categoria) ?? null;
+
+            // Obtener SLA usando la categoría si existe
+            if ($ticket->categoria && isset($ticket->categoria->id_sla)) {
+                $ticket->sla = $slaM->get($ticket->categoria->id_sla) ?? null;
+            } else {
+                $ticket->sla = null;
+            }
+
+            // Obtener estado
+            $ticket->estado = $estadoM->get($ticket->id_estado) ?? null;
+
+            // Obtener etiquetas asociadas a la categoría
+            if ($ticket->categoria && method_exists($categoriaM, 'getEtiquetasByCategoria')) {
+                $ticket->etiquetas = $categoriaM->getEtiquetasByCategoria($ticket->categoria->id_categoria);
+            } else {
+                $ticket->etiquetas = [];
+            }
+
+            // Calcular tiempo restante del SLA (si aplica)
+            if ($ticket->sla && isset($ticket->sla->tiempo_resolucion_max) && is_numeric($ticket->sla->tiempo_resolucion_max)) {
+                try {
+                    $fechaCreacion = new DateTime($ticket->fecha_creacion);
+                    $ahora = new DateTime();
+                    $interval = $fechaCreacion->diff($ahora);
+                    $minutosPasados = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
+                    $tiempoRestanteMin = max(0, $ticket->sla->tiempo_resolucion_max - $minutosPasados);
+                    $horas = floor($tiempoRestanteMin / 60);
+                    $minutos = $tiempoRestanteMin % 60;
+                    $ticket->sla->tiempo_restante = "{$horas}h {$minutos}m";
+                } catch (Exception $e) {
+                    $ticket->sla->tiempo_restante = null;
+                }
+            } else {
+                if ($ticket->sla) $ticket->sla->tiempo_restante = null;
+            }
+
+            // Agregar al arreglo final
+            $ticketsCompletos[] = $ticket;
+        }
+
+        return $ticketsCompletos;
+
+    } catch (Exception $e) {
+        handleException($e);
+    }
+}
+
 
 
 }
