@@ -6,7 +6,10 @@ import {
 import axios from 'axios';
 
 const TicketsPorTecnico = () => {
-  const apiBase = 'http://localhost:81';
+  const apiBase = (import.meta?.env?.VITE_API_BASE)
+    || (typeof window !== 'undefined'
+        ? window.location.origin.replace(/:\d+$/, '')
+        : 'http://localhost');
   const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState(''); // id_tecnico
   const [tecnicos, setTecnicos] = useState([]); // [{id_tecnico, nombre}]
   const [tickets, setTickets] = useState([]);

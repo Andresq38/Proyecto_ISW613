@@ -11,7 +11,13 @@ import {
   Alert
 } from '@mui/material';
 
-const API_BASE = 'http://localhost:81/apiticket';
+// Detectar base del API automáticamente o por variable de entorno
+const API_BASE = (
+  (import.meta?.env?.VITE_API_BASE && `${import.meta.env.VITE_API_BASE}/apiticket`) ||
+  (typeof window !== 'undefined'
+    ? `${window.location.origin.replace(/:\d+$/, '')}/apiticket`
+    : 'http://localhost/apiticket')
+);
 
 const statusColor = (estado) => {
   const map = {

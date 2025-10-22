@@ -24,7 +24,13 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedIds, setSelectedIds] = useState([]);
-  const apiBase = 'http://localhost:81';
+  // Detectar automáticamente la base del API o tomarla de variables de entorno
+  const apiBase = (import.meta?.env?.VITE_API_BASE)
+    || (typeof window !== 'undefined'
+        ? (window.location.origin.includes(':')
+            ? window.location.origin.replace(/:\d+$/, '') // quita el puerto (p.ej. :5173) -> http://localhost
+            : window.location.origin)
+        : 'http://localhost');
   const theme = useTheme();
   const navigate = useNavigate(); // Hook para navegación
 
@@ -58,8 +64,11 @@ const Home = () => {
         setTickets(sorted);
       }
     } catch (err) {
-      console.error(err);
-      setError('Error al cargar tickets');
+      console.error('Error al cargar tickets:', err);
+      const msg = err?.response?.status
+        ? `Error ${err.response.status} al cargar tickets`
+        : (err?.message || 'Error al cargar tickets');
+      setError(msg);
     } finally {
       setLoading(false);
     }
