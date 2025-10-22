@@ -11,10 +11,14 @@ import {
   Divider,
   CircularProgress,
   Alert,
-  Button
+  Button,
+  Badge
 } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import WarningAmberIcon from '@mui/icons-material/WarningAmber';
+import ErrorIcon from '@mui/icons-material/Error';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
 
 // Datos simulados como fallback
 const TICKET_DATA_HOME = [];
@@ -42,6 +46,28 @@ const Home = () => {
     if (e.includes('resuelto')) return theme.palette.success.main;
     if (e.includes('cerrado')) return theme.palette.grey[500];
     return theme.palette.grey[700];
+  };
+
+  // Función para calcular la urgencia del SLA
+  const getSlaUrgency = (slaText) => {
+    if (!slaText) return null;
+    
+    const match = slaText.match(/(-?\d+)h/);
+    if (!match) return null;
+    
+    const horas = parseInt(match[1]);
+    
+    if (horas < 0) {
+      return { level: 'vencido', color: '#d32f2f', bgColor: '#ffebee', icon: ErrorIcon, label: 'VENCIDO' };
+    } else if (horas <= 2) {
+      return { level: 'critico', color: '#d32f2f', bgColor: '#ffe0e0', icon: ErrorIcon, label: 'CRÍTICO' };
+    } else if (horas <= 4) {
+      return { level: 'urgente', color: '#f57c00', bgColor: '#fff3e0', icon: WarningAmberIcon, label: 'URGENTE' };
+    } else if (horas <= 24) {
+      return { level: 'proximo', color: '#ed6c02', bgColor: '#fff8e1', icon: AccessTimeIcon, label: 'PRÓXIMO' };
+    }
+    
+    return { level: 'normal', color: '#2e7d32', bgColor: '#f1f8f4', icon: AccessTimeIcon, label: 'NORMAL' };
   };
 
   // Traer tickets
@@ -175,10 +201,59 @@ const Home = () => {
 
                       <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
                         <Chip size="small" label={ticket.estado} sx={{ bgcolor: getStatusColor(ticket.estado), color: '#fff' }} />
-                        {ticket.sla && (
-                          <Chip size="small" variant="outlined" label={`SLA: ${ticket.sla}`} />
-                        )}
                       </Box>
+
+                      {/* Alerta SLA prominente */}
+                      {ticket.sla && (() => {
+                        const urgency = getSlaUrgency(ticket.sla);
+                        if (!urgency) {
+                          return (
+                            <Chip size="small" variant="outlined" label={`SLA: ${ticket.sla}`} />
+                          );
+                        }
+
+                        const Icon = urgency.icon;
+                        
+                        return (
+                          <Box 
+                            sx={{ 
+                              mt: 1, 
+                              p: 1, 
+                              bgcolor: urgency.bgColor,
+                              borderRadius: 1,
+                              borderLeft: `4px solid ${urgency.color}`,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1
+                            }}
+                          >
+                            <Icon sx={{ fontSize: 20, color: urgency.color }} />
+                            <Box sx={{ flex: 1 }}>
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  fontWeight: 700, 
+                                  color: urgency.color,
+                                  display: 'block',
+                                  lineHeight: 1.2
+                                }}
+                              >
+                                {urgency.label}
+                              </Typography>
+                              <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                  color: 'text.secondary',
+                                  display: 'block',
+                                  lineHeight: 1.2
+                                }}
+                              >
+                                SLA: {ticket.sla}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        );
+                      })()}
 
                       {/* Checkbox independiente */}
                       <Box onClick={(e) => e.stopPropagation()}>

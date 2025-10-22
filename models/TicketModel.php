@@ -12,6 +12,7 @@ class TicketModel
             //Consulta sql
 			$vSql = "SELECT 
                         t.id_ticket AS 'Identificador del Ticket',
+                        t.titulo AS 'Título',
                         c.nombre AS 'Categoría',
                         e.nombre AS 'Estado actual',
                         CONCAT(
@@ -25,7 +26,7 @@ class TicketModel
                                 NOW()
                             )), 60),
                             'm'
-                        ) AS 'Tiempo restante SLA (máx)'
+                        ) AS 'Tiempo restante SLA'
                     FROM 
                         ticket t
                     JOIN 
@@ -51,6 +52,7 @@ class TicketModel
             //Consulta sql
 			$vSql = "SELECT 
                         t.id_ticket AS 'Identificador del Ticket',
+                        t.titulo AS 'Título',
                         c.nombre AS 'Categoría',
                         e.nombre AS 'Estado actual',
                         CONCAT(
@@ -58,7 +60,7 @@ class TicketModel
                          'h ',
                         MOD((s.tiempo_resolucion_max - TIMESTAMPDIFF(MINUTE, t.fecha_creacion, NOW())), 60),
                          'm'
-                         ) AS 'Tiempo restante SLA (máx)'
+                         ) AS 'Tiempo restante SLA'
                         FROM 
                             ticket t
                         JOIN 
@@ -86,6 +88,7 @@ class TicketModel
         try {
             $vSql = "SELECT 
                         t.id_ticket AS 'Identificador del Ticket',
+                        t.titulo AS 'Título',
                         c.nombre AS 'Categoría',
                         e.nombre AS 'Estado actual',
                         CONCAT(
@@ -99,7 +102,7 @@ class TicketModel
                                 NOW()
                             )), 60),
                             'm'
-                        ) AS 'Tiempo restante SLA (máx)'
+                        ) AS 'Tiempo restante SLA'
                     FROM 
                         ticket t
                     JOIN 
@@ -134,6 +137,41 @@ class TicketModel
 			return $vResultado[0] ?? null;
 		} catch (Exception $e) {
             handleException($e);
+        }
+    }
+
+    /*Cambiar estado del ticket */
+    public function cambiarEstado($idTicket, $nuevoEstado, $observaciones = null)
+    {
+        try {
+            // 1. Actualizar el estado actual del ticket
+            $sqlUpdate = "UPDATE ticket SET id_estado = ? WHERE id_ticket = ?";
+            $this->enlace->executePrepared_DML($sqlUpdate, 'ii', [(int)$nuevoEstado, (int)$idTicket]);
+
+            // 2. Insertar en historial_estados
+            $sqlHistorial = "INSERT INTO historial_estados (id_ticket, id_estado, observaciones) VALUES (?, ?, ?)";
+            $this->enlace->executePrepared_DML($sqlHistorial, 'iis', [
+                (int)$idTicket, 
+                (int)$nuevoEstado, 
+                $observaciones
+            ]);
+
+            // 3. Si el nuevo estado es "Cerrado" (id_estado = 5), actualizar fecha_cierre
+            if ((int)$nuevoEstado === 5) {
+                $sqlCierre = "UPDATE ticket SET fecha_cierre = NOW() WHERE id_ticket = ?";
+                $this->enlace->executePrepared_DML($sqlCierre, 'i', [(int)$idTicket]);
+            }
+
+            return [
+                'success' => true,
+                'message' => 'Estado del ticket actualizado correctamente'
+            ];
+        } catch (Exception $e) {
+            handleException($e);
+            return [
+                'success' => false,
+                'message' => 'Error al actualizar el estado del ticket'
+            ];
         }
     }
 

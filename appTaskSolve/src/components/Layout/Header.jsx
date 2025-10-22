@@ -1,15 +1,38 @@
 import React, { useState } from 'react';
 import { AppBar, Toolbar, Typography, Button, Menu, MenuItem, Box } from '@mui/material';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const Header = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [anchorEl, setAnchorEl] = useState(null);
   const [message, setMessage] = useState('');
 
   // Color de advertencia fuerte
   const WARNING_COLOR = '#e65100';
+
+  // Función para verificar si una ruta está activa
+  const isActive = (path) => {
+    if (path === '/') return location.pathname === '/';
+    return location.pathname.startsWith(path);
+  };
+
+  // Estilos para botones activos e inactivos
+  const getButtonStyles = (path) => ({
+    textTransform: 'uppercase',
+    fontWeight: 700,
+    fontSize: '1.25rem',
+    letterSpacing: 0.3,
+    px: 1,
+    minWidth: 'auto',
+    borderBottom: isActive(path) ? '3px solid white' : '3px solid transparent',
+    borderRadius: 0,
+    backgroundColor: isActive(path) ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+    '&:hover': {
+      backgroundColor: isActive(path) ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+    },
+  });
 
   const handleMenuClick = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
@@ -73,14 +96,7 @@ const Header = () => {
             variant="text"
             color="inherit"
             onClick={() => navigate('/')}
-            sx={{
-              textTransform: 'uppercase',
-              fontWeight: 700,
-              fontSize: '1.25rem',
-              letterSpacing: 0.3,
-              px: 1,
-              minWidth: 'auto'
-            }}
+              sx={getButtonStyles('/')}
           >
             Home
           </Button>
@@ -89,14 +105,7 @@ const Header = () => {
             variant="text"
             color="inherit"
             onClick={() => navigate('/dashboard')}
-            sx={{
-              textTransform: 'uppercase',
-              fontWeight: 700,
-              fontSize: '1.25rem',
-              letterSpacing: 0.3,
-              px: 1,
-              minWidth: 'auto'
-            }}
+              sx={getButtonStyles('/dashboard')}
           >
             Dashboard
           </Button>
@@ -106,14 +115,7 @@ const Header = () => {
             color="inherit"
             onClick={handleMenuClick}
             endIcon={<ArrowDropDownIcon />}
-            sx={{
-              textTransform: 'uppercase',
-              fontWeight: 700,
-              fontSize: '1.25rem',
-              letterSpacing: 0.3,
-              px: 1,
-              minWidth: 'auto'
-            }}
+              sx={getButtonStyles('/tickets')}
           >
             Tickets
           </Button>
@@ -122,14 +124,7 @@ const Header = () => {
             variant="text"
             color="inherit"
             onClick={() => navigate('/tecnicos')}
-            sx={{
-              textTransform: 'uppercase',
-              fontWeight: 700,
-              fontSize: '1.25rem',
-              letterSpacing: 0.3,
-              px: 1,
-              minWidth: 'auto'
-            }}
+              sx={getButtonStyles('/tecnicos')}
           >
             Técnicos
           </Button>
@@ -138,14 +133,7 @@ const Header = () => {
             variant="text"
             color="inherit"
             onClick={() => navigate('/categorias')}
-            sx={{
-              textTransform: 'uppercase',
-              fontWeight: 700,
-              fontSize: '1.25rem',
-              letterSpacing: 0.3,
-              px: 1,
-              minWidth: 'auto'
-            }}
+              sx={getButtonStyles('/categorias')}
           >
             Categorías
           </Button>
@@ -154,14 +142,7 @@ const Header = () => {
             variant="text"
             color="inherit"
             onClick={() => navigate('/asignaciones')}
-            sx={{
-              textTransform: 'uppercase',
-              fontWeight: 700,
-              fontSize: '1.25rem',
-              letterSpacing: 0.3,
-              px: 1,
-              minWidth: 'auto'
-            }}
+              sx={getButtonStyles('/asignaciones')}
           >
             Asignaciones
           </Button>

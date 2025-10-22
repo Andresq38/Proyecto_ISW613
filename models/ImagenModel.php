@@ -26,34 +26,59 @@ class ImagenModel
     {
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM imagen where id_imagen=$id";
+			$vSql = "SELECT * FROM imagen WHERE id_imagen = ?";
 			
             //Ejecutar la consulta
-			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
+			$vResultado = $this->enlace->executePrepared($vSql, 'i', [(int)$id]);
 			// Retornar el objeto
-			return $vResultado[0];
+			return $vResultado[0] ?? null;
 		} catch (Exception $e) {
             handleException($e);
         }
     }
-     //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
-    /*Obtener los actores de una pelicula */
-    /*/public function getActorMovie($idMovie)
+
+    /* Crear nueva imagen */
+    public function crear($url, $idUsuario = null, $idHistorial = null)
     {
         try {
-            //Consulta SQL
-            $vSQL = "SELECT g.id, g.fname, g.lname, mg.role".
-            " FROM actor g, movie_cast mg".
-            " where g.id=mg.actor_id and mg.movie_id=$idMovie;";
-            //Establecer conexión
+            $vSql = "INSERT INTO imagen (url, id_usuario, id_historial) VALUES (?, ?, ?)";
+            $this->enlace->executePrepared_DML($vSql, 'ssi', [$url, $idUsuario, $idHistorial]);
             
-            //Ejecutar la consulta
-            $vResultado = $this->enlace->executeSQL($vSQL);
-            //Retornar el resultado
-            return $vResultado;
+            // Obtener el ID de la imagen insertada
+            $lastIdSql = "SELECT LAST_INSERT_ID() as id";
+            $result = $this->enlace->ExecuteSQL($lastIdSql);
+            
+            return $result[0]->id ?? null;
         } catch (Exception $e) {
             handleException($e);
+            return null;
         }
-    }*/
+    }
+
+    /* Asociar imagen a ticket */
+    public function asociarATicket($idImagen, $idTicket, $descripcion = null)
+    {
+        try {
+            $vSql = "INSERT INTO ticket_imagen (id_ticket, id_imagen, descripcion) VALUES (?, ?, ?)";
+            $this->enlace->executePrepared_DML($vSql, 'iis', [(int)$idTicket, (int)$idImagen, $descripcion]);
+            return true;
+        } catch (Exception $e) {
+            handleException($e);
+            return false;
+        }
+    }
+
+    /* Asociar imagen a historial */
+    public function asociarAHistorial($idImagen, $idHistorial)
+    {
+        try {
+            $vSql = "INSERT INTO historial_imagen (id_historial_estado, id_imagen) VALUES (?, ?)";
+            $this->enlace->executePrepared_DML($vSql, 'ii', [(int)$idHistorial, (int)$idImagen]);
+            return true;
+        } catch (Exception $e) {
+            handleException($e);
+            return false;
+        }
+    }
     
 }
