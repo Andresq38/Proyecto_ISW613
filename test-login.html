@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Login - Backend API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1976d2;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #1976d2;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1565c0;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .success {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        .error {
+            background: #ffebee;
+            border: 1px solid #f44336;
+            color: #c62828;
+        }
+        .info {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            color: #1565c0;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        label {
+            font-weight: bold;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Backend API - Login</h1>
+        
+        <div>
+            <label>Email:</label>
+            <input type="email" id="email" value="rreyes@utn.ac.cr" placeholder="usuario@ejemplo.com">
+            
+            <label>Contraseña:</label>
+            <input type="password" id="password" value="Admin" placeholder="contraseña">
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button onclick="testLogin()">🔐 Probar Login</button>
+            <button onclick="testStatus()">✅ Probar Status</button>
+            <button onclick="clearResult()">🧹 Limpiar</button>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:81/apiticket';
+
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+        }
+
+        function clearResult() {
+            document.getElementById('result').textContent = '';
+            document.getElementById('result').className = 'result';
+        }
+
+        async function testStatus() {
+            showResult('⏳ Probando endpoint de status...', 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/status`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(`✅ Backend funcionando correctamente!\n\nRespuesta:\n${JSON.stringify(data, null, 2)}`, 'success');
+                } else {
+                    showResult(`⚠️ Respuesta no OK (${response.status})\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(`❌ Error de conexión:\n${error.message}\n\n¿Apache está corriendo en puerto 81?`, 'error');
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            if (!email || !password) {
+                showResult('❌ Por favor ingresa email y contraseña', 'error');
+                return;
+            }
+
+            showResult(`⏳ Intentando login con:\nEmail: ${email}\nPassword: ${password}`, 'info');
+            
+            try {
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showResult(
+                        `✅ LOGIN EXITOSO!\n\n` +
+                        `Token: ${data.token.substring(0, 50)}...\n\n` +
+                        `Usuario:\n${JSON.stringify(data.user, null, 2)}\n\n` +
+                        `Ahora la app debería funcionar correctamente.`,
+                        'success'
+                    );
+                } else if (response.status === 401) {
+                    showResult(`❌ Credenciales inválidas\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                } else {
+                    showResult(`⚠️ Error ${response.status}\n\n${JSON.stringify(data, null, 2)}`, 'error');
+                }
+            } catch (error) {
+                showResult(
+                    `❌ Error de conexión:\n${error.message}\n\n` +
+                    `Posibles causas:\n` +
+                    `• Apache no está corriendo\n` +
+                    `• Apache no está en puerto 81\n` +
+                    `• Firewall bloqueando la conexión\n` +
+                    `• CORS issue (poco probable)`,
+                    'error'
+                );
+            }
+        }
+
+        // Probar status automáticamente al cargar
+        window.addEventListener('load', () => {
+            setTimeout(testStatus, 500);
+        });
+    </script>
+</body>
+</html>
