@@ -5,13 +5,10 @@ ob_start();
 // Composer autoloader
 require_once 'vendor/autoload.php';
 /*Encabezada de las solicitudes*/
-/*CORS - ajustar origen y permitir credenciales para sesiones*/
-// En desarrollo, cambia el origen por el de tu frontend (ej: http://localhost:5173)
-$allowedOrigin = 'http://localhost:5173';
-header("Access-Control-Allow-Origin: " . $allowedOrigin);
-header("Access-Control-Allow-Headers: Content-Type, X-Requested-With");
-header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
-header('Access-Control-Allow-Credentials: true');
+/*CORS - Permitir todos los orígenes en desarrollo*/
+header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Headers: *");
+header("Access-Control-Allow-Methods: *");
 header('Content-Type: application/json');
 
 // Configurar parámetros de cookie y arrancar sesión

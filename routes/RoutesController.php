@@ -6,32 +6,17 @@ class RoutesController
 
     public function __construct() {
         $this->authMiddleware = new AuthMiddleware();
-        $this->registerRoutes();
-        // No llamar routes() aquí, se llamará en index()
+        // Rutas protegidas deshabilitadas - sin autenticación
+        // $this->registerRoutes();
     }
 
     private function registerRoutes() {
-        // Registrar rutas protegidas (por prefijo)
-        //---------------------  Metodo,pathPrefix (en minuscula),controlador, accion, array de nombres de roles
-        $this->addProtectedRoute('GET', '/apiticket/ticket', 'ticket', 'index', ['Administrador','Tecnico','Cliente']);
-        $this->addProtectedRoute('POST', '/apiticket/ticket', 'ticket', 'create', ['Administrador','Tecnico','Cliente']);
-        $this->addProtectedRoute('GET', '/apiticket/tecnico', 'tecnico', 'index', ['Administrador','Tecnico']);
-        $this->addProtectedRoute('GET', '/apiticket/categoria_ticket', 'categoria_ticket', 'index', ['Administrador','Tecnico','Cliente']);
-        
+        // DESHABILITADO - Sin autenticación
     }
 
     private function checkAuth() {
-        $method = $_SERVER['REQUEST_METHOD'];
-        $path = strtolower($_SERVER['REQUEST_URI']);
-
-        // Si la ruta es protegida, aplicar autenticación
-        $matched = $this->matchProtectedRoute($method, $path);
-        if ($matched) {
-            if(!$this->authMiddleware->handle($matched['requiredRole'])){
-                return false;
-            }
-        }
-        return true;
+        // DESHABILITADO - Sin autenticación
+        return true; // Siempre permitir acceso
     }
 
     private function addProtectedRoute($method, $path, $controllerName, $action, $requiredRole) {

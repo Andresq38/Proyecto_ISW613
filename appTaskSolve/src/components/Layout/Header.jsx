@@ -1,14 +1,10 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Box, IconButton, Chip } from '@mui/material';
-import LogoutIcon from '@mui/icons-material/Logout';
-import PersonIcon from '@mui/icons-material/Person';
+import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
 
   // Función para verificar si una ruta está activa
   const isActive = (path) => {
@@ -79,37 +75,33 @@ const Header = () => {
           <Button
             variant="text"
             color="inherit"
-            onClick={() => navigate('/home')}
-              sx={getButtonStyles('/home')}
+            onClick={() => navigate('/')}
+              sx={getButtonStyles('/')}
           >
             Inicio
           </Button>
 
-          {/* DASHBOARD - solo Administrador */}
-          {user && user.rol === 'Administrador' && (
-            <Button
-              variant="text"
-              color="inherit"
-              onClick={() => navigate('/dashboard')}
-                sx={getButtonStyles('/dashboard')}
-            >
-              Panel Ejecutivo
-            </Button>
-          )}
+          {/* DASHBOARD */}
+          <Button
+            variant="text"
+            color="inherit"
+            onClick={() => navigate('/dashboard')}
+              sx={getButtonStyles('/dashboard')}
+          >
+            Panel Ejecutivo
+          </Button>
 
-          {/* TÉCNICOS - solo Administrador y Técnico */}
-          {user && (user.rol === 'Administrador' || user.rol === 'Técnico' || user.rol === 'Tecnico') && (
-            <Button
-              variant="text"
-              color="inherit"
-              onClick={() => navigate('/tecnicos')}
-                sx={getButtonStyles('/tecnicos')}
-            >
-              Equipo Técnico
-            </Button>
-          )}
+          {/* TÉCNICOS */}
+          <Button
+            variant="text"
+            color="inherit"
+            onClick={() => navigate('/tecnicos')}
+              sx={getButtonStyles('/tecnicos')}
+          >
+            Equipo Técnico
+          </Button>
 
-          {/* CATEGORÍAS - visible para todos */}
+          {/* CATEGORÍAS */}
           <Button
             variant="text"
             color="inherit"
@@ -118,44 +110,10 @@ const Header = () => {
           >
             Catálogo
           </Button>
-
-          {/* ASIGNACIONES - removido de la barra superior; sigue disponible en Técnicos > Asignaciones */}
         </Box>
 
         {/* Spacer to push any future items to the right */}
         <Box sx={{ flexGrow: 1 }} />
-
-        {/* User info and logout */}
-        {user && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Chip
-              icon={<PersonIcon />}
-              label={`${user.nombre || user.email} (${user.rol})`}
-              sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)', fontWeight: 600 }}
-            />
-            <IconButton
-              color="inherit"
-              onClick={() => {
-                logout();
-                navigate('/login');
-              }}
-              title="Cerrar sesión"
-              sx={{ color: 'white' }}
-            >
-              <LogoutIcon />
-            </IconButton>
-          </Box>
-        )}
-        {!user && (
-          <Button
-            variant="outlined"
-            color="inherit"
-            onClick={() => navigate('/login')}
-            sx={{ borderColor: 'white', color: 'white' }}
-          >
-            Iniciar sesión
-          </Button>
-        )}
 
       </Toolbar>
     </AppBar>

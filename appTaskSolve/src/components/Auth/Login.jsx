@@ -40,11 +40,16 @@ export default function Login() {
     e.preventDefault();
     setError('');
     setLoading(true);
+    console.log('🔐 Intentando login con:', email);
     try {
-      await login(email, password);
+      const user = await login(email, password);
+      console.log('✅ Login exitoso, usuario:', user);
+      console.log('📍 Navegando a:', getFrom(location.state));
       navigate(getFrom(location.state), { replace: true });
     } catch (err) {
-      const msg = err?.response?.data?.error || 'Error al iniciar sesión';
+      console.error('❌ Error en login:', err);
+      console.error('❌ Response:', err?.response?.data);
+      const msg = err?.response?.data?.error || err?.message || 'Error al iniciar sesión';
       setError(msg);
     } finally {
       setLoading(false);
