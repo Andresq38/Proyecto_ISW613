@@ -1,6 +1,7 @@
-import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import React, { useState } from 'react';
+import { AppBar, Toolbar, Typography, Button, Box, Menu, MenuItem } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
 
 const Header = () => {
   const navigate = useNavigate();
@@ -27,8 +28,17 @@ const Header = () => {
       backgroundColor: isActive(path) ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.1)',
     },
   });
+  // Tickets menu / warning message state
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [message] = useState(''); // set this to a non-empty string to show a message bar
+  const WARNING_COLOR = '#ff9800';
 
-  
+  const handleMenuClick = (e) => setAnchorEl(e.currentTarget);
+  const handleClose = () => setAnchorEl(null);
+  const handleTicketOption = (role) => {
+    setAnchorEl(null);
+    navigate(`/tickets?role=${encodeURIComponent(role)}`);
+  };
 
   return (
     <AppBar position="sticky">
@@ -81,6 +91,26 @@ const Header = () => {
             Inicio
           </Button>
 
+          {/* TICKETS - dropdown*/}
+          <Box>
+            <Button
+              variant="text"
+              color="inherit"
+              onClick={handleMenuClick}
+              endIcon={<ArrowDropDownIcon />}
+              sx={{
+                textTransform: 'uppercase',
+                fontWeight: 700,
+                fontSize: '1.25rem',
+                letterSpacing: 0.3,
+                px: 1,
+                minWidth: 'auto'
+              }}
+            >
+              Tickets
+            </Button>
+          </Box>
+
           {/* DASHBOARD */}
           <Button
             variant="text"
@@ -115,7 +145,18 @@ const Header = () => {
         {/* Spacer to push any future items to the right */}
         <Box sx={{ flexGrow: 1 }} />
 
+        <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
+          <MenuItem onClick={() => handleTicketOption('Administrador')}>Administrador</MenuItem>
+          <MenuItem onClick={() => handleTicketOption('Cliente')}>Cliente</MenuItem>
+          <MenuItem onClick={() => handleTicketOption('Tecnico')}>Técnico</MenuItem>
+        </Menu>
+
       </Toolbar>
+      {message && (
+        <Box sx={{ bgcolor: WARNING_COLOR, color: 'white', p: 1, textAlign: 'center' }}>
+          {message}
+        </Box>
+      )}
     </AppBar>
   );
 };
