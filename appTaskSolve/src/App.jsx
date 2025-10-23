@@ -24,7 +24,10 @@ export default function App() {
         <Layout>
           <Routes>
           <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/home" element={<Home />} />
+          {/* Rutas que requieren sesión iniciada */}
+          <Route element={<RequireAuth />}> 
+            <Route path="/home" element={<Home />} />
+          </Route>
           <Route element={<RequireAuth allowedRoles={["Administrador"]} />}> 
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>
