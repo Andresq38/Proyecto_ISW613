@@ -36,8 +36,17 @@ const Header = () => {
   const handleMenuClick = (e) => setAnchorEl(e.currentTarget);
   const handleClose = () => setAnchorEl(null);
   const handleTicketOption = (role) => {
-    setAnchorEl(null);
-    navigate(`/tickets?role=${encodeURIComponent(role)}`);
+    handleClose();
+    if (role === 'Tecnico') {
+      navigate('/tickets/tecnico');
+    } else if (role === 'Administrador') {
+      navigate('/tickets');
+    } else {
+      const msg = `Navegación a ${role} aún no implementada.`;
+      console.log(msg);
+      setMessage(msg);
+      setTimeout(() => setMessage(''), 3000);
+    }
   };
 
   return (
