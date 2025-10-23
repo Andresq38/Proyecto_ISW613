@@ -233,37 +233,14 @@ public function getTicketCompletoById($idTicket) {
             $ticket->sla->tiempo_restante = null;
         }
 
-        // Historial de estados
-        $sqlHist = "SELECT he.id_historial, he.fecha_cambio, he.observaciones, e.nombre AS estado
-                    FROM historial_estados he
-                    JOIN estado e ON e.id_estado = he.id_estado
-                    WHERE he.id_ticket = ?
-                    ORDER BY he.fecha_cambio ASC";
-        $historial = $this->enlace->executePrepared($sqlHist, 'i', [ (int)$idTicket ]);
-
-        // Imágenes asociadas directamente al ticket
-        $sqlImgsTicket = "SELECT i.id_imagen, i.url
-                          FROM imagen i
-                          JOIN ticket_imagen ti ON ti.id_imagen = i.id_imagen
-                          WHERE ti.id_ticket = ?";
-        $imagenesTicket = $this->enlace->executePrepared($sqlImgsTicket, 'i', [ (int)$idTicket ]);
-
-        // Imágenes por cada item de historial
-        $imagenesHistorial = [];
-        if (!empty($historial)) {
-            $sqlImgsHist = "SELECT i.id_imagen, i.url
-                            FROM historial_imagen hi
-                            JOIN imagen i ON i.id_imagen = hi.id_imagen
-                            WHERE hi.id_historial_estado = ?";
-            foreach ($historial as $h) {
-                $imgs = $this->enlace->executePrepared($sqlImgsHist, 'i', [ (int)$h->id_historial ]);
-                $imagenesHistorial[$h->id_historial] = $imgs ?: [];
-            }
+        // Adjuntar imágenes asociadas al ticket (tabla imagen tiene id_ticket e imagen)
+        try {
+            $sqlImgs = "SELECT * FROM imagen WHERE id_ticket = ? ORDER BY id_imagen";
+            $imgs = $this->enlace->executePrepared($sqlImgs, 'i', [ (int)$idTicket ]);
+            $ticket->imagenes = is_array($imgs) ? $imgs : [];
+        } catch (Exception $e) {
+            $ticket->imagenes = [];
         }
-
-        $ticket->historial_estados = $historial ?: [];
-        $ticket->imagenes = $imagenesTicket ?: [];
-        $ticket->imagenes_por_historial = $imagenesHistorial;
 
         return $ticket;
 
@@ -271,6 +248,7 @@ public function getTicketCompletoById($idTicket) {
         handleException($e);
     }
 }
+
 
 
 
