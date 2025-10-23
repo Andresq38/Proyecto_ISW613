@@ -23,7 +23,7 @@ const statusColor = (estado) => {
   return map[estado] || 'primary';
 };
 
-export default function TicketsAdmi() {
+export default function TicketsPorAdmi() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
