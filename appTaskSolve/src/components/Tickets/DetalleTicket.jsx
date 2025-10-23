@@ -21,6 +21,12 @@ export default function DetalleTicket() {
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [mainImageIndex, setMainImageIndex] = useState(0);
+
+  // reset main image index when ticket changes
+  useEffect(() => {
+    setMainImageIndex(0);
+  }, [ticket]);
   
   // Estados para el diálogo de cambio de estado
   const [openDialog, setOpenDialog] = useState(false);
@@ -403,55 +409,6 @@ export default function DetalleTicket() {
         )}
       </Paper>
 
-      {/* Valoración del Servicio */}
-      {(ticket.puntaje || ticket.comentario) && (
-        <Paper sx={{ p: 3, mb: 4, bgcolor: '#f8f9fa', border: '2px solid #e3f2fd' }}>
-          <Typography variant="h6" color="primary" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <StarIcon sx={{ color: '#ffc107' }} />
-            Valoración del Servicio
-          </Typography>
-          
-          {ticket.puntaje && (
-            <Box sx={{ mb: 2 }}>
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                Calificación:
-              </Typography>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Rating 
-                  value={parseInt(ticket.puntaje) || 0} 
-                  readOnly 
-                  size="large"
-                  precision={1}
-                  emptyIcon={<StarIcon style={{ opacity: 0.3 }} fontSize="inherit" />}
-                />
-                <Typography variant="h6" sx={{ fontWeight: 700, color: 'primary.main' }}>
-                  {ticket.puntaje}/5
-                </Typography>
-              </Box>
-            </Box>
-          )}
-
-          {ticket.comentario && (
-            <Box>
-              <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                Comentario del cliente:
-              </Typography>
-              <Paper sx={{ p: 2, bgcolor: 'white', borderLeft: '4px solid #1976d2' }} elevation={0}>
-                <Typography variant="body1" sx={{ fontStyle: 'italic', color: 'text.primary' }}>
-                  "{ticket.comentario}"
-                </Typography>
-              </Paper>
-            </Box>
-          )}
-
-          {!ticket.puntaje && !ticket.comentario && (
-            <Alert severity="info" sx={{ mt: 1 }}>
-              Este ticket aún no ha sido valorado por el cliente.
-            </Alert>
-          )}
-        </Paper>
-      )}
-
       {/* Usuario Afectado */}
       <Paper sx={{ p: 3, mb: 4 }}>
         <Typography variant="h6" color="primary" gutterBottom>Usuario Afectado</Typography>
@@ -531,39 +488,62 @@ export default function DetalleTicket() {
         )}
       </Paper>
 
-      {/* Imágenes del ticket (solo lectura) */}
+       {/* Imágenes (carrusel manual) */}
       <Paper sx={{ p: 3, mb: 4 }}>
-        <Typography variant="h6" color="primary" gutterBottom>Imágenes adjuntas al ticket</Typography>
+        <Typography variant="h6" color="primary" gutterBottom>Imágenes del Ticket</Typography>
         {Array.isArray(ticket.imagenes) && ticket.imagenes.length > 0 ? (
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-            {ticket.imagenes.map((img) => (
-              <Box key={img.id_imagen} component="img" src={img.url} alt={`ticket-img-${img.id_imagen}`} sx={{ width: 140, height: 100, objectFit: 'cover', borderRadius: 1, border: '1px solid #eee' }} />
-            ))}
-          </Box>
+          (() => {
+            const UPLOADS_BASE = 'http://localhost:81/apiticket/uploads';
+            const imgs = ticket.imagenes;
+            const safeIndex = ((mainImageIndex % imgs.length) + imgs.length) % imgs.length;
+            const main = imgs[safeIndex];
+            const filename = main?.imagen || main?.url || main?.path || main?.image || '';
+            return (
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Button size="small" disabled={imgs.length <= 1} onClick={() => setMainImageIndex(i => (i - 1 + imgs.length) % imgs.length)}>&lt;</Button>
+                  <Box sx={{ flex: 1, textAlign: 'center' }}>
+                    <Box
+                      component="img"
+                      src={`${UPLOADS_BASE}/${filename}`}
+                      alt={main?.imagen || ''}
+                      sx={{ maxWidth: '100%', maxHeight: 420, borderRadius: 2 }}
+                    />
+                    {main?.descripcion && <Typography variant="caption" display="block">{main.descripcion}</Typography>}
+                  </Box>
+                  <Button size="small" disabled={imgs.length <= 1} onClick={() => setMainImageIndex(i => (i + 1) % imgs.length)}>&gt;</Button>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1, mt: 2, overflowX: 'auto' }}>
+                  {imgs.map((im, idx) => {
+                    const fn = im?.imagen || im?.url || im?.path || im?.image || '';
+                    return (
+                      <Box key={im.id_imagen ?? idx} onClick={() => setMainImageIndex(idx)} sx={{ cursor: 'pointer', border: idx === safeIndex ? '2px solid #1976d2' : '2px solid transparent', borderRadius: 1 }}>
+                        <Box component="img" src={`${UPLOADS_BASE}/${fn}`} alt={im?.imagen || ''} sx={{ width: 100, height: 70, objectFit: 'cover', borderRadius: 1 }} />
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
+            );
+          })()
         ) : (
-          <Typography color="text.secondary">Sin imágenes adjuntas</Typography>
+          <Typography variant="body2">No hay imágenes asociadas a este ticket.</Typography>
         )}
       </Paper>
 
-      {/* Comentarios (solo lectura) */}
-      {Array.isArray(ticket.comentarios) && ticket.comentarios.length > 0 && (
-        <Paper sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6" color="primary" gutterBottom>Comentarios</Typography>
-          <Grid container spacing={2}>
-            {ticket.comentarios.map((c, idx) => (
-              <Grid item xs={12} key={c.id_comentario || idx}>
-                <Paper sx={{ p: 2 }} elevation={1}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    {c.autor || 'Usuario'} — {c.fecha || ''}
-                  </Typography>
-                  <Typography variant="body1">{c.texto || c.comentario || ''}</Typography>
-                </Paper>
-              </Grid>
-            ))}
-          </Grid>
-        </Paper>
-      )}
-
+      {/* Comentario existente (solo lectura) */}
+       {ticket.comentario && (
+            <Box>
+              <Paper sx={{ p: 2, bgcolor: 'white', borderLeft: '4px solid #1976d2' }} elevation={0}>
+                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                Comentario del cliente:
+              </Typography>
+                <Typography variant="body1" sx={{ fontStyle: 'italic', color: 'text.primary' }}>
+                  "{ticket.comentario}"
+                </Typography>
+              </Paper>
+            </Box>
+          )}
       {/* Diálogo para cambiar estado */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
