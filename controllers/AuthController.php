@@ -88,4 +88,19 @@ class auth
             handleException($e);
         }
     }
+
+    public function status()
+    {
+        try {
+            $response = new Response();
+            return $response->toJSON([
+                'status' => 'ok',
+                'message' => 'Backend funcionando correctamente',
+                'timestamp' => date('Y-m-d H:i:s'),
+                'version' => '1.0.0'
+            ]);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }
