@@ -5,11 +5,28 @@ ob_start();
 // Composer autoloader
 require_once 'vendor/autoload.php';
 /*Encabezada de las solicitudes*/
-/*CORS*/
-header("Access-Control-Allow-Origin: * ");
-header("Access-Control-Allow-Headers: *");
-header("Access-Control-Allow-Methods: *");
+/*CORS - ajustar origen y permitir credenciales para sesiones*/
+// En desarrollo, cambia el origen por el de tu frontend (ej: http://localhost:5173)
+$allowedOrigin = 'http://localhost:5173';
+header("Access-Control-Allow-Origin: " . $allowedOrigin);
+header("Access-Control-Allow-Headers: Content-Type, X-Requested-With");
+header("Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS");
+header('Access-Control-Allow-Credentials: true');
 header('Content-Type: application/json');
+
+// Configurar parámetros de cookie y arrancar sesión
+// Evitar incluir el puerto en el dominio de la cookie (los navegadores lo rechazan)
+$host = $_SERVER['HTTP_HOST'] ?? '';
+$domain = preg_replace('/:.*/', '', $host);
+session_set_cookie_params([
+	'lifetime' => 0,
+	'path' => '/',
+	'domain' => $domain,
+	'secure' => false, // poner true en producción con HTTPS
+	'httponly' => true,
+	'samesite' => 'Lax'
+]);
+if (session_status() !== PHP_SESSION_ACTIVE) session_start();
 
 /*--- Requerimientos Clases o librerías*/
 require_once "controllers/core/Config.php";

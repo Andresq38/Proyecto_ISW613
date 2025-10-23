@@ -27,34 +27,16 @@ class AuthMiddleware
 
     public function handle(array $requiredRoles = [])
     {
-        $authHeader = $this->getAuthHeader();
-        if (!$authHeader || stripos($authHeader, 'Bearer ') !== 0) {
+        // Usar sesión server-side para autenticación
+        if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+        if (empty($_SESSION['auth_user'])) {
             while (ob_get_level()) ob_end_clean(); // Limpiar todos los buffers
             http_response_code(401);
-            $error = json_encode(['error' => 'Unauthorized: missing Bearer token']);
-            header('Content-Length: ' . strlen($error));
-            echo $error;
-            die(); // Terminar COMPLETAMENTE la ejecución
-        }
-
-        $token = trim(substr($authHeader, 7));
-        try {
-            $jwtClass = '\\Firebase\\JWT\\JWT';
-            $keyClass = '\\Firebase\\JWT\\Key';
-            $decoded = $jwtClass::decode($token, new $keyClass($this->secret, 'HS256'));
-        } catch (\Throwable $e) {
-            while (ob_get_level()) ob_end_clean(); // Limpiar todos los buffers
-            http_response_code(401);
-            die(json_encode(['error' => 'Unauthorized: invalid token']));
+            die(json_encode(['error' => 'Unauthorized: no session']));
         }
 
         // Guardar user en servidor para usos posteriores
-        $_SERVER['auth_user'] = [
-            'id' => $decoded->sub ?? null,
-            'email' => $decoded->email ?? null,
-            'rol' => $decoded->rol ?? null,
-            'name' => $decoded->name ?? null,
-        ];
+        $_SERVER['auth_user'] = $_SESSION['auth_user'];
 
         if (!empty($requiredRoles)) {
             $userRole = $_SERVER['auth_user']['rol'] ?? null;

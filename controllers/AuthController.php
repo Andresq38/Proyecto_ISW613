@@ -49,29 +49,41 @@ class Auth
             // Actualizar último login (ignorar errores)
             try { $usuarioModel->actualizarUltimoLogin($user->id_usuario); } catch (\Throwable $e) {}
 
-            $now = time();
-            $payload = [
-                'iss' => 'apiticket',
-                'iat' => $now,
-                'exp' => $now + 60 * 60 * 8, // 8 horas
-                'sub' => $user->id_usuario,
+            // Actualizar último login (ignorar errores)
+            try { $usuarioModel->actualizarUltimoLogin($user->id_usuario); } catch (\Throwable $e) {}
+
+            // Iniciar sesión server-side
+            if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+            session_regenerate_id(true);
+            $_SESSION['auth_user'] = [
+                'id' => $user->id_usuario,
                 'email' => $user->correo ?? null,
                 'rol' => $user->rol ?? null,
                 'name' => $user->nombre ?? null,
             ];
-            
-            // Usar use statement y alias para evitar problemas
-            $token = \Firebase\JWT\JWT::encode($payload, $this->secret, 'HS256');
 
             return $response->toJSON([
-                'token' => $token,
-                'user' => [
-                    'id' => $user->id_usuario,
-                    'email' => $user->correo ?? null,
-                    'rol' => $user->rol ?? null,
-                    'nombre' => $user->nombre ?? null,
-                ]
+                'success' => true,
+                'user' => $_SESSION['auth_user']
             ]);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    public function logout()
+    {
+        try {
+            $response = new Response();
+            if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+            $_SESSION = [];
+            if (ini_get('session.use_cookies')) {
+                $params = session_get_cookie_params();
+                setcookie(session_name(), '', time() - 42000,
+                    $params['path'], preg_replace('/:.*/','', $params['domain']), $params['secure'], $params['httponly']);
+            }
+            session_destroy();
+            return $response->toJSON(['success' => true]);
         } catch (Exception $e) {
             handleException($e);
         }
@@ -81,9 +93,11 @@ class Auth
     {
         try {
             $response = new Response();
-            $auth = new AuthMiddleware();
-            if (!$auth->handle([])) { return; }
-            $user = $_SERVER['auth_user'] ?? null;
+            if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+            $user = $_SESSION['auth_user'] ?? null;
+            if (!$user) {
+                return $response->status(401)->toJSON(['error' => 'Unauthorized']);
+            }
             return $response->toJSON([ 'user' => $user ]);
         } catch (Exception $e) {
             handleException($e);

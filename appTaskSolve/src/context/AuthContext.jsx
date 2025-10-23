@@ -7,6 +7,8 @@ const AuthContext = createContext(null);
 const API_BASE = getApiBaseWithPrefix('/apiticket');
 // Asegurar baseURL de axios lo antes posible para evitar condiciones de carrera
 axios.defaults.baseURL = API_BASE;
+// Enviar cookies (credenciales) con las peticiones para soportar sesiones server-side
+axios.defaults.withCredentials = true;
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => {
@@ -19,17 +21,16 @@ export function AuthProvider({ children }) {
     return raw ? JSON.parse(raw) : null;
   });
 
-  // Interceptores para añadir siempre el token y reaccionar a 401
+  // Interceptores: ya no añadimos Authorization (usamos cookies), solo reaccionamos a 401
   useEffect(() => {
     console.log('🌐 axios.baseURL =', axios.defaults.baseURL);
 
     const reqId = axios.interceptors.request.use((config) => {
-      // Leer de estado o, si faltara por timing, desde localStorage
-      const currentToken = token || localStorage.getItem('authToken');
-      if (currentToken) {
-        config.headers = config.headers || {};
-        config.headers.Authorization = `Bearer ${currentToken}`;
-      }
+      try {
+        const method = (config.method || 'get').toUpperCase();
+        const url = config.url || config.baseURL || '<unknown>';
+        console.log('➤ Outgoing request', method, url, 'withCredentials=', axios.defaults.withCredentials);
+      } catch (e) {}
       return config;
     });
 
@@ -57,21 +58,37 @@ export function AuthProvider({ children }) {
     };
   }, [token]);
 
+  // Hacer login: backend creará la sesión y enviará cookie HttpOnly. El endpoint devuelve el user.
   const login = async (email, password) => {
-  const { data } = await axios.post('/auth/login', { email, password });
-    setToken(data.token);
+    const { data } = await axios.post('/auth/login', { email, password });
     setUser(data.user);
-    localStorage.setItem('authToken', data.token);
-    localStorage.setItem('authUser', JSON.stringify(data.user));
+    try { localStorage.setItem('authUser', JSON.stringify(data.user)); } catch {}
     return data.user;
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try { await axios.post('/auth/logout'); } catch (e) {}
     setToken(null);
     setUser(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('authUser');
+    try { localStorage.removeItem('authToken'); localStorage.removeItem('authUser'); } catch {}
   };
+
+  // Al montar, intentar obtener el usuario desde la sesión server-side
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await axios.get('/auth/me');
+        if (mounted) {
+          setUser(res.data.user || null);
+          try { localStorage.setItem('authUser', JSON.stringify(res.data.user || null)); } catch {}
+        }
+      } catch (e) {
+        if (mounted) setUser(null);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
 
   const value = useMemo(() => ({ token, user, login, logout }), [token, user]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
