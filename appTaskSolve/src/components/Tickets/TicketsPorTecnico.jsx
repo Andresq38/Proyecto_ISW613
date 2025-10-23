@@ -111,7 +111,11 @@ const TicketsPorTecnico = () => {
         {!loading && !error && tickets.length > 0 ? (
             tickets.map((ticket) => (
             <Grid item xs={12} md={6} key={ticket.id_ticket}>
-                <Card elevation={2} sx={{ borderRadius: 2, borderLeft: `6px solid ${getStatusColor(ticket.estado)}` }}>
+                <Card
+                  elevation={2}
+                  sx={{ borderRadius: 2, borderLeft: `6px solid ${getStatusColor(ticket.estado)}`, cursor: 'pointer', '&:hover': { boxShadow: 8 } }}
+                  onClick={() => window.location.assign(`/tickets/${ticket.id_ticket}`)}
+                >
                 <CardContent>
                     <Typography variant="h6">#{ticket.id_ticket} - {ticket.titulo}</Typography>
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mt: 1 }}>

@@ -113,9 +113,9 @@ export default function TicketsPorAdmi() {
 
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>
                     <Chip size="small" label={ticket.estado} sx={{ bgcolor: getStatusColor(ticket.estado), color: '#fff' }} />
-                    {ticket.sla && (
+                    {/*ticket.sla && (
                       <Chip size="small" variant="outlined" label={`SLA: ${ticket.sla}`} />
-                    )}
+                    )*/}
                   </Box>
                 </CardContent>
               </Card>

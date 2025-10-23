@@ -6,10 +6,10 @@ import {
 import axios from 'axios';
 import { getApiOrigin } from '../../utils/apiBase';
 
-const TicketsPorTecnico = () => {
+const TicketsPorCliente = () => {
   const apiBase = getApiOrigin();
-  const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState(''); // id_tecnico
-  const [tecnicos, setTecnicos] = useState([]); // [{id_tecnico, nombre}]
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(''); // id_usuario
+  const [usuarios, setUsuarios] = useState([]); // [{id_usuario, nombre}]
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -24,39 +24,38 @@ const TicketsPorTecnico = () => {
     return theme.palette.grey[700];
   };
 
-  // Cargar todos los técnicos (aunque no tengan tickets asignados)
+  // Cargar todos los usuarios (clientes)
   useEffect(() => {
-    const fetchTecnicos = async () => {
+    const fetchUsuarios = async () => {
       setError(null);
       try {
-        const res = await axios.get(`${apiBase}/apiticket/tecnico`);
+        const res = await axios.get(`${apiBase}/apiticket/usuario`);
         const data = Array.isArray(res.data) ? res.data : [];
-        // normalizar campos
-        const mapped = data.map(t => ({
-          id_tecnico: t.id_tecnico ?? t.ID_TECNICO ?? t.id,
-          nombre: t.nombre ?? t.nombre_usuario ?? 'Sin nombre'
+        // Map and capture possible role field names, then filter to role === 3 (cliente)
+        const mapped = data.map(u => ({
+          id_usuario: u.id_usuario ?? u.id ?? u.ID_USUARIO,
+          id_rol: u.id_rol ?? u.idRol ?? u.rol_id ?? u.rol ?? u.role ?? u.ID_ROL ?? null,
+          nombre: (u.nombre ?? u.nombre_usuario) || ((`${u.nombre || ''} ${u.apellido || ''}`).trim()) || 'Sin nombre'
         }));
-        setTecnicos(mapped);
-        // Preseleccionar el primer técnico disponible si no hay uno ya seleccionado
-        if (mapped.length > 0) {
-          setTecnicoSeleccionado(prev => prev || mapped[0].id_tecnico);
-        }
+        const clientes = mapped.filter(u => Number(u.id_rol) === 3);
+        setUsuarios(clientes);
+        if (clientes.length > 0) setUsuarioSeleccionado(prev => prev || clientes[0].id_usuario);
       } catch (err) {
         console.error(err);
-        setError('No se pudo cargar la lista de técnicos');
+        setError('No se pudo cargar la lista de usuarios');
       }
     };
-    fetchTecnicos();
+    fetchUsuarios();
   }, []);
 
-  // Cargar tickets por técnico seleccionado
+  // Cargar tickets por usuario seleccionado
   useEffect(() => {
     const fetchTickets = async () => {
-      if (!tecnicoSeleccionado) { setTickets([]); return; }
+      if (!usuarioSeleccionado) { setTickets([]); return; }
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`${apiBase}/apiticket/ticket/getTicketByTecnico/${tecnicoSeleccionado}`);
+        const res = await axios.get(`${apiBase}/apiticket/ticket/getTicketByUsuario/${usuarioSeleccionado}`);
         const data = Array.isArray(res.data) ? res.data : [];
         const mapped = data.map(t => ({
           id_ticket: parseInt(t['Identificador del Ticket'] ?? t.id_ticket ?? t.id, 10),
@@ -67,30 +66,30 @@ const TicketsPorTecnico = () => {
         setTickets(mapped);
       } catch (err) {
         console.error(err);
-        setError('No se pudieron cargar los tickets del técnico seleccionado');
+        setError('No se pudieron cargar los tickets del usuario seleccionado');
       } finally {
         setLoading(false);
       }
     };
     fetchTickets();
-  }, [tecnicoSeleccionado]);
+  }, [usuarioSeleccionado]);
 
   return (
     <Container sx={{ py: 4 }}>
       <Typography variant="h4" gutterBottom sx={{ mb: 3, color: 'primary.main', fontWeight: 700 }}>
-        Tickets Asignados por Técnico
+        Tickets por Cliente
       </Typography>
 
       <FormControl fullWidth sx={{ mb: 4 }}>
-        <InputLabel id="select-tecnico-label">Seleccionar Técnico</InputLabel>
+        <InputLabel id="select-usuario-label">Seleccionar Cliente</InputLabel>
         <Select
-          labelId="select-tecnico-label"
-          value={tecnicoSeleccionado}
-          label="Seleccionar Técnico"
-          onChange={(e) => setTecnicoSeleccionado(e.target.value)}
+          labelId="select-usuario-label"
+          value={usuarioSeleccionado}
+          label="Seleccionar Cliente"
+          onChange={(e) => setUsuarioSeleccionado(e.target.value)}
         >
-          {tecnicos.map((t) => (
-            <MenuItem key={t.id_tecnico} value={t.id_tecnico}>{t.nombre}</MenuItem>
+          {usuarios.map((u) => (
+            <MenuItem key={u.id_usuario} value={u.id_usuario}>{u.nombre}</MenuItem>
           ))}
         </Select>
       </FormControl>
@@ -104,41 +103,42 @@ const TicketsPorTecnico = () => {
           </Grid>
         )}
         {!!error && !loading && (
-          <Grid item xs={12}>
-            <Alert severity="error">{error}</Alert>
-          </Grid>
+          <Grid item xs={12}><Alert severity="error">{error}</Alert></Grid>
         )}
+
         {!loading && !error && tickets.length > 0 ? (
-            tickets.map((ticket) => (
-            <Grid item xs={12} md={6} key={ticket.id_ticket}>
-                <Card elevation={2} sx={{ borderRadius: 2, borderLeft: `6px solid ${getStatusColor(ticket.estado)}` }}>
-                <CardContent>
+          tickets.map((ticket) => (
+              <Grid item xs={12} md={6} key={ticket.id_ticket}>
+                <Card
+                  elevation={2}
+                  sx={{
+                    borderRadius: 2,
+                    borderLeft: `6px solid ${getStatusColor(ticket.estado)}`,
+                    cursor: 'pointer',
+                    '&:hover': { boxShadow: 8 }
+                  }}
+                  onClick={() => window.location.assign(`/tickets/${ticket.id_ticket}`)}
+                >
+                  <CardContent>
                     <Typography variant="h6">#{ticket.id_ticket} - {ticket.titulo}</Typography>
                     <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mt: 1 }}>
                       <Chip size="small" label={ticket.estado} sx={{ bgcolor: getStatusColor(ticket.estado), color: '#fff' }} />
-                      {ticket.sla && (
-                        <Chip size="small" variant="outlined" label={`SLA: ${ticket.sla}`} />
-                      )}
+                      {ticket.sla && <Chip size="small" variant="outlined" label={`SLA: ${ticket.sla}`} />}
                     </Box>
-                </CardContent>
+                  </CardContent>
                 </Card>
-            </Grid>
+              </Grid>
             ))
         ) : (
-            tecnicoSeleccionado && !loading && !error && (
-                <Grid item xs={12}>
-                    <Typography color="text.secondary">No hay tickets asignados para el técnico seleccionado.</Typography>
-                </Grid>
-            )
+          !loading && (
+            <Grid item xs={12}>
+              <Typography color="text.secondary">No hay tickets para el cliente seleccionado.</Typography>
+            </Grid>
+          )
         )}
       </Grid>
-      {!tecnicoSeleccionado && (
-          <Typography color="text.secondary" align="center" sx={{ mt: 5 }}>
-            Por favor, selecciona un técnico para ver sus tickets asignados.
-          </Typography>
-      )}
     </Container>
   );
 };
 
-export default TicketsPorTecnico;
+export default TicketsPorCliente;

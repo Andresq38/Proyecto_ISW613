@@ -6,6 +6,7 @@ import PageNotFound from './components/Home/PageNotFound';
 import TicketsPorTecnico from './components/Tickets/TicketsPorTecnico';
 import TicketsList from './components/Tickets/TicketsList';
 import TicketsPorAdmi from './components/Tickets/TicketsPorAdmi';
+import TicketsPorCliente from './components/Tickets/TicketsPorCliente';
 import DetalleTicket from './components/Tickets/DetalleTicket';
 import TecnicosList from './components/Tecnicos/TecnicosList';
 import TecnicosHub from './components/Tecnicos/TecnicosHub';
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/asignaciones" element={<Navigate to="/tecnicos/asignaciones" replace />} />
           <Route path="/tickets" element={<TicketsList />} />
           <Route path="/tickets/Administrador" element={<TicketsPorAdmi />} />
+          <Route path="/tickets/cliente" element={<TicketsPorCliente />} />
           <Route path="/tickets/tecnico" element={<TicketsPorTecnico />} />
           <Route path="/tickets/:id" element={<DetalleTicket />} />
           <Route path="/tecnicos/*" element={<TecnicosHub />} >
