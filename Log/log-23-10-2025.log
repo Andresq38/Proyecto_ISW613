@@ -1,3 +1,10 @@
 [23-10-2025 09:02:31] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
  [23-10-2025 09:02:32] [PC] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
+ [23-10-2025 09:06:51] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 44 - Message: require_once(C:\xampp\htdocs\apiticket\models\Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ [23-10-2025 09:06:52] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 44 - Message: require_once(C:\xampp\htdocs\apiticket\models\Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ [23-10-2025 09:06:55] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 44 - Message: require_once(C:\xampp\htdocs\apiticket\models\Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ [23-10-2025 09:06:56] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 44 - Message: require_once(C:\xampp\htdocs\apiticket\models\Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ [23-10-2025 09:07:04] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 44 - Message: require_once(C:\xampp\htdocs\apiticket\models\Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ [23-10-2025 09:07:05] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 44 - Message: require_once(C:\xampp\htdocs\apiticket\models\Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ [23-10-2025 09:07:13] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 44 - Message: require_once(C:\xampp\htdocs\apiticket\models\Historial_ImagenModel.php): Failed to open stream: No such file or directory
  
