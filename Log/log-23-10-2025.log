@@ -1,0 +1,6 @@
+[23-10-2025 04:54:35] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 26 - Message: require_once(models/Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ [23-10-2025 04:54:35] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 26 - Message: require_once(models/Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ [23-10-2025 04:55:10] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 26 - Message: require_once(models/Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ [23-10-2025 04:55:10] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 26 - Message: require_once(models/Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ [23-10-2025 04:55:25] [PC] error: File: C:\xampp\htdocs\apiticket\index.php - line: 26 - Message: require_once(models/Historial_ImagenModel.php): Failed to open stream: No such file or directory
+ 

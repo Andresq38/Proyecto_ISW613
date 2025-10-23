@@ -13,6 +13,12 @@ export default function DetalleTicket() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [comentario, setComentario] = useState('');
+  const [mainImageIndex, setMainImageIndex] = useState(0);
+
+  // reset main image index when ticket changes
+  useEffect(() => {
+    setMainImageIndex(0);
+  }, [ticket]);
 
   useEffect(() => {
     const fetchTicket = async () => {
@@ -61,6 +67,8 @@ export default function DetalleTicket() {
         <Typography><strong>SLA Descripcion:</strong> {ticket.sla?.nombre || 'N/A'}</Typography>
         <Typography><strong>Tiempo restante SLA:</strong> {ticket.sla?.tiempo_restante || 'N/A'}</Typography>
       </Paper>
+
+      
 
       {/* Usuario Afectado */}
       <Paper sx={{ p: 3, mb: 4 }}>
@@ -112,18 +120,57 @@ export default function DetalleTicket() {
         )}
       </Paper>
 
-      {/* Comentario */}
+      {/* Imágenes (carrusel manual) */}
+      <Paper sx={{ p: 3, mb: 4 }}>
+        <Typography variant="h6" color="primary" gutterBottom>Imágenes del Ticket</Typography>
+        {Array.isArray(ticket.imagenes) && ticket.imagenes.length > 0 ? (
+          (() => {
+            const UPLOADS_BASE = 'http://localhost:81/apiticket/uploads';
+            const imgs = ticket.imagenes;
+            const safeIndex = ((mainImageIndex % imgs.length) + imgs.length) % imgs.length;
+            const main = imgs[safeIndex];
+            const filename = main?.imagen || main?.url || main?.path || main?.image || '';
+            return (
+              <Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Button size="small" disabled={imgs.length <= 1} onClick={() => setMainImageIndex(i => (i - 1 + imgs.length) % imgs.length)}>&lt;</Button>
+                  <Box sx={{ flex: 1, textAlign: 'center' }}>
+                    <Box
+                      component="img"
+                      src={`${UPLOADS_BASE}/${filename}`}
+                      alt={main?.imagen || ''}
+                      sx={{ maxWidth: '100%', maxHeight: 420, borderRadius: 2 }}
+                    />
+                    {main?.descripcion && <Typography variant="caption" display="block">{main.descripcion}</Typography>}
+                  </Box>
+                  <Button size="small" disabled={imgs.length <= 1} onClick={() => setMainImageIndex(i => (i + 1) % imgs.length)}>&gt;</Button>
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1, mt: 2, overflowX: 'auto' }}>
+                  {imgs.map((im, idx) => {
+                    const fn = im?.imagen || im?.url || im?.path || im?.image || '';
+                    return (
+                      <Box key={im.id_imagen ?? idx} onClick={() => setMainImageIndex(idx)} sx={{ cursor: 'pointer', border: idx === safeIndex ? '2px solid #1976d2' : '2px solid transparent', borderRadius: 1 }}>
+                        <Box component="img" src={`${UPLOADS_BASE}/${fn}`} alt={im?.imagen || ''} sx={{ width: 100, height: 70, objectFit: 'cover', borderRadius: 1 }} />
+                      </Box>
+                    );
+                  })}
+                </Box>
+              </Box>
+            );
+          })()
+        ) : (
+          <Typography variant="body2">No hay imágenes asociadas a este ticket.</Typography>
+        )}
+      </Paper>
+
+      {/* Comentario existente (solo lectura) */}
       <Paper sx={{ p: 3 }}>
-        <Typography variant="h6" gutterBottom>Agregar Comentario</Typography>
-        <TextField
-          fullWidth
-          multiline
-          minRows={3}
-          value={comentario}
-          onChange={(e) => setComentario(e.target.value)}
-          placeholder="Escribí tu comentario aquí..."
-        />
-        <Button variant="contained" sx={{ mt: 2 }}>Enviar comentario</Button>
+        <Typography variant="h6" gutterBottom>Comentario</Typography>
+        {ticket.comentario ? (
+          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>{ticket.comentario}</Typography>
+        ) : (
+          <Typography variant="body2" color="text.secondary">No hay comentarios registrados para este ticket.</Typography>
+        )}
       </Paper>
     </Container>
   );

@@ -157,6 +157,15 @@ public function getTicketCompletoById($idTicket) {
             $ticket->sla->tiempo_restante = null;
         }
 
+        // Adjuntar imágenes asociadas al ticket (tabla imagen tiene id_ticket e imagen)
+        try {
+            $sqlImgs = "SELECT * FROM imagen WHERE id_ticket = ? ORDER BY id_imagen";
+            $imgs = $this->enlace->executePrepared($sqlImgs, 'i', [ (int)$idTicket ]);
+            $ticket->imagenes = is_array($imgs) ? $imgs : [];
+        } catch (Exception $e) {
+            $ticket->imagenes = [];
+        }
+
         return $ticket;
 
     } catch (Exception $e) {
