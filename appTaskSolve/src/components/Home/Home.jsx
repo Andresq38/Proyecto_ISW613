@@ -28,6 +28,7 @@ import { useNavigate } from 'react-router-dom';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import { getApiOrigin } from '../../utils/apiBase';
 
 // Datos simulados como fallback
 const TICKET_DATA_HOME = [];
@@ -43,12 +44,7 @@ const Home = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   // Detectar automáticamente la base del API o tomarla de variables de entorno
-  const apiBase = (import.meta?.env?.VITE_API_BASE)
-    || (typeof window !== 'undefined'
-        ? (window.location.origin.includes(':')
-            ? window.location.origin.replace(/:\d+$/, '') // quita el puerto (p.ej. :5173) -> http://localhost
-            : window.location.origin)
-        : 'http://localhost');
+  const apiBase = getApiOrigin();
   const theme = useTheme();
   const navigate = useNavigate(); // Hook para navegación
 

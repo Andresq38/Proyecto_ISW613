@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Typography, CircularProgress, Box, Alert, Paper, Chip, Grid, Button } from '@mui/material';
+import { getApiOrigin } from '../../utils/apiBase';
 
-const apiBase = (import.meta?.env?.VITE_API_BASE)
-  || (typeof window !== 'undefined' ? window.location.origin.replace(/:\\d+$/, '') : 'http://localhost');
+const apiBase = getApiOrigin();
 
 export default function TecnicoDetalle() {
   const { id } = useParams();

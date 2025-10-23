@@ -13,6 +13,7 @@ import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
+import { getApiOrigin } from '../../utils/apiBase';
 
 export default function DetalleTicket() {
   const { id } = useParams();
@@ -30,12 +31,7 @@ export default function DetalleTicket() {
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
 
-  const getApiBase = () => {
-    return (import.meta?.env?.VITE_API_BASE)
-      || (typeof window !== 'undefined'
-          ? window.location.origin.replace(/:\d+$/, '')
-          : 'http://localhost');
-  };
+  const getApiBase = () => getApiOrigin();
 
   useEffect(() => {
     const fetchTicket = async () => {

@@ -4,12 +4,10 @@ import {
   Select, MenuItem, Grid, Card, CardContent, Box, CircularProgress, Alert, Chip, useTheme
 } from '@mui/material';
 import axios from 'axios';
+import { getApiOrigin } from '../../utils/apiBase';
 
 const TicketsPorTecnico = () => {
-  const apiBase = (import.meta?.env?.VITE_API_BASE)
-    || (typeof window !== 'undefined'
-        ? window.location.origin.replace(/:\d+$/, '')
-        : 'http://localhost');
+  const apiBase = getApiOrigin();
   const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState(''); // id_tecnico
   const [tecnicos, setTecnicos] = useState([]); // [{id_tecnico, nombre}]
   const [tickets, setTickets] = useState([]);

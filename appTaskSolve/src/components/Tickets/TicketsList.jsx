@@ -16,13 +16,9 @@ import {
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import { getApiOrigin } from '../../utils/apiBase';
 
-const getApiBase = () => {
-  const candidate = import.meta?.env?.VITE_API_BASE;
-  if (candidate) return candidate.replace(/\/$/, '');
-  const { protocol, hostname } = window.location;
-  return `${protocol}//${hostname}/apiticket`;
-};
+const getApiBase = () => `${getApiOrigin()}/apiticket`;
 
 const statusColor = (estado) => {
   const map = {

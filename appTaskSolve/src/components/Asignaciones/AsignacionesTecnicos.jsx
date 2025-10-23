@@ -24,6 +24,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import WarningIcon from '@mui/icons-material/Warning';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { getApiOrigin } from '../../utils/apiBase';
 
 const AsignacionesTecnicos = () => {
   const [tecnicos, setTecnicos] = useState([]);
@@ -32,17 +33,7 @@ const AsignacionesTecnicos = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Detección dinámica de la API base
-  const getApiBase = () => {
-    const envApiBase = import.meta.env.VITE_API_BASE;
-    if (envApiBase) return envApiBase;
-    
-    const currentUrl = window.location.origin;
-    if (currentUrl.includes(':5173') || currentUrl.includes(':3000')) {
-      return 'http://localhost';
-    }
-    return currentUrl;
-  };
+  const getApiBase = () => getApiOrigin();
 
   useEffect(() => {
     fetchAsignaciones();

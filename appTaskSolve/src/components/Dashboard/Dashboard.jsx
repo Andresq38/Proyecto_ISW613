@@ -27,6 +27,7 @@ import {
   Label as LabelIcon,
   School as SchoolIcon
 } from '@mui/icons-material';
+import { getApiOrigin } from '../../utils/apiBase';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
@@ -36,17 +37,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Detección dinámica de la API base
-  const getApiBase = () => {
-    const envApiBase = import.meta.env.VITE_API_BASE;
-    if (envApiBase) return envApiBase;
-    
-    const currentUrl = window.location.origin;
-    if (currentUrl.includes(':5173') || currentUrl.includes(':3000')) {
-      return 'http://localhost';
-    }
-    return currentUrl;
-  };
+  const getApiBase = () => getApiOrigin();
 
   useEffect(() => {
     fetchDashboardData();

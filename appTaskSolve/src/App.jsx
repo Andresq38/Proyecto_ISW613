@@ -23,7 +23,8 @@ export default function App() {
       <AuthProvider>
         <Layout>
           <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/home" element={<Home />} />
           <Route element={<RequireAuth allowedRoles={["Administrador"]} />}> 
             <Route path="/dashboard" element={<Dashboard />} />
           </Route>

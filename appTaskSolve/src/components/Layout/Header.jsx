@@ -39,7 +39,7 @@ const Header = () => {
       <Toolbar>
         {/* Logo + Wordmark: place your file at appTaskSolve/public/logo.png */}
         <Box
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/home')}
           sx={{ display: 'flex', alignItems: 'center', mr: 2, cursor: 'pointer' }}
           aria-label="Go to home"
         >
@@ -79,8 +79,8 @@ const Header = () => {
           <Button
             variant="text"
             color="inherit"
-            onClick={() => navigate('/')}
-              sx={getButtonStyles('/')}
+            onClick={() => navigate('/home')}
+              sx={getButtonStyles('/home')}
           >
             Inicio
           </Button>

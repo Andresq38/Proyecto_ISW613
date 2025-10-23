@@ -2,21 +2,13 @@ import React, { useEffect, useState } from 'react';
 import { Container, Typography, Grid, Card, CardContent, Chip, Box, CircularProgress, Alert, Avatar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { getApiOrigin } from '../../utils/apiBase';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 
-// Detección dinámica de la API base
-const getApiBase = () => {
-  const envApiBase = import.meta.env.VITE_API_BASE;
-  if (envApiBase) return envApiBase;
-  
-  const currentUrl = window.location.origin;
-  if (currentUrl.includes(':5173') || currentUrl.includes(':3000')) {
-    return 'http://localhost';
-  }
-  return currentUrl;
-};
+// Centralizado
+const getApiBase = () => getApiOrigin();
 
 export default function TecnicosList() {
   const [items, setItems] = useState([]);

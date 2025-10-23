@@ -21,6 +21,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import LabelIcon from '@mui/icons-material/Label';
 import SchoolIcon from '@mui/icons-material/School';
 import TimerIcon from '@mui/icons-material/Timer';
+import { getApiOrigin } from '../../utils/apiBase';
 
 const CategoriaDetalle = () => {
   const { id } = useParams();
@@ -29,17 +30,7 @@ const CategoriaDetalle = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Detección dinámica de la API base
-  const getApiBase = () => {
-    const envApiBase = import.meta.env.VITE_API_BASE;
-    if (envApiBase) return envApiBase;
-    
-    const currentUrl = window.location.origin;
-    if (currentUrl.includes(':5173') || currentUrl.includes(':3000')) {
-      return 'http://localhost';
-    }
-    return currentUrl;
-  };
+  const getApiBase = () => getApiOrigin();
 
   useEffect(() => {
     const fetchCategoria = async () => {

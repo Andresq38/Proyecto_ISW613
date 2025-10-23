@@ -18,6 +18,7 @@ import FolderSpecialIcon from '@mui/icons-material/FolderSpecial';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import { getApiOrigin } from '../../utils/apiBase';
 
 const CategoriasList = () => {
   const [categorias, setCategorias] = useState([]);
@@ -25,17 +26,7 @@ const CategoriasList = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Detección dinámica de la API base
-  const getApiBase = () => {
-    const envApiBase = import.meta.env.VITE_API_BASE;
-    if (envApiBase) return envApiBase;
-    
-    const currentUrl = window.location.origin;
-    if (currentUrl.includes(':5173') || currentUrl.includes(':3000')) {
-      return 'http://localhost';
-    }
-    return currentUrl;
-  };
+  const getApiBase = () => getApiOrigin();
 
   useEffect(() => {
     const fetchCategorias = async () => {

@@ -1,14 +1,12 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import { getApiOrigin, getApiBaseWithPrefix } from '../utils/apiBase';
 
 const AuthContext = createContext(null);
 
-const getApiBase = () => {
-  const candidate = import.meta?.env?.VITE_API_BASE;
-  if (candidate) return candidate.replace(/\/$/, '');
-  const { protocol, hostname } = window.location;
-  return `${protocol}//${hostname}/apiticket`;
-};
+const API_BASE = getApiBaseWithPrefix('/apiticket');
+// Asegurar baseURL de axios lo antes posible para evitar condiciones de carrera
+axios.defaults.baseURL = API_BASE;
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => {
@@ -21,21 +19,46 @@ export function AuthProvider({ children }) {
     return raw ? JSON.parse(raw) : null;
   });
 
-  // Sync axios header - ejecutar INMEDIATAMENTE cuando el componente se monta
+  // Interceptores para añadir siempre el token y reaccionar a 401
   useEffect(() => {
-    console.log('🔧 Configurando axios headers. Token:', token ? 'PRESENTE' : 'AUSENTE');
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      console.log('✅ Header configurado:', axios.defaults.headers.common['Authorization']);
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
-      console.log('❌ Header eliminado');
-    }
+    console.log('🌐 axios.baseURL =', axios.defaults.baseURL);
+
+    const reqId = axios.interceptors.request.use((config) => {
+      // Leer de estado o, si faltara por timing, desde localStorage
+      const currentToken = token || localStorage.getItem('authToken');
+      if (currentToken) {
+        config.headers = config.headers || {};
+        config.headers.Authorization = `Bearer ${currentToken}`;
+      }
+      return config;
+    });
+
+    const resId = axios.interceptors.response.use(
+      (res) => res,
+      (err) => {
+        if (err?.response?.status === 401) {
+          console.warn('🔒 401 no autorizado. Cerrando sesión.');
+          // Limpiar estado/almacenamiento y redirigir a login
+          try { localStorage.removeItem('authToken'); localStorage.removeItem('authUser'); } catch {}
+          setToken(null); setUser(null);
+          // Redirigir sin depender de hooks de router
+          if (typeof window !== 'undefined') {
+            const path = '/login';
+            if (!window.location.pathname.includes(path)) window.location.assign(path);
+          }
+        }
+        return Promise.reject(err);
+      }
+    );
+
+    return () => {
+      axios.interceptors.request.eject(reqId);
+      axios.interceptors.response.eject(resId);
+    };
   }, [token]);
 
   const login = async (email, password) => {
-    const apiBase = getApiBase();
-    const { data } = await axios.post(`${apiBase}/auth/login`, { email, password });
+  const { data } = await axios.post('/auth/login', { email, password });
     setToken(data.token);
     setUser(data.user);
     localStorage.setItem('authToken', data.token);
