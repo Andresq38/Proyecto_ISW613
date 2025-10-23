@@ -102,9 +102,17 @@ class RoutesController
                 $param2 = $routesArray[5] ?? null;
                 if ($controller) {
                     try {
-                        // Normalizar el nombre del controlador: primera letra mayúscula
-                        $controllerClass = ucfirst(strtolower($controller));
-                        if (class_exists($controllerClass)) {
+                        // Resolver clase de controlador de forma tolerante a mayúsculas/minúsculas
+                        $candidates = [
+                            $controller,                          // tal cual viene en la URL
+                            ucfirst(strtolower($controller)),      // Primera mayúscula (Auth, Ticket, etc.)
+                            strtolower($controller),               // todo minúsculas
+                        ];
+                        $controllerClass = null;
+                        foreach ($candidates as $cand) {
+                            if (class_exists($cand)) { $controllerClass = $cand; break; }
+                        }
+                        if ($controllerClass) {
                             $response = new $controllerClass();
                             switch ($_SERVER['REQUEST_METHOD']) {
                                 case 'GET':
