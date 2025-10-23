@@ -40,7 +40,7 @@ const Header = () => {
     if (role === 'Tecnico') {
       navigate('/tickets/tecnico');
     } else if (role === 'Administrador') {
-      navigate('/tickets');
+      navigate('/tickets/Administrador');
     } else {
       const msg = `Navegación a ${role} aún no implementada.`;
       console.log(msg);
