@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout/Layout';
 import Home from './components/Home/Home';
+import HomeP from './components/Home/HomeP';
 import PageNotFound from './components/Home/PageNotFound';
 import TicketsPorTecnico from './components/Tickets/TicketsPorTecnico';
 import TicketsList from './components/Tickets/TicketsList';
@@ -23,6 +24,7 @@ export default function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/homeP" element={<HomeP />} />
           <Route path="/asignaciones" element={<Navigate to="/tecnicos/asignaciones" replace />} />
           <Route path="/tickets" element={<TicketsList />} />
           <Route path="/tickets/Administrador" element={<TicketsPorAdmi />} />

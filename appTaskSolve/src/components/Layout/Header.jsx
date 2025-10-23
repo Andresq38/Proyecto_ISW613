@@ -56,7 +56,8 @@ const Header = () => {
       <Toolbar>
         {/* Logo + Wordmark: place your file at appTaskSolve/public/logo.png */}
         <Box
-          onClick={() => navigate('/home')}
+         //***********Cambio de direccion para el boton que tiene el logo de TaskSolve*************
+          onClick={() => navigate('/homeP')}
           sx={{ display: 'flex', alignItems: 'center', mr: 2, cursor: 'pointer' }}
           aria-label="Go to home"
         >
