@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Box, Typography, Container, Card, CardContent } from '@mui/material';
-//import TaskSolveLogo from '../../uploads/TaskSolve-Logo.jpg'; // Asegúrate de tener esta imagen
+import logo from '../../assets/TaskSolve-Logo.jpg';
 
 const authors = [
   'Joseph Rodolfo Segura Mora',
@@ -8,44 +8,53 @@ const authors = [
   'Andrés Quesada Molina'
 ];
 
+const imageFallbacks = [logo];
+
+function ImageCard() {
+  const [index, setIndex] = useState(0);
+  const [failed, setFailed] = useState(false);
+
+  const src = imageFallbacks[index];
+
+  return (
+    <Box>
+      {!failed ? (
+        <Box
+          component="img"
+          src={src}
+          alt="TaskSolve"
+          sx={{ width: '100%', height: { xs: 360, md: 650 }, objectFit: 'contain', display: 'block'}}
+          onError={() => {
+            if (index < imageFallbacks.length - 1) setIndex(index + 1);
+            else setFailed(true);
+          }}
+        />
+      ) : (
+  <Box sx={{ width: '100%', height: { xs: 360, md: 520 }, bgcolor: 'linear-gradient(135deg,#0b3d91,#062c5f)' }} />
+      )}
+    </Box>
+  );
+}
+
 const HomeP = () => {
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+      <Box sx={{display: 'flex', justifyContent: 'center', py: 6, gap: 2, flexDirection: 'column', alignItems: 'center' , margin: '0 auto' }}>
+        {/* Image card */}
         <Card sx={{ width: { xs: '95%', md: 1000 }, borderRadius: 3, boxShadow: 8, overflow: 'hidden' }}>
-          <Box>
-            <Box component="img"
-              src="/uploads/TaskSolve-Logo.jpg"
-              alt="TaskSolve"
-              sx={{ width: '100%', height: { xs: 220, md: 340 }, objectFit: 'cover', display: 'block' }}
-              onError={(e) => {
-                // try several filename variants (case, hyphen, no hyphen)
-                const fallbacks = ['/uploads/TaskSolve-logo.jpg', '/uploads/TaskSolve-logo.png', '/uploads/TaskSolve.jpg', '/uploads/TaskSolve.png', '/uploads/TaskSolve-Logo.jpg'];
-                const img = e.target;
-                const current = img.src || '';
-                // find next fallback not equal to current
-                const next = fallbacks.find(f => current.indexOf(f) === -1);
-                if (next) img.src = next; else {
-                  // last resort: show a subtle placeholder color
-                  img.style.display = 'none';
-                  const p = document.createElement('div');
-                  p.style.width = '100%';
-                  p.style.height = img.style.height || '300px';
-                  p.style.background = 'linear-gradient(135deg,#0b3d91,#062c5f)';
-                  img.parentNode.insertBefore(p, img);
-                }
-              }}
-            />
+          <ImageCard />
+        </Card>
 
-            <CardContent sx={{ bgcolor: 'rgba(11,61,145,0.92)', color: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'center', p: 6 }}>
-              <Typography variant="h3" component="h1" sx={{ color: '#fff', fontWeight: 900, fontStyle: 'italic' }}>
-                "TaskSolve — la mejor opción para gestionar tus tickets"
-              </Typography>
-              <Typography variant="h6" sx={{ color: '#e6f0ff', mt: 2, fontWeight: 800 }}>
-                Simplifica, asigna y resuelve. Tu soporte, más rápido y más organizado.
-              </Typography>
-            </CardContent>
-          </Box>
+        {/* Quote card */}
+        <Card sx={{ width: { xs: '95%', md: 1000 }, borderRadius: 3, boxShadow: 8 }}>
+          <CardContent sx={{ bgcolor: 'rgba(11,61,145,0.95)', color: '#fff', p: { xs: 4, md: 8 } }}>
+            <Typography variant="h2" component="h1" sx={{ color: '#fff', fontWeight: 900, fontStyle: 'italic' }}>
+              "TaskSolve — la mejor opción para gestionar tus tickets"
+            </Typography>
+            <Typography variant="h6" sx={{ color: '#e6f0ff', mt: 2, fontWeight: 800, fontSize: { xs: 14, md: 18 } }}>
+              Simplifica, asigna y resuelve. Tu soporte, más rápido y más organizado.
+            </Typography>
+          </CardContent>
         </Card>
       </Box>
 
