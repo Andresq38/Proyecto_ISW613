@@ -102,8 +102,10 @@ class RoutesController
                 $param2 = $routesArray[5] ?? null;
                 if ($controller) {
                     try {
-                        if (class_exists($controller)) {
-                            $response = new $controller();
+                        // Normalizar el nombre del controlador: primera letra mayúscula
+                        $controllerClass = ucfirst(strtolower($controller));
+                        if (class_exists($controllerClass)) {
+                            $response = new $controllerClass();
                             switch ($_SERVER['REQUEST_METHOD']) {
                                 case 'GET':
                                     if ($param1 && $param2) {
@@ -115,7 +117,7 @@ class RoutesController
                                     } elseif (!isset($action)) {
                                         $response->index();
                                     } elseif ($action) {
-                                        if (method_exists($controller, $action)) {
+                                        if (method_exists($controllerClass, $action)) {
                                             $response->$action();
                                         } elseif (count($routesArray) == 3) {
                                             $response->get($action);
@@ -134,7 +136,7 @@ class RoutesController
 
                                 case 'POST':
                                     if ($action) {
-                                        if (method_exists($controller, $action)) {
+                                        if (method_exists($controllerClass, $action)) {
                                             $response->$action();
                                         } else {
                                             $json = array(
@@ -153,7 +155,7 @@ class RoutesController
                                     if ($param1) {
                                         $response->update($param1);
                                     } elseif ($action) {
-                                        if (method_exists($controller, $action)) {
+                                        if (method_exists($controllerClass, $action)) {
                                             $response->$action();
                                         } else {
                                             $json = array(
@@ -171,7 +173,7 @@ class RoutesController
                                     if ($param1) {
                                         $response->delete($param1);
                                     } elseif ($action) {
-                                        if (method_exists($controller, $action)) {
+                                        if (method_exists($controllerClass, $action)) {
                                             $response->$action();
                                         } else {
                                             $json = array(
