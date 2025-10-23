@@ -13,8 +13,9 @@ class Auth
     public function login()
     {
         try {
-            $req = new Request();
-            $body = $req->getJSON();
+            // Leer JSON directamente sin usar Request (evitar conflicto de clase)
+            $content = trim(file_get_contents("php://input"));
+            $body = json_decode($content);
             $response = new Response();
 
             if (!$body || empty($body->email) || empty($body->password)) {
