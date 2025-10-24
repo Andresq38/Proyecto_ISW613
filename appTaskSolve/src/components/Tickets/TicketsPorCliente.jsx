@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
   Container, Typography, FormControl, InputLabel,
-  Select, MenuItem, Grid, Card, CardContent, Box, CircularProgress, Alert, Chip, useTheme
+  Select, MenuItem, Grid, Card, CardContent, Box, CircularProgress, Alert, Chip, useTheme, Button,
+  Dialog, DialogTitle, DialogContent, DialogActions
 } from '@mui/material';
+// Calendar
+import { Calendar, dateFnsLocalizer } from 'react-big-calendar';
+import format from 'date-fns/format';
+import parse from 'date-fns/parse';
+import startOfWeek from 'date-fns/startOfWeek';
+import getDay from 'date-fns/getDay';
+import enUS from 'date-fns/locale/en-US';
+import 'react-big-calendar/lib/css/react-big-calendar.css';
 import axios from 'axios';
 import { getApiOrigin } from '../../utils/apiBase';
 
@@ -14,6 +23,9 @@ const TicketsPorCliente = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const theme = useTheme();
+
+  const locales = { 'en-US': enUS };
+  const localizer = dateFnsLocalizer({ format, parse, startOfWeek, getDay, locales });
 
   const getStatusColor = (estado) => {
     const e = (estado || '').toLowerCase();
@@ -55,14 +67,22 @@ const TicketsPorCliente = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await axios.get(`${apiBase}/apiticket/ticket/getTicketByUsuario/${usuarioSeleccionado}`);
+        // Use the "completos" endpoint so we have fecha_creacion and related data
+        const res = await axios.get(`${apiBase}/apiticket/ticket/getTicketsCompletos`);
         const data = Array.isArray(res.data) ? res.data : [];
-        const mapped = data.map(t => ({
-          id_ticket: parseInt(t['Identificador del Ticket'] ?? t.id_ticket ?? t.id, 10),
-          titulo: t['Categoría'] ?? t.titulo ?? 'Ticket',
-          estado: t['Estado actual'] ?? t.estado ?? '',
-          sla: t['Tiempo restante SLA (máx)'] ?? t.sla ?? ''
-        }));
+        // Filter to tickets belonging to the selected user
+        const userTickets = data.filter(t => String(t.id_usuario) === String(usuarioSeleccionado));
+        const mapped = userTickets.map(t => {
+          const estadoVal = (t.estado && (t.estado.nombre ?? t.estado)) || (t['Estado actual'] ?? '');
+          const slaVal = (t.sla && (t.sla.tiempo_restante ?? t.sla)) || (t['Tiempo restante SLA'] ?? '');
+          return ({
+            id_ticket: parseInt(t.id_ticket ?? t['Identificador del Ticket'] ?? t.id, 10),
+            titulo: t.titulo ?? t['Título'] ?? 'Ticket',
+            estado: estadoVal,
+            sla: slaVal,
+            _raw: t
+          });
+        });
         setTickets(mapped);
       } catch (err) {
         console.error(err);
@@ -73,6 +93,68 @@ const TicketsPorCliente = () => {
     };
     fetchTickets();
   }, [usuarioSeleccionado]);
+
+  // Build calendar events from tickets (use creation date)
+  // Build calendar events from tickets using fecha_creacion from the ticket completo
+  const events = tickets.map(t => {
+    const raw = t._raw || {};
+    const dateStr = raw.fecha_creacion || raw['fecha_creacion'] || raw['Fecha de creación'] || raw.fecha || raw.created_at;
+    if (!dateStr) return null; // skip tickets without a creation date
+    const start = new Date(dateStr);
+    const end = new Date(start.getTime() + 60 * 60 * 1000);
+    return {
+      id: t.id_ticket,
+      title: `#${t.id_ticket} ${t.titulo}`,
+      start,
+      end,
+      allDay: false,
+      resource: t
+    };
+  }).filter(Boolean);
+
+  const eventStyleGetter = (event) => ({
+    style: {
+      backgroundColor: '#1976d2', // change this color to adjust calendar event color
+      borderRadius: '4px',
+      color: 'white',
+      border: 'none'
+    }
+  });
+
+  // Hover message and dialog states
+  const [hoveredTicket, setHoveredTicket] = useState(null); // object { title, msg }
+  const [hoverPos, setHoverPos] = useState(null);
+  const [selectedTicket, setSelectedTicket] = useState(null); // when set, dialog opens
+
+  const handleSelectEvent = (ev) => {
+    // clear hover preview when opening dialog
+    setHoveredTicket(null);
+    setHoverPos(null);
+    const found = tickets.find(t => Number(t.id_ticket) === Number(ev.id));
+    setSelectedTicket(found?._raw || found || ev.resource?._raw || ev.resource || null);
+  };
+
+  const CalendarEvent = ({ event }) => (
+    <div
+      onMouseEnter={(e) => {
+        const x = e.clientX;
+        const y = e.clientY;
+        const left = Math.min(x + 12, window.innerWidth - 320);
+        const top = Math.min(y + 12, window.innerHeight - 120);
+        setHoverPos({ left, top });
+        setHoveredTicket({ title: event.title, msg: 'Haga clic para ver un resumen detallado de este ticket.' });
+      }}
+      onMouseLeave={() => { setHoveredTicket(null); setHoverPos(null); }}
+      style={{ padding: 4 }}
+    >
+      {event.title}
+    </div>
+  );
+
+  const getField = (raw, names) => {
+    for (const n of names) if (raw[n]) return raw[n];
+    return null;
+  };
 
   return (
     <Container sx={{ py: 4 }}>
@@ -117,7 +199,15 @@ const TicketsPorCliente = () => {
                     cursor: 'pointer',
                     '&:hover': { boxShadow: 8 }
                   }}
-                  onClick={() => window.location.assign(`/tickets/${ticket.id_ticket}`)}
+                  onClick={() => { setHoveredTicket(null); setHoverPos(null); setSelectedTicket(ticket._raw || ticket); }}
+                  onMouseEnter={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const left = Math.min(rect.right + 12, window.innerWidth - 320);
+                    const top = Math.min(rect.top + 12, window.innerHeight - 120);
+                    setHoverPos({ left, top });
+                    setHoveredTicket({ title: `#${ticket.id_ticket} ${ticket.titulo}`, msg: 'Haga clic para ver un resumen detallado de este ticket.' });
+                  }}
+                  onMouseLeave={() => { setHoveredTicket(null); setHoverPos(null); }}
                 >
                   <CardContent>
                     <Typography variant="h6">#{ticket.id_ticket} - {ticket.titulo}</Typography>
@@ -137,6 +227,76 @@ const TicketsPorCliente = () => {
           )
         )}
       </Grid>
+
+      {/* Calendar view below the tickets list */}
+      <Box sx={{ mt: 4 }}>
+        <Typography variant="h5" sx={{ mb: 2 }}>Calendario de tickets (por fecha de creación)</Typography>
+        <Card>
+          <CardContent>
+            <div style={{ height: 520 }}>
+              <Calendar
+                localizer={localizer}
+                events={events}
+                startAccessor="start"
+                endAccessor="end"
+                style={{ height: '100%' }}
+                defaultView="month"
+                views={["month", "week", "day"]}
+                eventPropGetter={eventStyleGetter}
+                onSelectEvent={handleSelectEvent}
+                // Disable the calendar's native tooltip/title to avoid duplicate browser tooltips
+                tooltipAccessor={() => null}
+                components={{ event: CalendarEvent }}
+              />
+            </div>
+          </CardContent>
+        </Card>
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          Los eventos se generan desde la fecha de creación del ticket. Si no ve fechas correctas, revise el campo de fecha en la respuesta del API.
+        </Typography>
+      </Box>
+      {/* Dialog summary (opens on click) */}
+      <Dialog open={!!selectedTicket} onClose={() => setSelectedTicket(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>Resumen del ticket</DialogTitle>
+        <DialogContent dividers>
+          {selectedTicket ? (
+            <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
+              <Typography variant="subtitle2" color="text.secondary">ID</Typography>
+              <Typography variant="body1">{selectedTicket.id_ticket ?? selectedTicket.id}</Typography>
+
+              <Typography variant="subtitle2" color="text.secondary">Título</Typography>
+              <Typography variant="body1">{selectedTicket.titulo ?? selectedTicket.Título}</Typography>
+
+              <Typography variant="subtitle2" color="text.secondary">Descripción</Typography>
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>{selectedTicket.descripcion ?? selectedTicket.Descripción ?? 'Sin descripción'}</Typography>
+
+              <Typography variant="subtitle2" color="text.secondary">Prioridad</Typography>
+              <Typography variant="body1">{selectedTicket.prioridad ?? selectedTicket.priority ?? 'N/A'}</Typography>
+
+              <Typography variant="subtitle2" color="text.secondary">Categoría</Typography>
+              <Typography variant="body1">{(selectedTicket.categoria && (selectedTicket.categoria.nombre ?? selectedTicket.categoria)) || selectedTicket.categoria_descripcion || 'N/A'}</Typography>
+
+              <Typography variant="subtitle2" color="text.secondary">Técnico</Typography>
+              <Typography variant="body1">{(selectedTicket.tecnico && (selectedTicket.tecnico.nombre ?? selectedTicket.tecnico.nombre_usuario ?? selectedTicket.tecnico)) || 'No asignado'}</Typography>
+
+              <Typography variant="subtitle2" color="text.secondary">Cliente</Typography>
+              <Typography variant="body1">{(selectedTicket.usuario && (selectedTicket.usuario.nombre ?? selectedTicket.usuario)) || selectedTicket.id_usuario || 'N/A'}</Typography>
+            </Box>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setSelectedTicket(null)}>Cerrar</Button>
+          {selectedTicket && (
+            <Button variant="contained" onClick={() => window.location.assign(`/tickets/${selectedTicket.id_ticket ?? selectedTicket.id}`)}>Ver detalle</Button>
+          )}
+        </DialogActions>
+      </Dialog>
+      {hoveredTicket && hoverPos && (
+        <Box sx={{ position: 'fixed', left: hoverPos.left, top: hoverPos.top, width: 300, bgcolor: '#fff', color: '#000', boxShadow: 3, borderRadius: 2, p: 2, zIndex: 1400, pointerEvents: 'none' }}>
+          <Typography variant="subtitle2" sx={{ color: '#000', fontStyle: 'italic' }}>{hoveredTicket.title}</Typography>
+          <Typography variant="body2" sx={{ color: '#000', mt: 1 }}>{hoveredTicket.msg}</Typography>
+        </Box>
+      )}
     </Container>
   );
 };
