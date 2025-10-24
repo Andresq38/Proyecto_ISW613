@@ -532,18 +532,31 @@ export default function DetalleTicket() {
       </Paper>
 
       {/* Comentario existente (solo lectura) */}
-       {ticket.comentario && (
-            <Box>
-              <Paper sx={{ p: 2, bgcolor: 'white', borderLeft: '4px solid #1976d2' }} elevation={0}>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                Comentario del cliente:
+        <Box>
+          <Paper sx={{ p: 2, bgcolor: 'white', borderLeft: '4px solid #1976d2' }} elevation={0}>
+            <Typography variant="h6" color="primary" gutterBottom>
+              Comentario del cliente:
+            </Typography>
+
+            {ticket.comentario && ticket.comentario.trim().length > 0 ? (
+              <Typography
+                variant="body1"
+                sx={{ fontStyle: 'italic', color: 'text.primary' }}
+              >
+                "{ticket.comentario}"
               </Typography>
-                <Typography variant="body1" sx={{ fontStyle: 'italic', color: 'text.primary' }}>
-                  "{ticket.comentario}"
-                </Typography>
-              </Paper>
-            </Box>
-          )}
+            ) : (
+              <Typography
+                variant="body2"
+                sx={{ color: 'text.secondary', fontStyle: 'italic' }}
+              >
+                No hay comentarios asociados a este ticket.
+              </Typography>
+            )}
+          </Paper>
+        </Box>
+
+        
       {/* Diálogo para cambiar estado */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
