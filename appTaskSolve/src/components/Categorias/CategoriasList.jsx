@@ -18,7 +18,6 @@ import FolderSpecialIcon from '@mui/icons-material/FolderSpecial';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import { getApiOrigin } from '../../utils/apiBase';
 
 const CategoriasList = () => {
   const [categorias, setCategorias] = useState([]);
@@ -26,7 +25,17 @@ const CategoriasList = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  const getApiBase = () => getApiOrigin();
+  // Detección dinámica de la API base
+  const getApiBase = () => {
+    const envApiBase = import.meta.env.VITE_API_BASE;
+    if (envApiBase) return envApiBase;
+    
+    const currentUrl = window.location.origin;
+    if (currentUrl.includes(':5173') || currentUrl.includes(':3000')) {
+      return 'http://localhost';
+    }
+    return currentUrl;
+  };
 
   useEffect(() => {
     const fetchCategorias = async () => {
@@ -45,6 +54,12 @@ const CategoriasList = () => {
         
         // Manejar diferentes formatos de respuesta
         const categoriasData = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+        // Ordenar ascendente por id_categoria (defensivo ante distintas formas de respuesta)
+        categoriasData.sort((a, b) => {
+          const idA = Number(a?.id_categoria ?? a?.id ?? 0);
+          const idB = Number(b?.id_categoria ?? b?.id ?? 0);
+          return idA - idB;
+        });
         setCategorias(categoriasData);
       } catch (err) {
         console.error('Error al cargar categorías:', err);
@@ -195,10 +210,10 @@ const CategoriasList = () => {
                     sx={{ 
                       p: 1.5, 
                       mb: 2,
-                      bgcolor: 'rgba(25, 118, 210, 0.05)',
+                      bgcolor: 'rgba(13, 71, 161, 0.05)',
                       borderRadius: 1.5,
                       border: '1px solid',
-                      borderColor: 'rgba(25, 118, 210, 0.1)'
+                      borderColor: 'rgba(13, 71, 161, 0.1)'
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -237,14 +252,14 @@ const CategoriasList = () => {
                       alignItems: 'center', 
                       justifyContent: 'space-between',
                       p: 1.5,
-                      bgcolor: 'rgba(156, 39, 176, 0.05)',
+                      bgcolor: 'rgba(13, 71, 161, 0.05)',
                       borderRadius: 1.5,
                       border: '1px solid',
-                      borderColor: 'rgba(156, 39, 176, 0.1)'
+                      borderColor: 'rgba(13, 71, 161, 0.1)'
                     }}
                   >
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                      <LocalOfferIcon sx={{ color: 'secondary.main', fontSize: 20 }} />
+                      <LocalOfferIcon sx={{ color: 'rgba(0,0,139,0.9)', fontSize: 20 }} />
                       <Typography 
                         variant="body2" 
                         sx={{ 
@@ -259,7 +274,7 @@ const CategoriasList = () => {
                       label={cat.num_etiquetas}
                       size="small"
                       sx={{ 
-                        bgcolor: 'secondary.main',
+                        bgcolor: 'primary.main',
                         color: 'white',
                         fontWeight: 700,
                         minWidth: 32,
