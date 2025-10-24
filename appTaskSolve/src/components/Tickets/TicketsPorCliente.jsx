@@ -51,7 +51,7 @@ const TicketsPorCliente = () => {
         }));
         const clientes = mapped.filter(u => Number(u.id_rol) === 3);
         setUsuarios(clientes);
-        if (clientes.length > 0) setUsuarioSeleccionado(prev => prev || clientes[0].id_usuario);
+        // Do not auto-select a client; keep the select empty so user chooses explicitly
       } catch (err) {
         console.error(err);
         setError('No se pudo cargar la lista de usuarios');
@@ -162,14 +162,23 @@ const TicketsPorCliente = () => {
         Tickets por Cliente
       </Typography>
 
-      <FormControl fullWidth sx={{ mb: 4 }}>
-        <InputLabel id="select-usuario-label">Seleccionar Cliente</InputLabel>
+      <FormControl fullWidth variant="outlined" sx={{ mb: 4 }}>
+        <InputLabel id="select-usuario-label" shrink>Seleccionar Cliente</InputLabel>
         <Select
           labelId="select-usuario-label"
           value={usuarioSeleccionado}
           label="Seleccionar Cliente"
           onChange={(e) => setUsuarioSeleccionado(e.target.value)}
+          displayEmpty
+          renderValue={(selected) => {
+            if (!selected) return 'Seleccione un cliente...';
+            const found = usuarios.find(u => String(u.id_usuario) === String(selected));
+            return found ? found.nombre : selected;
+          }}
         >
+          <MenuItem value="" disabled>
+            Seleccione un cliente...
+          </MenuItem>
           {usuarios.map((u) => (
             <MenuItem key={u.id_usuario} value={u.id_usuario}>{u.nombre}</MenuItem>
           ))}
@@ -196,18 +205,9 @@ const TicketsPorCliente = () => {
                   sx={{
                     borderRadius: 2,
                     borderLeft: `6px solid ${getStatusColor(ticket.estado)}`,
-                    cursor: 'pointer',
-                    '&:hover': { boxShadow: 8 }
+                    cursor: 'pointer'
                   }}
-                  onClick={() => { setHoveredTicket(null); setHoverPos(null); setSelectedTicket(ticket._raw || ticket); }}
-                  onMouseEnter={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    const left = Math.min(rect.right + 12, window.innerWidth - 320);
-                    const top = Math.min(rect.top + 12, window.innerHeight - 120);
-                    setHoverPos({ left, top });
-                    setHoveredTicket({ title: `#${ticket.id_ticket} ${ticket.titulo}`, msg: 'Haga clic para ver un resumen detallado de este ticket.' });
-                  }}
-                  onMouseLeave={() => { setHoveredTicket(null); setHoverPos(null); }}
+                  onClick={() => window.location.assign(`/tickets/${ticket.id_ticket}`)}
                 >
                   <CardContent>
                     <Typography variant="h6">#{ticket.id_ticket} - {ticket.titulo}</Typography>
@@ -220,11 +220,11 @@ const TicketsPorCliente = () => {
               </Grid>
             ))
         ) : (
-          !loading && (
+          !loading && usuarioSeleccionado ? (
             <Grid item xs={12}>
               <Typography color="text.secondary">No hay tickets para el cliente seleccionado.</Typography>
             </Grid>
-          )
+          ) : null
         )}
       </Grid>
 

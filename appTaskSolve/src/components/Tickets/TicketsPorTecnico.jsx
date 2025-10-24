@@ -49,10 +49,7 @@ const TicketsPorTecnico = () => {
           nombre: t.nombre ?? t.nombre_usuario ?? 'Sin nombre'
         }));
         setTecnicos(mapped);
-        // Preseleccionar el primer técnico disponible si no hay uno ya seleccionado
-        if (mapped.length > 0) {
-          setTecnicoSeleccionado(prev => prev || mapped[0].id_tecnico);
-        }
+        // Do not auto-select a technician; require explicit user choice
       } catch (err) {
         console.error(err);
         setError('No se pudo cargar la lista de técnicos');
@@ -162,14 +159,23 @@ const TicketsPorTecnico = () => {
         Tickets Asignados por Técnico
       </Typography>
 
-      <FormControl fullWidth sx={{ mb: 4 }}>
-        <InputLabel id="select-tecnico-label">Seleccionar Técnico</InputLabel>
+      <FormControl fullWidth variant="outlined" sx={{ mb: 4 }}>
+        <InputLabel id="select-tecnico-label" shrink>Seleccionar Técnico</InputLabel>
         <Select
           labelId="select-tecnico-label"
           value={tecnicoSeleccionado}
           label="Seleccionar Técnico"
           onChange={(e) => setTecnicoSeleccionado(e.target.value)}
+          displayEmpty
+          renderValue={(selected) => {
+            if (!selected) return 'Seleccione un técnico...';
+            const found = tecnicos.find(t => String(t.id_tecnico) === String(selected));
+            return found ? found.nombre : selected;
+          }}
         >
+          <MenuItem value="" disabled>
+            Seleccione un técnico...
+          </MenuItem>
           {tecnicos.map((t) => (
             <MenuItem key={t.id_tecnico} value={t.id_tecnico}>{t.nombre}</MenuItem>
           ))}
@@ -194,16 +200,8 @@ const TicketsPorTecnico = () => {
             <Grid item xs={12} md={6} key={ticket.id_ticket}>
               <Card
                 elevation={2}
-                sx={{ borderRadius: 2, borderLeft: `6px solid ${getStatusColor(ticket.estado)}`, cursor: 'pointer', '&:hover': { boxShadow: 8 }, position: 'relative' }}
-                onClick={() => { setHoveredTicket(null); setHoverPos(null); setSelectedTicket(ticket._raw || ticket); }}
-                onMouseEnter={(e) => {
-                  const rect = e.currentTarget.getBoundingClientRect();
-                  const left = Math.min(rect.right + 12, window.innerWidth - 320);
-                  const top = Math.min(rect.top + 12, window.innerHeight - 120);
-                  setHoverPos({ left, top });
-                  setHoveredTicket({ title: `#${ticket.id_ticket} ${ticket.titulo}`, msg: 'Haga clic para ver un resumen detallado de este ticket.' });
-                }}
-                onMouseLeave={() => { setHoveredTicket(null); setHoverPos(null); }}
+                sx={{ borderRadius: 2, borderLeft: `6px solid ${getStatusColor(ticket.estado)}`, cursor: 'pointer', position: 'relative' }}
+                onClick={() => window.location.assign(`/tickets/${ticket.id_ticket}`)}
               >
                 <CardContent>
                   <Typography variant="h6">#{ticket.id_ticket} - {ticket.titulo}</Typography>
