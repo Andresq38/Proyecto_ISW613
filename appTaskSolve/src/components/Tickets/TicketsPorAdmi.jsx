@@ -108,7 +108,7 @@ export default function TicketsPorAdmi() {
                 onClick={() => window.location.assign(`/tickets/${id}`)}
               >
                 <CardContent>
-                  <Typography variant="subtitle2" color="text.secondary">ID #{id}</Typography>
+                  <Typography variant="subtitle2" color="text.secondary">Ticket #{id}</Typography>
                   <Typography variant="h6" sx={{ mb: 1 }}>{ticket.titulo}</Typography>
 
                   <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap', mb: 1 }}>

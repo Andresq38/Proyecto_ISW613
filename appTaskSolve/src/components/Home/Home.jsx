@@ -181,7 +181,7 @@ const Home = () => {
         <TextField
           size="small"
           label="Buscar"
-          placeholder="ID, título o estado"
+          placeholder="Ticket, título o estado"
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(0); }}
         />
@@ -226,12 +226,12 @@ const Home = () => {
             <TableHead>
               <TableRow>
                 <TableCell sortDirection={orderBy === 'id_ticket' ? order : false}>
-                  <TableSortLabel
+                    <TableSortLabel
                     active={orderBy === 'id_ticket'}
                     direction={orderBy === 'id_ticket' ? order : 'asc'}
                     onClick={() => handleRequestSort('id_ticket')}
                   >
-                    ID
+                    Ticket
                   </TableSortLabel>
                 </TableCell>
                 <TableCell sortDirection={orderBy === 'titulo' ? order : false} sx={{ minWidth: 260 }}>

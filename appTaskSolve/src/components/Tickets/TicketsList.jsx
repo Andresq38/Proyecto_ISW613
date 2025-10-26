@@ -150,7 +150,7 @@ export default function TicketsList() {
                 <CardContent>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
                     <Typography variant="subtitle2" color="text.secondary">
-                      ID #{t['Identificador del Ticket']}
+                      Ticket #{t['Identificador del Ticket']}
                     </Typography>
                     {urgency?.pulse && (
                       <Chip 

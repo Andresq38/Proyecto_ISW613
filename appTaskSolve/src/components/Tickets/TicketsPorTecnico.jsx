@@ -259,7 +259,7 @@ const TicketsPorTecnico = () => {
         <DialogContent dividers>
           {selectedTicket ? (
             <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
-              <Typography variant="subtitle2" color="text.secondary">ID</Typography>
+              <Typography variant="subtitle2" color="text.secondary">Ticket</Typography>
               <Typography variant="body1">{selectedTicket.id_ticket ?? selectedTicket.id}</Typography>
 
               <Typography variant="subtitle2" color="text.secondary">Título</Typography>
