@@ -248,7 +248,7 @@ const TicketsPorTecnico = () => {
           </CardContent>
         </Card>
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          Los eventos se generan desde la fecha de asignación del ticket (fecha_asignacion). Solo se muestran eventos con fecha de asignación explícita.
+          Los eventos se generan desde la fecha de asignación del ticket fecha_asignacion.
         </Typography>
       </Box>
       {/* Dialog summary (opens on click) */}

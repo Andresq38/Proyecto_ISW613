@@ -252,7 +252,7 @@ const TicketsPorCliente = () => {
           </CardContent>
         </Card>
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          Los eventos se generan desde la fecha de creación del ticket. Si no ve fechas correctas, revise el campo de fecha en la respuesta del API.
+          Los eventos se generan desde la fecha de creación del ticket.
         </Typography>
       </Box>
       {/* Dialog summary (opens on click) */}
