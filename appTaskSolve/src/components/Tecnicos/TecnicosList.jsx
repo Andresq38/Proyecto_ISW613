@@ -53,7 +53,7 @@ export default function TecnicosList() {
           👨‍💻 Técnicos
         </Typography>
         //Botón para crear técnico//
-        <Button variant="contained" color="primary" onClick={() => navigate('/tecnicos/crear') }>
+        <Button variant="contained" color="primary" onClick={() => navigate('/tecnicos/crear')}>
           Crear técnico
         </Button>
       </Box>

@@ -12,6 +12,7 @@ import DetalleTicket from './components/Tickets/DetalleTicket';
 import TecnicosList from './components/Tecnicos/TecnicosList';
 import TecnicosHub from './components/Tecnicos/TecnicosHub';
 import TecnicoDetalle from './components/Tecnicos/TecnicoDetalle';
+import CreateTecnico from './components/Tecnicos/CreateTecnico';
 import CategoriasList from './components/Categorias/CategoriasList';
 import CategoriaDetalle from './components/Categorias/CategoriaDetalle';
 import Dashboard from './components/Dashboard/Dashboard';
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="listado" element={<TecnicosList />} />
             <Route path="asignaciones" element={<AsignacionesTecnicos />} />
             <Route path="tickets" element={<TicketsPorTecnico />} />
+            <Route path="crear" element={<CreateTecnico />} />
           </Route>
           <Route path="/tecnicos/:id" element={<TecnicoDetalle />} />
           <Route path="/categorias" element={<CategoriasList />} />
