@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Grid, Card, CardContent, Chip, Box, CircularProgress, Alert, Avatar } from '@mui/material';
+import { Container, Typography, Grid, Card, CardContent, Chip, Box, CircularProgress, Alert, Avatar, Button } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiOrigin } from '../../utils/apiBase';
@@ -48,9 +48,15 @@ export default function TecnicosList() {
 
   return (
     <Container sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 700, color: 'text.primary' }}>
-        👨‍💻 Técnicos
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
+          👨‍💻 Técnicos
+        </Typography>
+        //Botón para crear técnico//
+        <Button variant="contained" color="primary" onClick={() => navigate('/tecnicos/crear') }>
+          Crear técnico
+        </Button>
+      </Box>
 
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 300 }}>

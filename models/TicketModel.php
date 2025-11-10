@@ -7,10 +7,11 @@ class TicketModel
         $this->enlace = new MySqlConnect();
     }
     /*Listar */
-    public function all(){
+    public function all()
+    {
         try {
             //Consulta sql
-			$vSql = "SELECT 
+            $vSql = "SELECT 
                         t.id_ticket AS 'Identificador del Ticket',
                         t.titulo AS 'Título',
                         c.nombre AS 'Categoría',
@@ -38,8 +39,8 @@ class TicketModel
                     ORDER BY 
                         t.id_ticket;";
             //Ejecutar la consulta
-            $vResultado = $this->enlace->ExecuteSQL ($vSql);
-                
+            $vResultado = $this->enlace->ExecuteSQL($vSql);
+
             // Retornar el objeto
             return $vResultado;
         } catch (Exception $e) {
@@ -47,10 +48,11 @@ class TicketModel
         }
     }
 
-    public function getTicketByTecnico($idTecnico){
+    public function getTicketByTecnico($idTecnico)
+    {
         try {
             //Consulta sql
-			$vSql = "SELECT 
+            $vSql = "SELECT 
                         t.id_ticket AS 'Identificador del Ticket',
                         t.titulo AS 'Título',
                         c.nombre AS 'Categoría',
@@ -75,16 +77,17 @@ class TicketModel
                             t.id_ticket;";
 
             //Ejecutar la consulta con prepared statements
-			$vResultado = $this->enlace->executePrepared($vSql, 'i', [ (int)$idTecnico ]);
-				
-			// Retornar el objeto
-			return $vResultado;
-		} catch (Exception $e) {
+            $vResultado = $this->enlace->executePrepared($vSql, 'i', [(int)$idTecnico]);
+
+            // Retornar el objeto
+            return $vResultado;
+        } catch (Exception $e) {
             handleException($e);
         }
     }
 
-    public function getTicketByUsuario($idUsuario){
+    public function getTicketByUsuario($idUsuario)
+    {
         try {
             $vSql = "SELECT 
                         t.id_ticket AS 'Identificador del Ticket',
@@ -116,7 +119,7 @@ class TicketModel
                     ORDER BY 
                         t.id_ticket;";
 
-            $vResultado = $this->enlace->executePrepared($vSql, 's', [ (string)$idUsuario ]);
+            $vResultado = $this->enlace->executePrepared($vSql, 's', [(string)$idUsuario]);
             return $vResultado;
         } catch (Exception $e) {
             handleException($e);
@@ -129,13 +132,13 @@ class TicketModel
     {
         try {
             //Consulta sql
-			$vSql = "SELECT * FROM ticket WHERE id_ticket = ?";
-			
+            $vSql = "SELECT * FROM ticket WHERE id_ticket = ?";
+
             //Ejecutar la consulta
-			$vResultado = $this->enlace->executePrepared($vSql, 'i', [ (int)$id ]);
-			// Retornar el objeto
-			return $vResultado[0] ?? null;
-		} catch (Exception $e) {
+            $vResultado = $this->enlace->executePrepared($vSql, 'i', [(int)$id]);
+            // Retornar el objeto
+            return $vResultado[0] ?? null;
+        } catch (Exception $e) {
             handleException($e);
         }
     }
@@ -151,8 +154,8 @@ class TicketModel
             // 2. Insertar en historial_estados
             $sqlHistorial = "INSERT INTO historial_estados (id_ticket, id_estado, observaciones) VALUES (?, ?, ?)";
             $this->enlace->executePrepared_DML($sqlHistorial, 'iis', [
-                (int)$idTicket, 
-                (int)$nuevoEstado, 
+                (int)$idTicket,
+                (int)$nuevoEstado,
                 $observaciones
             ]);
 
@@ -175,129 +178,48 @@ class TicketModel
         }
     }
 
-// Obtener ticket completo por ID
-public function getTicketCompletoById($idTicket) {
-    try {
-        // Instancias de los modelos (tendrás que tener estas clases definidas con métodos get())
-        $usuarioM = new UsuarioModel();
-        $tecnicoM = new TecnicoModel();
-        $categoriaM = new Categoria_ticketModel();
-        $slaM = new SlaModel();
-        $estadoM = new EstadoModel();
-        $etiquetaM = new EtiquetaModel();
-
-        // Traer el ticket principal (solo datos básicos y IDs relacionados)
-    $sql = "SELECT * FROM ticket WHERE id_ticket = ?";
-    $resultado = $this->enlace->executePrepared($sql, 'i', [ (int)$idTicket ]);
-
-        if (empty($resultado) || !isset($resultado[0])) {
-            return null; // No existe el ticket
-        }
-
-        $ticket = $resultado[0];
-
-        // Obtener datos relacionados con comprobaciones de existencia
-        $ticket->usuario = $usuarioM->get($ticket->id_usuario) ?? null;
-        $ticket->tecnico = isset($ticket->id_tecnico) ? ($tecnicoM->get($ticket->id_tecnico) ?? null) : null;
-        $ticket->categoria = $categoriaM->get($ticket->id_categoria) ?? null;
-        // Obtener SLA usando la categoria si existe
-        if ($ticket->categoria && isset($ticket->categoria->id_sla)) {
-            $ticket->sla = $slaM->get($ticket->categoria->id_sla) ?? null;
-        } else {
-            $ticket->sla = null;
-        }
-        $ticket->estado = $estadoM->get($ticket->id_estado) ?? null;
-
-        // Obtener etiquetas asociadas a la categoria usando el método adecuado
-        if ($ticket->categoria && method_exists($categoriaM, 'getEtiquetasByCategoria')) {
-            $ticket->etiquetas = $categoriaM->getEtiquetasByCategoria($ticket->categoria->id_categoria);
-        } else {
-            $ticket->etiquetas = [];
-        }
-
-        // Calcular tiempo restante SLA (si existe SLA y tiempo_resolucion_max es numérico)
-        if ($ticket->sla && isset($ticket->sla->tiempo_resolucion_max) && is_numeric($ticket->sla->tiempo_resolucion_max)) {
-            try {
-                $fechaCreacion = new DateTime($ticket->fecha_creacion);
-                $ahora = new DateTime();
-                $interval = $fechaCreacion->diff($ahora);
-                $minutosPasados = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
-                $tiempoRestanteMin = max(0, $ticket->sla->tiempo_resolucion_max - $minutosPasados);
-                $horas = floor($tiempoRestanteMin / 60);
-                $minutos = $tiempoRestanteMin % 60;
-                $ticket->sla->tiempo_restante = "{$horas}h {$minutos}m";
-            } catch (Exception $e) {
-                $ticket->sla->tiempo_restante = null;
-            }
-        } else {
-            $ticket->sla->tiempo_restante = null;
-        }
-
-        // Adjuntar imágenes asociadas al ticket (tabla imagen tiene id_ticket e imagen)
+    // Obtener ticket completo por ID
+    public function getTicketCompletoById($idTicket)
+    {
         try {
-            $sqlImgs = "SELECT * FROM imagen WHERE id_ticket = ? ORDER BY id_imagen";
-            $imgs = $this->enlace->executePrepared($sqlImgs, 'i', [ (int)$idTicket ]);
-            $ticket->imagenes = is_array($imgs) ? $imgs : [];
-        } catch (Exception $e) {
-            $ticket->imagenes = [];
-        }
+            // Instancias de los modelos 
+            $usuarioM = new UsuarioModel();
+            $tecnicoM = new TecnicoModel();
+            $categoriaM = new Categoria_ticketModel();
+            $slaM = new SlaModel();
+            $estadoM = new EstadoModel();
+            $etiquetaM = new EtiquetaModel();
 
-        return $ticket;
+            // Traer el ticket principal (solo datos básicos y IDs relacionados)
+            $sql = "SELECT * FROM ticket WHERE id_ticket = ?";
+            $resultado = $this->enlace->executePrepared($sql, 'i', [(int)$idTicket]);
 
-    } catch (Exception $e) {
-        handleException($e);
-    }
-}
+            if (empty($resultado) || !isset($resultado[0])) {
+                return null; // No existe el ticket
+            }
 
+            $ticket = $resultado[0];
 
-
-
-// Obtener todos los tickets completos
-public function getTicketsCompletos() {
-    try {
-        // Instancias de los modelos relacionados
-        $usuarioM = new UsuarioModel();
-        $tecnicoM = new TecnicoModel();
-        $categoriaM = new Categoria_ticketModel();
-        $slaM = new SlaModel();
-        $estadoM = new EstadoModel();
-        $etiquetaM = new EtiquetaModel();
-
-        // Traer todos los tickets
-        $sql = "SELECT * FROM ticket";
-        $resultado = $this->enlace->executeSQL($sql);
-
-        /** @var array<object> $resultado */
-        if (!is_array($resultado) || empty($resultado)) {
-            return []; // No hay tickets
-        }
-
-        $ticketsCompletos = [];
-
-        foreach ($resultado as $ticket) {
             // Obtener datos relacionados con comprobaciones de existencia
             $ticket->usuario = $usuarioM->get($ticket->id_usuario) ?? null;
             $ticket->tecnico = isset($ticket->id_tecnico) ? ($tecnicoM->get($ticket->id_tecnico) ?? null) : null;
             $ticket->categoria = $categoriaM->get($ticket->id_categoria) ?? null;
-
-            // Obtener SLA usando la categoría si existe
+            // Obtener SLA usando la categoria si existe
             if ($ticket->categoria && isset($ticket->categoria->id_sla)) {
                 $ticket->sla = $slaM->get($ticket->categoria->id_sla) ?? null;
             } else {
                 $ticket->sla = null;
             }
-
-            // Obtener estado
             $ticket->estado = $estadoM->get($ticket->id_estado) ?? null;
 
-            // Obtener etiquetas asociadas a la categoría
+            // Obtener etiquetas asociadas a la categoria usando el método adecuado
             if ($ticket->categoria && method_exists($categoriaM, 'getEtiquetasByCategoria')) {
                 $ticket->etiquetas = $categoriaM->getEtiquetasByCategoria($ticket->categoria->id_categoria);
             } else {
                 $ticket->etiquetas = [];
             }
 
-            // Calcular tiempo restante del SLA (si aplica)
+            // Calcular tiempo restante SLA (si existe SLA y tiempo_resolucion_max es numérico)
             if ($ticket->sla && isset($ticket->sla->tiempo_resolucion_max) && is_numeric($ticket->sla->tiempo_resolucion_max)) {
                 try {
                     $fechaCreacion = new DateTime($ticket->fecha_creacion);
@@ -312,20 +234,182 @@ public function getTicketsCompletos() {
                     $ticket->sla->tiempo_restante = null;
                 }
             } else {
-                if ($ticket->sla) $ticket->sla->tiempo_restante = null;
+                $ticket->sla->tiempo_restante = null;
             }
 
-            // Agregar al arreglo final
-            $ticketsCompletos[] = $ticket;
+            // Adjuntar imágenes asociadas al ticket (tabla imagen tiene id_ticket e imagen)
+            try {
+                $sqlImgs = "SELECT * FROM imagen WHERE id_ticket = ? ORDER BY id_imagen";
+                $imgs = $this->enlace->executePrepared($sqlImgs, 'i', [(int)$idTicket]);
+                $ticket->imagenes = is_array($imgs) ? $imgs : [];
+            } catch (Exception $e) {
+                $ticket->imagenes = [];
+            }
+
+            return $ticket;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+
+
+
+    // Obtener todos los tickets completos
+    public function getTicketsCompletos()
+    {
+        try {
+            // Instancias de los modelos relacionados
+            $usuarioM = new UsuarioModel();
+            $tecnicoM = new TecnicoModel();
+            $categoriaM = new Categoria_ticketModel();
+            $slaM = new SlaModel();
+            $estadoM = new EstadoModel();
+            $etiquetaM = new EtiquetaModel();
+
+            // Traer todos los tickets
+            $sql = "SELECT * FROM ticket";
+            $resultado = $this->enlace->executeSQL($sql);
+
+            /** @var array<object> $resultado */
+            if (!is_array($resultado) || empty($resultado)) {
+                return []; // No hay tickets
+            }
+
+            $ticketsCompletos = [];
+
+            foreach ($resultado as $ticket) {
+                // Obtener datos relacionados con comprobaciones de existencia
+                $ticket->usuario = $usuarioM->get($ticket->id_usuario) ?? null;
+                $ticket->tecnico = isset($ticket->id_tecnico) ? ($tecnicoM->get($ticket->id_tecnico) ?? null) : null;
+                $ticket->categoria = $categoriaM->get($ticket->id_categoria) ?? null;
+
+                // Obtener SLA usando la categoría si existe
+                if ($ticket->categoria && isset($ticket->categoria->id_sla)) {
+                    $ticket->sla = $slaM->get($ticket->categoria->id_sla) ?? null;
+                } else {
+                    $ticket->sla = null;
+                }
+
+                // Obtener estado
+                $ticket->estado = $estadoM->get($ticket->id_estado) ?? null;
+
+                // Obtener etiquetas asociadas a la categoría
+                if ($ticket->categoria && method_exists($categoriaM, 'getEtiquetasByCategoria')) {
+                    $ticket->etiquetas = $categoriaM->getEtiquetasByCategoria($ticket->categoria->id_categoria);
+                } else {
+                    $ticket->etiquetas = [];
+                }
+
+                // Calcular tiempo restante del SLA (si aplica)
+                if ($ticket->sla && isset($ticket->sla->tiempo_resolucion_max) && is_numeric($ticket->sla->tiempo_resolucion_max)) {
+                    try {
+                        $fechaCreacion = new DateTime($ticket->fecha_creacion);
+                        $ahora = new DateTime();
+                        $interval = $fechaCreacion->diff($ahora);
+                        $minutosPasados = ($interval->days * 24 * 60) + ($interval->h * 60) + $interval->i;
+                        $tiempoRestanteMin = max(0, $ticket->sla->tiempo_resolucion_max - $minutosPasados);
+                        $horas = floor($tiempoRestanteMin / 60);
+                        $minutos = $tiempoRestanteMin % 60;
+                        $ticket->sla->tiempo_restante = "{$horas}h {$minutos}m";
+                    } catch (Exception $e) {
+                        $ticket->sla->tiempo_restante = null;
+                    }
+                } else {
+                    if ($ticket->sla) $ticket->sla->tiempo_restante = null;
+                }
+
+                // Agregar al arreglo final
+                $ticketsCompletos[] = $ticket;
+            }
+
+            return $ticketsCompletos;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+    	public function create($objeto) {
+        try {
+            $fechaReact = $objeto->creation_date;
+            // Crear un objeto DateTime a partir de la cadena de fecha
+            // Convertir la fecha al formato deseado para la base de datos
+            $fechaBD = date('Y-m-d', strtotime($fechaReact));
+            
+            //Consulta sql
+            
+			$vSql = "INSERT INTO ticket
+                (titulo,
+                descripcion,
+                prioridad,
+                id_estado,
+                id_usuario,
+                id_categoria,
+                fecha_creacion)
+                VALUES
+                ('$objeto->titulo',
+                '$objeto->descripcion',
+                '$objeto->prioridad',
+                '$objeto->id_estado',
+                '$objeto->id_usuario',
+                '$objeto->id_categoria',
+                '$fechaBD');";
+			
+            //Ejecutar la consulta
+			$idTicket = $this->enlace->executeSQL_DML_last( $vSql);
+            //Insertar peliculas
+			// Retornar el objeto creado
+            return $this->get($idTicket);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    public function update($objeto)
+{
+    try {
+        // Validar que venga el ID del ticket
+        if (!isset($objeto->id_ticket)) {
+            throw new Exception("El ID del ticket es obligatorio para actualizar.");
         }
 
-        return $ticketsCompletos;
+        //Construir partes dinámicas de la consulta
+        $updates = [];
+
+        if (isset($objeto->titulo)) {
+            $updates[] = "titulo = '$objeto->titulo'";
+        }
+
+        if (isset($objeto->id_estado)) {
+            $updates[] = "id_estado = $objeto->id_estado";
+        }
+
+        if (isset($objeto->comentario)) {
+            $updates[] = "comentario = '$objeto->comentario'";
+        }
+
+        if (isset($objeto->id_tecnico)) {
+            $updates[] = "id_tecnico = $objeto->id_tecnico";
+        }
+
+        //Si no hay nada que actualizar
+        if (empty($updates)) {
+            throw new Exception("No hay campos válidos para actualizar el ticket.");
+        }
+
+        // 🧩 Armar la consulta final
+        $sql = "UPDATE ticket SET " . implode(", ", $updates) .
+               " WHERE id_ticket = $objeto->id_ticket";
+
+        // ⚙️ Ejecutar la actualización
+        $resultado = $this->enlace->executeSQL_DML($sql);
+
+        // ✅ Retornar el ticket actualizado
+        return $this->get($objeto->id_ticket);
 
     } catch (Exception $e) {
         handleException($e);
     }
 }
-
 
 
 }

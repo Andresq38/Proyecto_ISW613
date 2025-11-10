@@ -36,6 +36,21 @@ class RolModel
             handleException($e);
         }
     }
+
+     public function getRolTecnico($id)
+    {
+        try {
+            //Consulta sql
+			$vSql = "SELECT * FROM rol where id_rol=2";
+			
+            //Ejecutar la consulta
+			$vResultado = $this->enlace->ExecuteSQL ( $vSql);
+			// Retornar el objeto
+			return $vResultado[0];
+		} catch (Exception $e) {
+            handleException($e);
+        }
+    }
      //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
     /*Obtener los actores de una pelicula */
     /*/public function getActorMovie($idMovie)
