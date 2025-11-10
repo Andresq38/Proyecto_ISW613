@@ -108,5 +108,42 @@ class ticket
             handleException($e);
         }
     }
+
+     public function create()
+    {
+        try {
+            $request = new Request();
+            $response = new Response();
+            //Obtener json enviado
+            $inputJSON = $request->getJSON();
+            //Instancia del modelo
+            $ticket = new TicketModel();
+            //Acción del modelo a ejecutar
+            $result = $ticket->create($inputJSON);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    //PUT actualizar
+    public function update()
+    {
+        try {
+            $request = new Request();
+            $response = new Response();
+            //Obtener json enviado
+            $inputJSON = $request->getJSON();
+            //Instancia del modelo
+            $ticket = new TicketModel();
+            //Acción del modelo a ejecutar
+            $result = $ticket->update($inputJSON);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
     
 }
