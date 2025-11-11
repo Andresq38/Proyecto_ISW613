@@ -1,0 +1,8 @@
+{
+  "id_usuario": "1-1111-1111",
+  "nombre": "Juan Perez Tecnico",
+  "correo": "juan.perez.tecnico@test.com",
+  "password": "test123",
+  "disponibilidad": true,
+  "carga_trabajo": 0
+}

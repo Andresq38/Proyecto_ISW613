@@ -405,12 +405,24 @@ class TicketModel
             if ($titulo === '' || $descripcion === '' || !$idUsuario) {
                 throw new Exception('Faltan campos requeridos: titulo, descripcion, id_usuario');
             }
+            // Longitudes y reglas básicas
+            if (mb_strlen($titulo) < 5 || mb_strlen($titulo) > 120) {
+                throw new Exception('El título debe tener entre 5 y 120 caracteres');
+            }
+            if (mb_strlen($descripcion) < 10 || mb_strlen($descripcion) > 2000) {
+                throw new Exception('La descripción debe tener entre 10 y 2000 caracteres');
+            }
             // Normalizar prioridad a ENUM permitido
             $validP = ['Baja','Media','Alta'];
             if (!in_array($prioridad, $validP, true)) { $prioridad = 'Media'; }
 
             // Derivar categoría a partir de etiqueta si no fue enviada
             if (!$idCategoria && $idEtiqueta) {
+                // Verificar existencia de etiqueta
+                $chkEt = $this->enlace->executePrepared("SELECT id_etiqueta FROM etiqueta WHERE id_etiqueta = ?", 'i', [ (int)$idEtiqueta ], 'asoc');
+                if (empty($chkEt)) {
+                    throw new Exception('La etiqueta seleccionada no existe');
+                }
                 $sqlCat = "SELECT id_categoria_ticket FROM categoria_etiqueta WHERE id_etiqueta = ? LIMIT 1";
                 $cat = $this->enlace->executePrepared($sqlCat, 'i', [ (int)$idEtiqueta ], 'asoc');
                 if (!empty($cat) && isset($cat[0]['id_categoria_ticket'])) {

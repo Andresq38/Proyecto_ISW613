@@ -140,7 +140,14 @@ class RoutesController
                                 case 'POST':
                                     if ($action) {
                                         if (method_exists($controllerClass, $action)) {
-                                            $response->$action();
+                                            // Pasar parámetros si existen en la URL
+                                            if ($param1 && $param2) {
+                                                $response->$action($param1, $param2);
+                                            } elseif ($param1) {
+                                                $response->$action($param1);
+                                            } else {
+                                                $response->$action();
+                                            }
                                         } else {
                                             $json = array(
                                                 'status' => 404,

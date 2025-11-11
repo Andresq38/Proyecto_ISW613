@@ -14,6 +14,7 @@ import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import { getApiOrigin } from '../../utils/apiBase';
+import { formatDateTime } from '../../utils/format';
 
 export default function DetalleTicket() {
   const { id } = useParams();
@@ -250,8 +251,8 @@ export default function DetalleTicket() {
         <Typography><strong>Descripción:</strong> {ticket.descripcion}</Typography>
         <Typography><strong>Prioridad:</strong> {ticket.prioridad}</Typography>
         <Typography><strong>Estado:</strong> {ticket.estado?.nombre || 'N/A'}</Typography>
-        <Typography><strong>Fecha creación:</strong> {ticket.fecha_creacion}</Typography>
-        <Typography><strong>Fecha cierre:</strong> {ticket.fecha_cierre || 'No cerrado'}</Typography>
+  <Typography><strong>Fecha creación:</strong> {formatDateTime(ticket.fecha_creacion)}</Typography>
+  <Typography><strong>Fecha cierre:</strong> {ticket.fecha_cierre ? formatDateTime(ticket.fecha_cierre) : 'No cerrado'}</Typography>
       </Paper>
 
       {/* Métricas de SLA y Cumplimiento */}
@@ -302,6 +303,18 @@ export default function DetalleTicket() {
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 600, color: ticket.sla.tiempo_restante?.includes('-') ? 'error.main' : 'success.main' }}>
                   {ticket.sla.tiempo_restante || 'N/A'}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mt: 1 }}>
+                  Límite de Respuesta
+                </Typography>
+                <Typography variant="body2">
+                  {ticket.sla_fecha_respuesta ? formatDateTime(ticket.sla_fecha_respuesta) : 'N/A'}
+                </Typography>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'text.secondary', mt: 1 }}>
+                  Límite de Resolución
+                </Typography>
+                <Typography variant="body2">
+                  {ticket.sla_fecha_resolucion ? formatDateTime(ticket.sla_fecha_resolucion) : 'N/A'}
                 </Typography>
               </Box>
             </Grid>

@@ -28,6 +28,7 @@ import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import { getApiOrigin } from '../../utils/apiBase';
+import { formatDateTime } from '../../utils/format';
 
 // Usuario solicitante fijo mientras no hay autenticación
 const CURRENT_USER = '1-1343-0736';
@@ -52,6 +53,8 @@ export default function CreateTicket() {
     id_usuario: CURRENT_USER,
     id_etiqueta: ''
   });
+  const [usuarioInfo, setUsuarioInfo] = useState(null);
+  const [fechaCreacion] = useState(() => new Date());
   const [touched, setTouched] = useState({});
 
   const errors = {
@@ -75,13 +78,23 @@ export default function CreateTicket() {
     async function load() {
       try {
         setError('');
-        // Cargar prioridades
-        const [pRes, eRes] = await Promise.all([
+        // Cargar prioridades, etiquetas y usuario solicitante
+        const [pRes, eRes, uRes] = await Promise.all([
           axios.get(`${apiBase}/ticket/prioridades`, { signal: controller.signal }),
-          axios.get(`${apiBase}/etiqueta`, { signal: controller.signal })
+          axios.get(`${apiBase}/etiqueta`, { signal: controller.signal }),
+          axios.get(`${apiBase}/usuario/${CURRENT_USER}`, { signal: controller.signal })
         ]);
         setPrioridades(Array.isArray(pRes.data) ? pRes.data : []);
         setEtiquetas(Array.isArray(eRes.data) ? eRes.data : (eRes.data?.data || []));
+        // Normalizar usuario
+        const u = uRes?.data;
+        if (u && (u.id_usuario || u.nombre)) {
+          setUsuarioInfo({
+            id: u.id_usuario ?? CURRENT_USER,
+            nombre: u.nombre ?? 'Usuario',
+            correo: u.correo ?? '—'
+          });
+        }
       } catch (e) {
         if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
           setError(e.response?.data?.error || e.message || 'Error al cargar datos iniciales');
@@ -322,11 +335,20 @@ export default function CreateTicket() {
               <TextField
                 fullWidth
                 label="Usuario solicitante"
-                value={form.id_usuario}
+                value={usuarioInfo ? `${usuarioInfo.id} - ${usuarioInfo.nombre}` : form.id_usuario}
                 InputProps={{
                   readOnly: true,
                   startAdornment: <PersonOutlineIcon sx={{ mr: 1, color: 'primary.main' }} />
                 }}
+                helperText={usuarioInfo?.correo ? usuarioInfo.correo : ''}
+              />
+            </Grid>
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Fecha de creación"
+                value={formatDateTime(fechaCreacion)}
+                InputProps={{ readOnly: true }}
               />
             </Grid>
 

@@ -74,4 +74,17 @@ class tecnico
             handleException($e);
         }
     }
+
+    //POST toggle disponibilidad
+    public function toggleDisponibilidad($id_tecnico)
+    {
+        try {
+            $response = new Response();
+            $tecnico = new TecnicoModel();
+            $result = $tecnico->toggleDisponibilidad($id_tecnico);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }

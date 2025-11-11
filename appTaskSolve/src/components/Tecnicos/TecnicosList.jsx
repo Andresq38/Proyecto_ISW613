@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Grid, Card, CardContent, Chip, Box, CircularProgress, Alert, Avatar, Button } from '@mui/material';
+import { Container, Typography, Grid, Card, CardContent, Chip, Box, CircularProgress, Alert, Avatar, Button, Divider } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiOrigin } from '../../utils/apiBase';
 import PersonIcon from '@mui/icons-material/Person';
 import EmailIcon from '@mui/icons-material/Email';
 import AssignmentIcon from '@mui/icons-material/Assignment';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import WarningIcon from '@mui/icons-material/Warning';
 
 // Centralizado
 const getApiBase = () => getApiOrigin();
@@ -79,7 +81,12 @@ export default function TecnicosList() {
       <Grid container spacing={3}>
         {items.map((t) => {
           const ticketsAbiertos = parseInt(t.tickets_abiertos) || 0;
-          const chipColor = ticketsAbiertos > 2 ? 'error' : (ticketsAbiertos > 0 ? 'warning' : 'success');
+          // Disponibilidad calculada basada en carga (< 5 tickets = disponible)
+          const disponibleCalculada = ticketsAbiertos < 5;
+          
+          // Color según carga de trabajo
+          const cargaColor = ticketsAbiertos >= 5 ? 'error' : (ticketsAbiertos >= 3 ? 'warning' : 'success');
+          const cargaLabel = ticketsAbiertos >= 5 ? 'Saturado' : (ticketsAbiertos >= 3 ? 'Ocupado' : 'Disponible');
           
           return (
             <Grid item xs={12} sm={6} md={4} key={t.id_tecnico}>
@@ -87,30 +94,59 @@ export default function TecnicosList() {
                 elevation={3}
                 sx={{ 
                   height: '100%',
+                  minHeight: 270,
                   cursor: 'pointer',
                   transition: 'transform 0.2s, box-shadow 0.2s',
+                  borderTop: `4px solid`,
+                  borderTopColor: disponibleCalculada ? 'success.main' : 'warning.main',
                   '&:hover': {
                     transform: 'translateY(-4px)',
                     boxShadow: 6,
-                  }
+                  },
+                  display: 'flex',
+                  flexDirection: 'column'
                 }} 
                 onClick={() => navigate(`/tecnicos/${t.id_tecnico}`)}
               >
-                <CardContent sx={{ p: 3 }}>
+                <CardContent sx={{ 
+                  p: 3, 
+                  flex: 1,
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  '&:last-child': { pb: 3 }
+                }}>
                   {/* Avatar y nombre */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2.5, height: 64 }}>
                     <Avatar 
                       sx={{ 
                         bgcolor: 'primary.main', 
                         width: 56, 
                         height: 56,
-                        mr: 2 
+                        mr: 2,
+                        flexShrink: 0
                       }}
                     >
                       <PersonIcon sx={{ fontSize: 32 }} />
                     </Avatar>
-                    <Box>
-                      <Typography variant="h6" sx={{ fontWeight: 600, lineHeight: 1.2 }}>
+                    <Box sx={{ 
+                      flex: 1, 
+                      minWidth: 0,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      height: '100%'
+                    }}>
+                      <Typography 
+                        variant="h6" 
+                        sx={{ 
+                          fontWeight: 600, 
+                          lineHeight: 1.4, 
+                          fontSize: '1.125rem',
+                          mb: 0.75
+                        }} 
+                        noWrap 
+                        title={t.nombre}
+                      >
                         {t.nombre}
                       </Typography>
                       <Chip 
@@ -118,32 +154,107 @@ export default function TecnicosList() {
                         size="small" 
                         color="primary" 
                         variant="outlined"
-                        sx={{ mt: 0.5 }}
+                        sx={{ 
+                          height: 22, 
+                          fontSize: '0.7rem', 
+                          alignSelf: 'flex-start',
+                          '& .MuiChip-label': { px: 1.5, py: 0 } 
+                        }}
                       />
                     </Box>
                   </Box>
 
                   {/* Correo */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                    <EmailIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
-                    <Typography variant="body2" color="text.secondary" sx={{ wordBreak: 'break-word' }}>
-                      {t.correo}
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5, height: 28 }}>
+                    <EmailIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20, flexShrink: 0 }} />
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      noWrap 
+                      sx={{ 
+                        overflow: 'hidden', 
+                        textOverflow: 'ellipsis', 
+                        flex: 1, 
+                        fontSize: '0.875rem', 
+                        lineHeight: 1.75
+                      }} 
+                      title={t.correo || ''}
+                    >
+                      {t.correo || '—'}
                     </Typography>
                   </Box>
 
+                  <Divider sx={{ my: 2 }} />
+
+                  {/* Disponibilidad */}
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, height: 32 }}>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        fontSize: '0.875rem', 
+                        lineHeight: 2,
+                        height: '100%'
+                      }}
+                    >
+                      {disponibleCalculada ? (
+                        <CheckCircleIcon sx={{ fontSize: 18, mr: 0.5, color: 'success.main', flexShrink: 0 }} />
+                      ) : (
+                        <WarningIcon sx={{ fontSize: 18, mr: 0.5, color: 'warning.main', flexShrink: 0 }} />
+                      )}
+                      Disponibilidad:
+                    </Typography>
+                    <Chip 
+                      label={cargaLabel}
+                      color={cargaColor}
+                      size="small"
+                      variant="filled"
+                      sx={{ 
+                        fontWeight: 600, 
+                        width: 95, 
+                        height: 26, 
+                        fontSize: '0.75rem', 
+                        flexShrink: 0,
+                        '& .MuiChip-label': {
+                          px: 1.5
+                        }
+                      }}
+                    />
+                  </Box>
+
                   {/* Tickets abiertos */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                      <AssignmentIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Carga de trabajo:
-                      </Typography>
-                    </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 32 }}>
+                    <Typography 
+                      variant="body2" 
+                      color="text.secondary" 
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        fontSize: '0.875rem', 
+                        lineHeight: 2,
+                        height: '100%'
+                      }}
+                    >
+                      <AssignmentIcon sx={{ fontSize: 18, mr: 0.5, flexShrink: 0 }} />
+                      Tickets abiertos:
+                    </Typography>
                     <Chip 
                       label={ticketsAbiertos} 
-                      color={chipColor} 
+                      color={ticketsAbiertos > 0 ? 'info' : 'default'}
                       size="small"
-                      sx={{ fontWeight: 700 }}
+                      variant="outlined"
+                      sx={{ 
+                        fontWeight: 600, 
+                        width: 45, 
+                        height: 26, 
+                        fontSize: '0.75rem', 
+                        flexShrink: 0,
+                        '& .MuiChip-label': {
+                          px: 1.5
+                        }
+                      }}
                     />
                   </Box>
                 </CardContent>

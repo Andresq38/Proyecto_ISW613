@@ -98,28 +98,72 @@ class TecnicoModel
     public function create($objeto)
     {
         try {
+            // --- Validaciones ---
+            if (empty($objeto->id_usuario) || empty($objeto->nombre) || empty($objeto->correo) || empty($objeto->password)) {
+                throw new Exception("Campos requeridos: id_usuario, nombre, correo, password");
+            }
 
-            // --- 1. Crear el usuario ---
+            // Validar longitud de nombre (3-150 caracteres)
+            if (strlen($objeto->nombre) < 3 || strlen($objeto->nombre) > 150) {
+                throw new Exception("El nombre debe tener entre 3 y 150 caracteres");
+            }
+
+            // Validar formato de correo
+            if (!filter_var($objeto->correo, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception("Formato de correo inválido");
+            }
+
+            // Validar que el correo no esté duplicado
+            $sqlCheckEmail = "SELECT COUNT(*) as count FROM usuario WHERE correo = ?";
+            $resultEmail = $this->enlace->executePrepared($sqlCheckEmail, 's', [$objeto->correo]);
+            if ($resultEmail[0]->count > 0) {
+                throw new Exception("El correo ya está registrado");
+            }
+
+            // Validar que el id_usuario no esté duplicado
+            $sqlCheckId = "SELECT COUNT(*) as count FROM usuario WHERE id_usuario = ?";
+            $resultId = $this->enlace->executePrepared($sqlCheckId, 's', [$objeto->id_usuario]);
+            if ($resultId[0]->count > 0) {
+                throw new Exception("El ID de usuario ya está registrado");
+            }
+
+            // Validar longitud mínima de password
+            if (strlen($objeto->password) < 6) {
+                throw new Exception("La contraseña debe tener al menos 6 caracteres");
+            }
+
+            // Hash de la contraseña
+            $hashedPassword = hash('sha256', $objeto->password);
+
+            // Defaults
+            $disponibilidad = isset($objeto->disponibilidad) ? (bool)$objeto->disponibilidad : true;
+            $cargaTrabajo = isset($objeto->carga_trabajo) ? (int)$objeto->carga_trabajo : 0;
+
+            // --- 1. Crear el usuario con prepared statement ---
             $sqlUsuario = "INSERT INTO usuario (id_usuario, nombre, correo, password, id_rol)
-                       VALUES (
-                           '$objeto->id_usuario',
-                           '$objeto->nombre',
-                           '$objeto->correo',
-                           '$objeto->password',
-                           2  -- Rol por defecto: Técnico
-                       )";
-            $this->enlace->executeSQL_DML($sqlUsuario);
+                       VALUES (?, ?, ?, ?, 2)";
+            $this->enlace->executePrepared($sqlUsuario, 'ssss', [
+                $objeto->id_usuario,
+                $objeto->nombre,
+                $objeto->correo,
+                $hashedPassword
+            ]);
 
             // --- 2. Crear el técnico asociado ---
             $sqlTecnico = "INSERT INTO tecnico (id_usuario, disponibilidad, carga_trabajo)
-                       VALUES (
-                           '$objeto->id_usuario',
-                           " . ($objeto->disponibilidad ? 'TRUE' : 'FALSE') . ",
-                           $objeto->carga_trabajo
-                       )";
-            $idTecnico = $this->enlace->executeSQL_DML_last($sqlTecnico);
+                       VALUES (?, ?, ?)";
+            $this->enlace->executePrepared($sqlTecnico, 'sii', [
+                $objeto->id_usuario,
+                $disponibilidad ? 1 : 0,
+                $cargaTrabajo
+            ]);
 
-            // --- 3. Retornar el técnico recién creado ---
+            // --- 3. Obtener el id_tecnico recién creado ---
+            $sqlGetId = "SELECT id_tecnico FROM tecnico WHERE id_usuario = ?";
+            $result = $this->enlace->executePrepared($sqlGetId, 's', [$objeto->id_usuario]);
+            $idTecnico = $result[0]->id_tecnico;
+
+            // --- 4. Retornar el técnico recién creado ---
             return $this->get($idTecnico);
         } catch (Exception $e) {
             handleException($e);
@@ -127,31 +171,114 @@ class TecnicoModel
     }
 
     public function update($objeto)
-{
-    try {
+    {
+        try {
+            // --- Validaciones ---
+            if (empty($objeto->id_tecnico) || empty($objeto->id_usuario)) {
+                throw new Exception("Campos requeridos: id_tecnico, id_usuario");
+            }
 
+            // Validar longitud de nombre si se proporciona
+            if (isset($objeto->nombre) && (strlen($objeto->nombre) < 3 || strlen($objeto->nombre) > 150)) {
+                throw new Exception("El nombre debe tener entre 3 y 150 caracteres");
+            }
 
-        // --- 1. Actualizar datos del usuario ---
-        $sqlUsuario = "UPDATE usuario SET
-                           nombre = '$objeto->nombre',
-                           correo = '$objeto->correo',
-                           password = '$objeto->password',
-                           id_rol = $objeto->id_rol
-                       WHERE id_usuario = '$objeto->id_usuario'";
-        $this->enlace->executeSQL_DML($sqlUsuario);
+            // Validar formato de correo si se proporciona
+            if (isset($objeto->correo) && !filter_var($objeto->correo, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception("Formato de correo inválido");
+            }
 
-        // --- 2. Actualizar datos del técnico ---
-        $sqlTecnico = "UPDATE tecnico SET
-                           disponibilidad = " . ($objeto->disponibilidad ? 'TRUE' : 'FALSE') . ",
-                       WHERE id_tecnico = $objeto->id_tecnico";
-        $this->enlace->executeSQL_DML($sqlTecnico);
+            // Validar unicidad del correo si se está actualizando
+            if (isset($objeto->correo)) {
+                $sqlCheckEmail = "SELECT COUNT(*) as count FROM usuario WHERE correo = ? AND id_usuario != ?";
+                $resultEmail = $this->enlace->executePrepared($sqlCheckEmail, 'ss', [$objeto->correo, $objeto->id_usuario]);
+                if ($resultEmail[0]->count > 0) {
+                    throw new Exception("El correo ya está registrado por otro usuario");
+                }
+            }
 
-        // Retornar el técnico actualizado
-        return $this->get($objeto->id_tecnico);
+            // Hash de la contraseña si se proporciona una nueva
+            $updatePassword = false;
+            $hashedPassword = null;
+            if (isset($objeto->password) && !empty($objeto->password)) {
+                if (strlen($objeto->password) < 6) {
+                    throw new Exception("La contraseña debe tener al menos 6 caracteres");
+                }
+                $hashedPassword = hash('sha256', $objeto->password);
+                $updatePassword = true;
+            }
 
-    } catch (Exception $e) {
-    
-        handleException($e);
+            // --- 1. Actualizar datos del usuario ---
+            if (isset($objeto->nombre) || isset($objeto->correo) || $updatePassword) {
+                $updates = [];
+                $types = '';
+                $params = [];
+
+                if (isset($objeto->nombre)) {
+                    $updates[] = "nombre = ?";
+                    $types .= 's';
+                    $params[] = $objeto->nombre;
+                }
+                if (isset($objeto->correo)) {
+                    $updates[] = "correo = ?";
+                    $types .= 's';
+                    $params[] = $objeto->correo;
+                }
+                if ($updatePassword) {
+                    $updates[] = "password = ?";
+                    $types .= 's';
+                    $params[] = $hashedPassword;
+                }
+
+                $types .= 's';
+                $params[] = $objeto->id_usuario;
+
+                $sqlUsuario = "UPDATE usuario SET " . implode(', ', $updates) . " WHERE id_usuario = ?";
+                $this->enlace->executePrepared($sqlUsuario, $types, $params);
+            }
+
+            // --- 2. Actualizar datos del técnico ---
+            if (isset($objeto->disponibilidad)) {
+                $sqlTecnico = "UPDATE tecnico SET disponibilidad = ? WHERE id_tecnico = ?";
+                $this->enlace->executePrepared($sqlTecnico, 'ii', [
+                    $objeto->disponibilidad ? 1 : 0,
+                    (int)$objeto->id_tecnico
+                ]);
+            }
+
+            // Retornar el técnico actualizado
+            return $this->get($objeto->id_tecnico);
+
+        } catch (Exception $e) {
+            handleException($e);
+        }
     }
-}
+
+    /* Toggle disponibilidad */
+    public function toggleDisponibilidad($id_tecnico)
+    {
+        try {
+            // Obtener disponibilidad actual
+            $sql = "SELECT disponibilidad FROM tecnico WHERE id_tecnico = ?";
+            $result = $this->enlace->executePrepared($sql, 'i', [(int)$id_tecnico]);
+            
+            if (empty($result)) {
+                throw new Exception("Técnico no encontrado");
+            }
+
+            // executePrepared retorna objetos por defecto (resultType = "obj")
+            $disponibilidadActual = isset($result[0]->disponibilidad) ? (int)$result[0]->disponibilidad : 0;
+            $nuevaDisponibilidad = $disponibilidadActual === 1 ? 0 : 1;
+
+            // Actualizar disponibilidad
+            $sqlUpdate = "UPDATE tecnico SET disponibilidad = ? WHERE id_tecnico = ?";
+            $this->enlace->executePrepared($sqlUpdate, 'ii', [$nuevaDisponibilidad, (int)$id_tecnico]);
+
+            // Retornar el técnico actualizado
+            return $this->get($id_tecnico);
+
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }
