@@ -46,18 +46,28 @@ class RoutesController
         
         //include "routes/routes.php";
         if (isset($_SERVER['REQUEST_URI']) && !empty($_SERVER['REQUEST_URI'])) {
-            //Gestion de imagenes
-            if (strpos($_SERVER['REQUEST_URI'], '/uploads/') === 0) {
-                $filePath = __DIR__ . $_SERVER['REQUEST_URI'];
-                
-                // Verificar si el archivo existe
-                if (file_exists($filePath)) {
-                    header('Content-Type: ' . mime_content_type($filePath));
+            // Gestión de archivos estáticos en /uploads (soporta /uploads/* y /apiticket/uploads/*)
+            $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+            if (strpos($uri, '/uploads/') === 0 || strpos($uri, '/apiticket/uploads/') === 0) {
+                // Normalizar ruta relativa a la carpeta uploads del proyecto
+                $prefix = strpos($uri, '/apiticket/uploads/') === 0 ? '/apiticket/uploads/' : '/uploads/';
+                $relative = substr($uri, strlen($prefix));
+                // Evitar traversal
+                $relative = str_replace(['..', '\\', '%2e%2e'], '', $relative);
+                $baseDir = realpath(__DIR__ . '/../uploads');
+                $filePath = $baseDir ? $baseDir . DIRECTORY_SEPARATOR . $relative : null;
+
+                if ($filePath && file_exists($filePath)) {
+                    $mime = function_exists('mime_content_type') ? mime_content_type($filePath) : 'application/octet-stream';
+                    header('Access-Control-Allow-Origin: *');
+                    header('Content-Type: ' . $mime);
+                    header('Cache-Control: public, max-age=31536000, immutable');
                     readfile($filePath);
                     exit;
                 } else {
                     http_response_code(404);
                     echo 'Archivo no encontrado.';
+                    exit;
                 }
             }
              //FIN Gestion de imagenes

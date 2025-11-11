@@ -1,0 +1,26 @@
+[11-11-2025 19:00:05] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:00:10] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:00:17] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:00:21] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:00:23] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:00:27] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:01:07] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:01:07] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:01:10] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:01:15] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:01:17] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:01:17] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:01:18] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:01:23] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 19:03:25] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 29 - Message: No se puede establecer una conexión ya que el equipo de destino denegó expresamente dicha conexión
+ [11-11-2025 20:52:06] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 130 - Message: Unknown column 'url' in 'field list'
+ [11-11-2025 20:52:14] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
+ [11-11-2025 20:52:14] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
+ [11-11-2025 20:52:23] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
+ [11-11-2025 20:52:23] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
+ [11-11-2025 20:52:52] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
+ [11-11-2025 20:52:52] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
+ [11-11-2025 20:55:39] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
+ [11-11-2025 20:55:40] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
+ [11-11-2025 20:57:01] [user] error: File: C:\xampp\htdocs\apiticket\controllers\core\MySqlConnect.php - line: 89 - Message: Table 'ticket_system.ticket_imagen' doesn't exist
+ 

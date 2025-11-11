@@ -37,17 +37,16 @@ class ImagenModel
         }
     }
 
-    /* Crear nueva imagen */
-    public function crear($url, $idUsuario = null, $idHistorial = null)
+    /* Crear nueva imagen para un ticket (ajustado al esquema actual: imagen(id_ticket, imagen)) */
+    public function crear($idTicket, $fileName)
     {
         try {
-            $vSql = "INSERT INTO imagen (url, id_usuario, id_historial) VALUES (?, ?, ?)";
-            $this->enlace->executePrepared_DML($vSql, 'ssi', [$url, $idUsuario, $idHistorial]);
-            
-            // Obtener el ID de la imagen insertada
+            $sql = "INSERT INTO imagen (id_ticket, imagen) VALUES (?, ?)";
+            $this->enlace->executePrepared_DML($sql, 'is', [(int)$idTicket, (string)$fileName]);
+
+            // Obtener el ID insertado
             $lastIdSql = "SELECT LAST_INSERT_ID() as id";
             $result = $this->enlace->ExecuteSQL($lastIdSql);
-            
             return $result[0]->id ?? null;
         } catch (Exception $e) {
             handleException($e);
@@ -55,30 +54,17 @@ class ImagenModel
         }
     }
 
-    /* Asociar imagen a ticket */
+    /* Métodos de asociación no aplican al esquema actual; se mantienen no operativos por compatibilidad */
     public function asociarATicket($idImagen, $idTicket, $descripcion = null)
     {
-        try {
-            $vSql = "INSERT INTO ticket_imagen (id_ticket, id_imagen, descripcion) VALUES (?, ?, ?)";
-            $this->enlace->executePrepared_DML($vSql, 'iis', [(int)$idTicket, (int)$idImagen, $descripcion]);
-            return true;
-        } catch (Exception $e) {
-            handleException($e);
-            return false;
-        }
+        // Esquema actual no usa tabla intermedia ticket_imagen
+        return false;
     }
 
-    /* Asociar imagen a historial */
     public function asociarAHistorial($idImagen, $idHistorial)
     {
-        try {
-            $vSql = "INSERT INTO historial_imagen (id_historial_estado, id_imagen) VALUES (?, ?)";
-            $this->enlace->executePrepared_DML($vSql, 'ii', [(int)$idHistorial, (int)$idImagen]);
-            return true;
-        } catch (Exception $e) {
-            handleException($e);
-            return false;
-        }
+        // Esquema actual no define tabla historial_imagen
+        return false;
     }
     
 }

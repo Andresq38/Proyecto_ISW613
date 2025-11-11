@@ -493,11 +493,21 @@ export default function DetalleTicket() {
         <Typography variant="h6" color="primary" gutterBottom>Imágenes del Ticket</Typography>
         {Array.isArray(ticket.imagenes) && ticket.imagenes.length > 0 ? (
           (() => {
-            const UPLOADS_BASE = 'http://localhost:81/apiticket/uploads';
+            const apiBase = getApiOrigin();
+            const UPLOADS_BASE = `${apiBase}/apiticket/uploads`;
+            const toSrc = (img) => {
+              const raw = img?.url || img?.imagen || img?.path || img?.image || '';
+              if (!raw) return '';
+              if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
+              if (raw.startsWith('/apiticket/')) return `${apiBase}${raw}`; // backend already provided full path under api prefix
+              return `${UPLOADS_BASE}/${raw}`; // assume it's just a filename
+            };
+
             const imgs = ticket.imagenes;
             const safeIndex = ((mainImageIndex % imgs.length) + imgs.length) % imgs.length;
             const main = imgs[safeIndex];
-            const filename = main?.imagen || main?.url || main?.path || main?.image || '';
+            const mainSrc = toSrc(main);
+
             return (
               <Box>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -505,8 +515,20 @@ export default function DetalleTicket() {
                   <Box sx={{ flex: 1, textAlign: 'center' }}>
                     <Box
                       component="img"
-                      src={`${UPLOADS_BASE}/${filename}`}
-                      alt={main?.imagen || ''}
+                      src={mainSrc}
+                      alt=""
+                      loading="lazy"
+                      onError={(e) => { 
+                        e.currentTarget.style.display = 'none';
+                        const parent = e.currentTarget.parentElement;
+                        if (parent && !parent.querySelector('.image-error-msg')) {
+                          const msg = document.createElement('div');
+                          msg.className = 'image-error-msg';
+                          msg.textContent = 'Imagen no disponible';
+                          msg.style.cssText = 'color: #999; padding: 40px; text-align: center;';
+                          parent.appendChild(msg);
+                        }
+                      }}
                       sx={{ maxWidth: '100%', maxHeight: 420, borderRadius: 2 }}
                     />
                     {main?.descripcion && <Typography variant="caption" display="block">{main.descripcion}</Typography>}
@@ -514,14 +536,18 @@ export default function DetalleTicket() {
                   <Button size="small" disabled={imgs.length <= 1} onClick={() => setMainImageIndex(i => (i + 1) % imgs.length)}>&gt;</Button>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1, mt: 2, overflowX: 'auto' }}>
-                  {imgs.map((im, idx) => {
-                    const fn = im?.imagen || im?.url || im?.path || im?.image || '';
-                    return (
-                      <Box key={im.id_imagen ?? idx} onClick={() => setMainImageIndex(idx)} sx={{ cursor: 'pointer', border: idx === safeIndex ? '2px solid #1976d2' : '2px solid transparent', borderRadius: 1 }}>
-                        <Box component="img" src={`${UPLOADS_BASE}/${fn}`} alt={im?.imagen || ''} sx={{ width: 100, height: 70, objectFit: 'cover', borderRadius: 1 }} />
-                      </Box>
-                    );
-                  })}
+                  {imgs.map((im, idx) => (
+                    <Box key={im.id_imagen ?? idx} onClick={() => setMainImageIndex(idx)} sx={{ cursor: 'pointer', border: idx === safeIndex ? '2px solid #1976d2' : '2px solid transparent', borderRadius: 1 }}>
+                      <Box 
+                        component="img" 
+                        src={toSrc(im)} 
+                        alt="" 
+                        loading="lazy"
+                        onError={(e) => { e.currentTarget.style.visibility = 'hidden'; }}
+                        sx={{ width: 100, height: 70, objectFit: 'cover', borderRadius: 1 }} 
+                      />
+                    </Box>
+                  ))}
                 </Box>
               </Box>
             );

@@ -14,6 +14,19 @@ class ticket
             handleException($e);
         }
     }
+    /**
+     * Devuelve las prioridades disponibles desde el ENUM de la tabla ticket.
+     * No se consulta la BD: se exponen valores conocidos para poblar el selector del frontend.
+     */
+    public function prioridades()
+    {
+        try {
+            $response = new Response();
+            $response->toJSON(['Baja', 'Media', 'Alta']);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
     public function get($param)
     {
         try {

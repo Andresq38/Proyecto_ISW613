@@ -86,40 +86,85 @@ class imagen
             $fileName = 'ticket_' . $idTicket . '_' . uniqid() . '.' . $extension;
             $filePath = $uploadDir . $fileName;
 
+            // Verificar que el directorio existe y tiene permisos
+            if (!is_writable($uploadDir)) {
+                $response->toJSON([
+                    'success' => false,
+                    'message' => 'El directorio de uploads no tiene permisos de escritura',
+                    'debug' => [
+                        'uploadDir' => $uploadDir,
+                        'exists' => is_dir($uploadDir),
+                        'writable' => is_writable($uploadDir)
+                    ]
+                ]);
+                return;
+            }
+
             // Mover archivo al directorio de uploads
             if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+                $error = error_get_last();
                 $response->toJSON([
                     'success' => false,
-                    'message' => 'Error al guardar el archivo'
+                    'message' => 'Error al guardar el archivo',
+                    'debug' => [
+                        'tmp_name' => $file['tmp_name'],
+                        'destination' => $filePath,
+                        'tmp_exists' => file_exists($file['tmp_name']),
+                        'error' => $error
+                    ]
                 ]);
                 return;
             }
 
-            // Guardar información en base de datos
-            $url = '/apiticket/uploads/' . $fileName;
+            // Verificar que el archivo se guardó correctamente
+            if (!file_exists($filePath)) {
+                $response->toJSON([
+                    'success' => false,
+                    'message' => 'El archivo no se guardó correctamente',
+                    'debug' => [
+                        'filePath' => $filePath,
+                        'exists' => file_exists($filePath)
+                    ]
+                ]);
+                return;
+            }
+
+            // Guardar información en base de datos (ajustado al esquema actual)
             $imagenModel = new ImagenModel();
-            $idImagen = $imagenModel->crear($url, $idUsuario, null);
+            $idImagen = $imagenModel->crear($idTicket, $fileName);
 
             if (!$idImagen) {
-                // Si falla, eliminar el archivo
-                unlink($filePath);
+                // Si falla la inserción en BD, eliminar el archivo físico (rollback)
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
                 $response->toJSON([
                     'success' => false,
-                    'message' => 'Error al registrar la imagen en la base de datos'
+                    'message' => 'Error al registrar la imagen en la base de datos',
+                    'debug' => [
+                        'fileName' => $fileName,
+                        'fileDeleted' => !file_exists($filePath)
+                    ]
                 ]);
                 return;
             }
 
-            // Asociar imagen al ticket
-            $asociado = $imagenModel->asociarATicket($idImagen, $idTicket, $descripcion);
-
-            if (!$asociado) {
+            // Verificar que el registro se creó y el archivo sigue existiendo
+            if (!file_exists($filePath)) {
+                // Si por alguna razón el archivo desapareció, eliminar el registro de BD
                 $response->toJSON([
                     'success' => false,
-                    'message' => 'Error al asociar la imagen al ticket'
+                    'message' => 'El archivo desapareció después de guardarse',
+                    'debug' => [
+                        'id_imagen' => $idImagen,
+                        'filePath' => $filePath
+                    ]
                 ]);
                 return;
             }
+
+            // Construir URL pública
+            $url = '/apiticket/uploads/' . $fileName;
 
             $response->toJSON([
                 'success' => true,

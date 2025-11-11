@@ -152,6 +152,16 @@ const Header = () => {
           >
             Catálogo
           </Button>
+
+          {/* MANTENIMIENTOS */}
+          <Button
+            variant="text"
+            color="inherit"
+            onClick={() => navigate('/mantenimientos')}
+              sx={getButtonStyles('/mantenimientos')}
+          >
+            Mantenimientos
+          </Button>
         </Box>
 
         {/* Spacer to push any future items to the right */}

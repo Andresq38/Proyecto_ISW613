@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Upload</title>
+</head>
+<body>
+    <h1>Test Image Upload to Ticket</h1>
+    <form id="uploadForm">
+        <label>Ticket ID:</label>
+        <input type="number" id="ticketId" value="100012" required><br><br>
+        
+        <label>User ID:</label>
+        <input type="text" id="userId" value="1-1343-0736"><br><br>
+        
+        <label>Image:</label>
+        <input type="file" id="imageFile" accept="image/*" required><br><br>
+        
+        <button type="submit">Upload</button>
+    </form>
+    
+    <div id="result" style="margin-top: 20px; padding: 10px; border: 1px solid #ccc;"></div>
+    
+    <script>
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData();
+            formData.append('imagen', document.getElementById('imageFile').files[0]);
+            formData.append('id_ticket', document.getElementById('ticketId').value);
+            formData.append('id_usuario', document.getElementById('userId').value);
+            
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Uploading...</p>';
+            
+            try {
+                const response = await fetch('http://localhost:81/apiticket/imagen/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                resultDiv.innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+        });
+    </script>
+</body>
+</html>

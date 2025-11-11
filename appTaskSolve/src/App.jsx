@@ -6,6 +6,7 @@ import HomeP from './components/Home/HomeP';
 import PageNotFound from './components/Home/PageNotFound';
 import TicketsPorTecnico from './components/Tickets/TicketsPorTecnico';
 import TicketsList from './components/Tickets/TicketsList';
+import CreateTicket from './components/Tickets/CreateTicket';
 import TicketsPorAdmi from './components/Tickets/TicketsPorAdmi';
 import TicketsPorCliente from './components/Tickets/TicketsPorCliente';
 import DetalleTicket from './components/Tickets/DetalleTicket';
@@ -17,6 +18,7 @@ import CategoriasList from './components/Categorias/CategoriasList';
 import CategoriaDetalle from './components/Categorias/CategoriaDetalle';
 import Dashboard from './components/Dashboard/Dashboard';
 import AsignacionesTecnicos from './components/Asignaciones/AsignacionesTecnicos';
+import MantenimientosHome from './components/Mantenimientos/MantenimientosHome';
 
 export default function App() {
   return (
@@ -28,6 +30,7 @@ export default function App() {
           <Route path="/homeP" element={<HomeP />} />
           <Route path="/asignaciones" element={<Navigate to="/tecnicos/asignaciones" replace />} />
           <Route path="/tickets" element={<TicketsList />} />
+          <Route path="/tickets/crear" element={<CreateTicket />} />
           <Route path="/tickets/Administrador" element={<TicketsPorAdmi />} />
           <Route path="/tickets/cliente" element={<TicketsPorCliente />} />
           <Route path="/tickets/tecnico" element={<TicketsPorTecnico />} />
@@ -42,6 +45,7 @@ export default function App() {
           <Route path="/tecnicos/:id" element={<TecnicoDetalle />} />
           <Route path="/categorias" element={<CategoriasList />} />
           <Route path="/categorias/:id" element={<CategoriaDetalle />} />
+          <Route path="/mantenimientos" element={<MantenimientosHome />} />
           <Route path="*" element={<PageNotFound />} />
         </Routes>
       </Layout>

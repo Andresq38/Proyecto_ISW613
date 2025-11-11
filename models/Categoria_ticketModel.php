@@ -113,4 +113,19 @@ class Categoria_ticketModel
             handleException($e);
         }
     }*/
+
+    public function getCategoriaByEtiqueta($idEtiqueta)
+    {
+        try {
+            $sql = "SELECT c.id_categoria, c.nombre
+                    FROM categoria_ticket c
+                    JOIN categoria_etiqueta ce ON c.id_categoria = ce.id_categoria_ticket
+                    WHERE ce.id_etiqueta = ?
+                    LIMIT 1";
+            $res = $this->enlace->executePrepared($sql, 'i', [ (int)$idEtiqueta ]);
+            return $res[0] ?? null;
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }

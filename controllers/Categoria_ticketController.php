@@ -65,4 +65,16 @@ class categoria_ticket
         }
     }
     */
+
+    public function getCategoriaByEtiqueta($idEtiqueta)
+    {
+        try {
+            $response = new Response();
+            $categoria = new Categoria_ticketModel();
+            $result = $categoria->getCategoriaByEtiqueta($idEtiqueta);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }

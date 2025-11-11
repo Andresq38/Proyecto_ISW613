@@ -143,6 +143,30 @@ class MySqlConnect {
 			handleException($e);
 		}
 	}
+
+	/**
+	 * Ejecutar INSERT usando prepared statements y devolver el último ID insertado
+	 * @return int último id insertado
+	 */
+	public function executePrepared_DML_last($sql, $types = "", $params = []) {
+		try {
+			$this->connect();
+			$stmt = $this->link->prepare($sql);
+			if (!$stmt) {
+				throw new \Exception('Error al preparar la sentencia: ' . $this->link->error);
+			}
+			if (!empty($types) && !empty($params)) {
+				$stmt->bind_param($types, ...$params);
+			}
+			$stmt->execute();
+			$lastId = $this->link->insert_id;
+			$stmt->close();
+			$this->link->close();
+			return $lastId;
+		} catch ( Exception $e ) {
+			handleException($e);
+		}
+	}
 	/**
 	 * Ejecutar una setencia SQL tipo INSERT,UPDATE
 	 * @param $sql - string sentencia SQL

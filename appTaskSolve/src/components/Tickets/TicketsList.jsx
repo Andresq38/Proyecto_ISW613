@@ -1,5 +1,5 @@
-﻿import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+﻿import React, { useCallback, useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import axios from 'axios';
 import {
@@ -11,7 +11,9 @@ import {
   Chip,
   Box,
   CircularProgress,
-  Alert
+  Alert,
+  Button,
+  Snackbar
 } from '@mui/material';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
@@ -55,56 +57,81 @@ export default function TicketsList() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const navigate = useNavigate();
-  const { user } = useAuth();
+  // Manejar ausencia de AuthProvider: si useAuth() devuelve null, evitamos crash
+  const { user } = useAuth() || {};
+  const location = useLocation();
+
+  const load = useCallback(async (abortSignal) => {
+    try {
+      setLoading(true);
+      setError('');
+      const apiBase = getApiBase();
+      let url = `${apiBase}/ticket`;
+
+      if (user) {
+        if (user.rol?.toLowerCase() === 'cliente' && user.id_usuario) {
+          url = `${apiBase}/ticket/getTicketByUsuario/${user.id_usuario}`;
+        } else if (user.rol?.toLowerCase() === 'técnico' || user.rol?.toLowerCase() === 'tecnico') {
+          if (user.id_tecnico) {
+            url = `${apiBase}/ticket/getTicketByTecnico/${user.id_tecnico}`;
+          }
+        }
+      }
+
+      const res = await axios.get(url, { signal: abortSignal });
+      const data = res.data;
+      setTickets(Array.isArray(data) ? data : []);
+    } catch (e) {
+      if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
+        console.error('Error cargando tickets:', e);
+        setError(e.response?.data?.message || e.message || 'Error al cargar tickets');
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
 
   useEffect(() => {
     const controller = new AbortController();
-    async function load() {
-      try {
-        setLoading(true);
-        setError('');
-        
-        const apiBase = getApiBase();
-        let url = `${apiBase}/ticket`;
-        
-        // Filtrar por rol
-        if (user) {
-          if (user.rol?.toLowerCase() === 'cliente' && user.id_usuario) {
-            url = `${apiBase}/ticket/getTicketByUsuario/${user.id_usuario}`;
-          } else if (user.rol?.toLowerCase() === 'técnico' || user.rol?.toLowerCase() === 'tecnico') {
-            if (user.id_tecnico) {
-              url = `${apiBase}/ticket/getTicketByTecnico/${user.id_tecnico}`;
-            }
-          }
-        }
-        
-        console.log('Fetching tickets from:', url);
-        const res = await axios.get(url, {
-          signal: controller.signal
-        });
-        
-        console.log('Tickets response:', res.data);
-        const data = res.data;
-        setTickets(Array.isArray(data) ? data : []);
-      } catch (e) {
-        if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
-          console.error('Error cargando tickets:', e);
-          setError(e.response?.data?.message || e.message || 'Error al cargar tickets');
-        }
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
+    load(controller.signal);
     return () => controller.abort();
-  }, [user]);
+  }, [load]);
+
+  // Refrescar al volver desde creación (state.refresh) y mostrar toast
+  useEffect(() => {
+    if (location.state?.refresh) {
+      const controller = new AbortController();
+      load(controller.signal);
+      setSnackbar({ open: true, message: location.state.toast || 'Operación realizada con éxito', severity: 'success' });
+  // limpiar state para evitar repetición (ruta absoluta para evitar edge cases)
+  navigate('/tickets', { replace: true, state: {} });
+      return () => controller.abort();
+    }
+  }, [location.state, load, navigate]);
+
+  // Refrescar al recuperar el foco de la ventana
+  useEffect(() => {
+    const onFocus = () => {
+      const controller = new AbortController();
+      load(controller.signal);
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [load]);
+
 
   return (
     <Container sx={{ py: 4 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 2 }}>
-        Tickets
-      </Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4" gutterBottom sx={{ mb: 0 }}>
+          Tickets
+        </Typography>
+        <Button variant="contained" color="primary" onClick={() => navigate('/tickets/crear')}>
+          Crear Ticket
+        </Button>
+      </Box>
 
       {loading && (
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 5 }}>
@@ -216,6 +243,16 @@ export default function TicketsList() {
           );
         })}
       </Grid>
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={3500}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }
