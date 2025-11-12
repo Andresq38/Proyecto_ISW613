@@ -7,6 +7,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SchoolIcon from '@mui/icons-material/School';
 import ToggleOnIcon from '@mui/icons-material/ToggleOn';
+import EditIcon from '@mui/icons-material/Edit';
 import TecnicoService from '../../services/TecnicoService';
 import { getApiOrigin } from '../../utils/apiBase';
 
@@ -102,6 +103,14 @@ export default function TecnicoDetalle() {
           Técnico: {data.nombre_usuario}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
+          <Button 
+            variant="contained" 
+            color="primary"
+            startIcon={<EditIcon />}
+            onClick={() => navigate(`/tecnicos/editar/${id}`)}
+          >
+            Editar
+          </Button>
           <Button 
             variant="contained" 
             color={disponibilidad === 'Disponible' ? 'warning' : 'success'}

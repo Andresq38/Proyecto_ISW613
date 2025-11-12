@@ -54,10 +54,6 @@ export default function TecnicosList() {
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
           👨‍💻 Técnicos
         </Typography>
-        //Botón para crear técnico//
-        <Button variant="contained" color="primary" onClick={() => navigate('/tecnicos/crear')}>
-          Crear técnico
-        </Button>
       </Box>
 
       {loading && (
@@ -81,10 +77,7 @@ export default function TecnicosList() {
       <Grid container spacing={3}>
         {items.map((t) => {
           const ticketsAbiertos = parseInt(t.tickets_abiertos) || 0;
-          // Disponibilidad calculada basada en carga (< 5 tickets = disponible)
           const disponibleCalculada = ticketsAbiertos < 5;
-          
-          // Color según carga de trabajo
           const cargaColor = ticketsAbiertos >= 5 ? 'error' : (ticketsAbiertos >= 3 ? 'warning' : 'success');
           const cargaLabel = ticketsAbiertos >= 5 ? 'Saturado' : (ticketsAbiertos >= 3 ? 'Ocupado' : 'Disponible');
           
@@ -94,7 +87,6 @@ export default function TecnicosList() {
                 elevation={3}
                 sx={{ 
                   height: '100%',
-                  minHeight: 270,
                   cursor: 'pointer',
                   transition: 'transform 0.2s, box-shadow 0.2s',
                   borderTop: `4px solid`,
@@ -109,40 +101,38 @@ export default function TecnicosList() {
                 onClick={() => navigate(`/tecnicos/${t.id_tecnico}`)}
               >
                 <CardContent sx={{ 
-                  p: 3, 
+                  p: 2.5, 
                   flex: 1,
                   display: 'flex', 
                   flexDirection: 'column',
-                  '&:last-child': { pb: 3 }
+                  '&:last-child': { pb: 2.5 }
                 }}>
                   {/* Avatar y nombre */}
-                  <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2.5, height: 64 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                     <Avatar 
                       sx={{ 
                         bgcolor: 'primary.main', 
-                        width: 56, 
-                        height: 56,
-                        mr: 2,
+                        width: 52, 
+                        height: 52,
+                        mr: 1.5,
                         flexShrink: 0
                       }}
                     >
-                      <PersonIcon sx={{ fontSize: 32 }} />
+                      <PersonIcon sx={{ fontSize: 28 }} />
                     </Avatar>
                     <Box sx={{ 
                       flex: 1, 
                       minWidth: 0,
                       display: 'flex',
                       flexDirection: 'column',
-                      justifyContent: 'center',
-                      height: '100%'
+                      gap: 0.5
                     }}>
                       <Typography 
                         variant="h6" 
                         sx={{ 
                           fontWeight: 600, 
-                          lineHeight: 1.4, 
-                          fontSize: '1.125rem',
-                          mb: 0.75
+                          lineHeight: 1.3, 
+                          fontSize: '1rem'
                         }} 
                         noWrap 
                         title={t.nombre}
@@ -155,18 +145,18 @@ export default function TecnicosList() {
                         color="primary" 
                         variant="outlined"
                         sx={{ 
-                          height: 22, 
+                          height: 20, 
                           fontSize: '0.7rem', 
                           alignSelf: 'flex-start',
-                          '& .MuiChip-label': { px: 1.5, py: 0 } 
+                          '& .MuiChip-label': { px: 1, py: 0 } 
                         }}
                       />
                     </Box>
                   </Box>
 
                   {/* Correo */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2.5, height: 28 }}>
-                    <EmailIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 20, flexShrink: 0 }} />
+                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2, minHeight: 24 }}>
+                    <EmailIcon sx={{ color: 'text.secondary', mr: 1, fontSize: 18, flexShrink: 0 }} />
                     <Typography 
                       variant="body2" 
                       color="text.secondary" 
@@ -175,8 +165,7 @@ export default function TecnicosList() {
                         overflow: 'hidden', 
                         textOverflow: 'ellipsis', 
                         flex: 1, 
-                        fontSize: '0.875rem', 
-                        lineHeight: 1.75
+                        fontSize: '0.813rem'
                       }} 
                       title={t.correo || ''}
                     >
@@ -184,25 +173,23 @@ export default function TecnicosList() {
                     </Typography>
                   </Box>
 
-                  <Divider sx={{ my: 2 }} />
+                  <Divider sx={{ my: 1.5 }} />
 
                   {/* Disponibilidad */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2, height: 32 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5, minHeight: 28 }}>
                     <Typography 
                       variant="body2" 
                       color="text.secondary" 
                       sx={{ 
                         display: 'flex', 
                         alignItems: 'center', 
-                        fontSize: '0.875rem', 
-                        lineHeight: 2,
-                        height: '100%'
+                        fontSize: '0.813rem'
                       }}
                     >
                       {disponibleCalculada ? (
-                        <CheckCircleIcon sx={{ fontSize: 18, mr: 0.5, color: 'success.main', flexShrink: 0 }} />
+                        <CheckCircleIcon sx={{ fontSize: 16, mr: 0.5, color: 'success.main', flexShrink: 0 }} />
                       ) : (
-                        <WarningIcon sx={{ fontSize: 18, mr: 0.5, color: 'warning.main', flexShrink: 0 }} />
+                        <WarningIcon sx={{ fontSize: 16, mr: 0.5, color: 'warning.main', flexShrink: 0 }} />
                       )}
                       Disponibilidad:
                     </Typography>
@@ -213,31 +200,26 @@ export default function TecnicosList() {
                       variant="filled"
                       sx={{ 
                         fontWeight: 600, 
-                        width: 95, 
-                        height: 26, 
-                        fontSize: '0.75rem', 
-                        flexShrink: 0,
-                        '& .MuiChip-label': {
-                          px: 1.5
-                        }
+                        minWidth: 90, 
+                        height: 24, 
+                        fontSize: '0.7rem',
+                        '& .MuiChip-label': { px: 1.5 }
                       }}
                     />
                   </Box>
 
                   {/* Tickets abiertos */}
-                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 32 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', minHeight: 28 }}>
                     <Typography 
                       variant="body2" 
                       color="text.secondary" 
                       sx={{ 
                         display: 'flex', 
                         alignItems: 'center', 
-                        fontSize: '0.875rem', 
-                        lineHeight: 2,
-                        height: '100%'
+                        fontSize: '0.813rem'
                       }}
                     >
-                      <AssignmentIcon sx={{ fontSize: 18, mr: 0.5, flexShrink: 0 }} />
+                      <AssignmentIcon sx={{ fontSize: 16, mr: 0.5, flexShrink: 0 }} />
                       Tickets abiertos:
                     </Typography>
                     <Chip 
@@ -247,13 +229,10 @@ export default function TecnicosList() {
                       variant="outlined"
                       sx={{ 
                         fontWeight: 600, 
-                        width: 45, 
-                        height: 26, 
-                        fontSize: '0.75rem', 
-                        flexShrink: 0,
-                        '& .MuiChip-label': {
-                          px: 1.5
-                        }
+                        minWidth: 40, 
+                        height: 24, 
+                        fontSize: '0.75rem',
+                        '& .MuiChip-label': { px: 1.5 }
                       }}
                     />
                   </Box>

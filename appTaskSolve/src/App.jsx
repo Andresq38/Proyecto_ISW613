@@ -14,6 +14,7 @@ import TecnicosList from './components/Tecnicos/TecnicosList';
 import TecnicosHub from './components/Tecnicos/TecnicosHub';
 import TecnicoDetalle from './components/Tecnicos/TecnicoDetalle';
 import CreateTecnico from './components/Tecnicos/CreateTecnico';
+import EditTecnico from './components/Tecnicos/EditTecnico';
 import CategoriasList from './components/Categorias/CategoriasList';
 import CategoriaDetalle from './components/Categorias/CategoriaDetalle';
 import Dashboard from './components/Dashboard/Dashboard';
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="crear" element={<CreateTecnico />} />
           </Route>
           <Route path="/tecnicos/:id" element={<TecnicoDetalle />} />
+          <Route path="/tecnicos/editar/:id" element={<EditTecnico />} />
           <Route path="/categorias" element={<CategoriasList />} />
           <Route path="/categorias/:id" element={<CategoriaDetalle />} />
           <Route path="/mantenimientos" element={<MantenimientosHome />} />

@@ -28,7 +28,7 @@ import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import { getApiOrigin } from '../../utils/apiBase';
-import { formatDateTime } from '../../utils/format';
+import { formatDate } from '../../utils/format';
 
 // Usuario solicitante fijo mientras no hay autenticación
 const CURRENT_USER = '1-1343-0736';
@@ -297,20 +297,27 @@ export default function CreateTicket() {
                   }
                 }}
                 onChange={(_, val) => setForm((f) => ({ ...f, id_etiqueta: val?.id_etiqueta || '' }))}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Etiqueta"
-                    required
-                    onBlur={() => markTouched('id_etiqueta')}
-                    error={Boolean(touched.id_etiqueta && errors.id_etiqueta)}
-                    helperText={touched.id_etiqueta && errors.id_etiqueta}
-                    InputProps={{
-                      ...params.InputProps,
-                      startAdornment: <LabelOutlinedIcon sx={{ mr: 1, color: 'primary.main' }} />
-                    }}
-                  />
-                )}
+                renderInput={(params) => {
+                  const selectedEtiqueta = etiquetas.find((e) => String(e.id_etiqueta) === String(form.id_etiqueta));
+                  const displayText = selectedEtiqueta 
+                    ? `${selectedEtiqueta.id_etiqueta} - ${selectedEtiqueta.nombre || ''}`
+                    : '';
+                  
+                  return (
+                    <TextField
+                      {...params}
+                      label="Etiqueta"
+                      required
+                      onBlur={() => markTouched('id_etiqueta')}
+                      error={Boolean(touched.id_etiqueta && errors.id_etiqueta)}
+                      helperText={touched.id_etiqueta && errors.id_etiqueta || (displayText ? displayText : '')}
+                      InputProps={{
+                        ...params.InputProps,
+                        startAdornment: <LabelOutlinedIcon sx={{ mr: 1, color: 'primary.main' }} />
+                      }}
+                    />
+                  );
+                }}
                 value={etiquetas.find((e) => String(e.id_etiqueta) === String(form.id_etiqueta)) || null}
                 isOptionEqualToValue={(o, v) => String(o.id_etiqueta) === String(v.id_etiqueta)}
               />
@@ -335,7 +342,7 @@ export default function CreateTicket() {
               <TextField
                 fullWidth
                 label="Usuario solicitante"
-                value={usuarioInfo ? `${usuarioInfo.id} - ${usuarioInfo.nombre}` : form.id_usuario}
+                value={usuarioInfo ? usuarioInfo.nombre : ''}
                 InputProps={{
                   readOnly: true,
                   startAdornment: <PersonOutlineIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -347,7 +354,7 @@ export default function CreateTicket() {
               <TextField
                 fullWidth
                 label="Fecha de creación"
-                value={formatDateTime(fechaCreacion)}
+                value={formatDate(fechaCreacion)}
                 InputProps={{ readOnly: true }}
               />
             </Grid>

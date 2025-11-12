@@ -10,6 +10,18 @@ const Header = () => {
   // Función para verificar si una ruta está activa
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
+    // Para MANTENIMIENTOS, considerar subrutas relacionadas
+    if (path === '/mantenimientos') {
+      // Todas las rutas de mantenimientos y sus submódulos
+      const mantenimientosPaths = [
+        '/mantenimientos',
+        '/tecnicos',
+        '/tecnicos/crear',
+        '/categorias',
+        '/tickets/crear',
+      ];
+      return mantenimientosPaths.some((p) => location.pathname.startsWith(p));
+    }
     return location.pathname.startsWith(path);
   };
 
