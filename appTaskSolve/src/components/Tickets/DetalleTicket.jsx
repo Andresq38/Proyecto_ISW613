@@ -9,6 +9,7 @@ import {
 } from '@mui/material';
 import StarIcon from '@mui/icons-material/Star';
 import ChangeCircleIcon from '@mui/icons-material/ChangeCircle';
+import EditIcon from '@mui/icons-material/Edit';
 // Se removieron iconos de carga/eliminación de imágenes para modo solo lectura
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
@@ -136,8 +137,14 @@ export default function DetalleTicket() {
       </Typography>
 
       <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <Button variant="outlined" onClick={() => navigate('/')}>
-          Volver al Inicio
+        <Button 
+          variant="contained" 
+          color="warning"
+          startIcon={<EditIcon />}
+          onClick={() => navigate(`/tickets/editar/${id}`)}
+          disabled={ticket?.estado?.nombre === 'Cerrado'}
+        >
+          Editar Ticket
         </Button>
         <Button 
           variant="contained" 
@@ -147,6 +154,9 @@ export default function DetalleTicket() {
           disabled={ticket?.estado?.nombre === 'Cerrado'}
         >
           Cambiar Estado
+        </Button>
+        <Button variant="outlined" onClick={() => navigate('/')}>
+          Volver al Inicio
         </Button>
       </Box>
 

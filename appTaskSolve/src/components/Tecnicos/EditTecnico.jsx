@@ -24,7 +24,6 @@ const schema = yup.object({
   correo: yup.string().email('Debe ser un correo válido').required('El correo es requerido'),
   password: yup.string().min(6, 'Mínimo 6 caracteres').optional(),
   disponibilidad: yup.boolean().required(),
-  estado: yup.string().required('El estado es requerido'),
   especialidades: yup.array().of(yup.mixed()).min(1, 'Seleccione al menos una especialidad'),
 });
 
@@ -35,32 +34,47 @@ export default function EditTecnico() {
   const [loadError, setLoadError] = useState('');
   const { control, handleSubmit, reset, formState: { errors } } = useForm({
     defaultValues: {
-      id_usuario: '', nombre: '', correo: '', password: '', disponibilidad: true, carga_trabajo: 0, estado: '', especialidades: [],
+      id_usuario: '', nombre: '', correo: '', password: '', disponibilidad: true, especialidades: [],
     }, resolver: yupResolver(schema),
   });
-  const [estados, setEstados] = useState([]);
   const [especialidades, setEspecialidades] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   // Cargar datos del técnico y catálogos
   useEffect(() => {
-    const abort = new AbortController();
+    let isMounted = true;
     (async () => {
       try {
         setLoading(true);
         // Cargar catálogos y datos del técnico en paralelo
-        const [estRes, espRes, tecnicoRes] = await Promise.all([
-          fetch(`${apiBase}/apiticket/estado`, { signal: abort.signal }),
-          fetch(`${apiBase}/apiticket/especialidad`, { signal: abort.signal }),
+        const [espRes, tecnicoRes] = await Promise.all([
+          fetch(`${apiBase}/apiticket/especialidad`),
           TecnicoService.getTecnicoById(id),
         ]);
 
-        const estadosData = await estRes.json();
         const especialidadesData = await espRes.json();
-        const tecnicoData = tecnicoRes.data;
+        
+        // Debug: Ver qué devuelve la API
+        console.log('Respuesta completa de la API:', tecnicoRes.data);
+        
+        // La respuesta de axios viene en tecnicoRes.data
+        // Verificar si la respuesta es un array o un objeto directo
+        const tecnicoData = Array.isArray(tecnicoRes.data) 
+          ? (tecnicoRes.data.length > 0 ? tecnicoRes.data[0] : null)
+          : tecnicoRes.data;
 
-        setEstados(estadosData);
+        console.log('Datos del técnico procesados:', tecnicoData);
+
+        if (!isMounted) return;
+
         setEspecialidades(especialidadesData);
+
+        // Verificar si se encontró el técnico
+        if (!tecnicoData) {
+          setLoadError('No se encontró el técnico');
+          setLoading(false);
+          return;
+        }
 
         // Precargar datos del técnico en el formulario
         if (tecnicoData) {
@@ -77,33 +91,36 @@ export default function EditTecnico() {
             correo: tecnicoData.correo_usuario || tecnicoData.correo || '',
             password: '', // Dejar vacío en edición
             disponibilidad: tecnicoData.disponibilidad === 1 || tecnicoData.disponibilidad === true,
-            carga_trabajo: tecnicoData.carga_trabajo || 0,
-            estado: tecnicoData.id_estado || '',
             especialidades: especialidadesTecnico,
           });
         }
 
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       } catch (err) {
         console.error('Error al cargar datos:', err);
-        setLoadError('Error al cargar los datos del técnico');
-        setLoading(false);
+        if (isMounted) {
+          setLoadError('Error al cargar los datos del técnico');
+          setLoading(false);
+        }
       }
     })();
-    return () => abort.abort();
+    return () => { isMounted = false; };
   }, [id, reset]);
 
   const onSubmit = async (v) => {
     try {
+      console.log('Datos del formulario antes de enviar:', v);
       const payload = {
         id_tecnico: parseInt(id),
         id_usuario: v.id_usuario,
         nombre: v.nombre,
         correo: v.correo,
         disponibilidad: v.disponibilidad ? 1 : 0,
-        estado: v.estado,
         especialidades: (v.especialidades || []).map(e => e.id_especialidad),
       };
+      console.log('Payload a enviar:', payload);
 
       // Solo incluir password si se proporcionó
       if (v.password && v.password.trim()) {
@@ -211,15 +228,6 @@ export default function EditTecnico() {
             </Grid>
             <Grid item xs={12} md={6}>
               <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
-                <Controller name="estado" control={control} render={({ field }) => (
-                  <TextField {...field} id="estado" label="Estado" select error={Boolean(errors.estado)} helperText={errors.estado ? errors.estado.message : ''}>
-                    {estados.map(e => <MenuItem key={e.id_estado} value={e.id_estado}>{e.nombre}</MenuItem>)}
-                  </TextField>
-                )} />
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
                 <Controller name="especialidades" control={control} render={({ field }) => (
                   <Autocomplete 
                     multiple 
@@ -233,13 +241,6 @@ export default function EditTecnico() {
                       <TextField {...params} label="Especialidades" error={Boolean(errors.especialidades)} helperText={errors.especialidades ? errors.especialidades.message : ''} />
                     )} 
                   />
-                )} />
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
-                <Controller name="carga_trabajo" control={control} render={({ field }) => (
-                  <TextField {...field} id="carga_trabajo" label="Carga de Trabajo Actual" type="number" InputProps={{ readOnly: true }} helperText="Se calcula automáticamente" />
                 )} />
               </FormControl>
             </Grid>

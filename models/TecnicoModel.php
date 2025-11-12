@@ -81,11 +81,11 @@ class TecnicoModel
             // Regla simple: disponible si tiene menos de 5 tickets abiertos
             $tec->disponibilidad_calculada = $tec->tickets_abiertos < 5;
 
-            // Especialidades derivadas de categorias de tickets asignados
-            $sqlEsp = "SELECT DISTINCT es.id_especialidad, es.nombre, es.descripcion
-                       FROM ticket t
-                       JOIN especialidad es ON es.id_categoria = t.id_categoria
-                       WHERE t.id_tecnico = ?";
+            // Especialidades del técnico desde la tabla intermedia tecnico_especialidad
+            $sqlEsp = "SELECT e.id_especialidad, e.nombre, e.descripcion
+                       FROM tecnico_especialidad te
+                       JOIN especialidad e ON e.id_especialidad = te.id_especialidad
+                       WHERE te.id_tecnico = ?";
             $especialidades = $this->enlace->executePrepared($sqlEsp, 'i', [(int)$id]);
             $tec->especialidades = $especialidades ?: [];
 
@@ -163,7 +163,18 @@ class TecnicoModel
             $result = $this->enlace->executePrepared($sqlGetId, 's', [$objeto->id_usuario]);
             $idTecnico = $result[0]->id_tecnico;
 
-            // --- 4. Retornar el técnico recién creado ---
+            // --- 4. Insertar especialidades del técnico ---
+            if (isset($objeto->especialidades) && is_array($objeto->especialidades) && !empty($objeto->especialidades)) {
+                foreach ($objeto->especialidades as $id_especialidad) {
+                    $sqlEsp = "INSERT INTO tecnico_especialidad (id_tecnico, id_especialidad) VALUES (?, ?)";
+                    $this->enlace->executePrepared($sqlEsp, 'ii', [
+                        (int)$idTecnico,
+                        (int)$id_especialidad
+                    ]);
+                }
+            }
+
+            // --- 5. Retornar el técnico recién creado ---
             return $this->get($idTecnico);
         } catch (Exception $e) {
             handleException($e);
@@ -244,6 +255,24 @@ class TecnicoModel
                     $objeto->disponibilidad ? 1 : 0,
                     (int)$objeto->id_tecnico
                 ]);
+            }
+
+            // --- 3. Actualizar especialidades del técnico ---
+            if (isset($objeto->especialidades) && is_array($objeto->especialidades)) {
+                // Eliminar especialidades anteriores
+                $sqlDelete = "DELETE FROM tecnico_especialidad WHERE id_tecnico = ?";
+                $this->enlace->executePrepared($sqlDelete, 'i', [(int)$objeto->id_tecnico]);
+
+                // Insertar nuevas especialidades
+                if (!empty($objeto->especialidades)) {
+                    foreach ($objeto->especialidades as $id_especialidad) {
+                        $sqlInsert = "INSERT INTO tecnico_especialidad (id_tecnico, id_especialidad) VALUES (?, ?)";
+                        $this->enlace->executePrepared($sqlInsert, 'ii', [
+                            (int)$objeto->id_tecnico,
+                            (int)$id_especialidad
+                        ]);
+                    }
+                }
             }
 
             // Retornar el técnico actualizado

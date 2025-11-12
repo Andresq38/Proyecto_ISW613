@@ -7,6 +7,7 @@ import PageNotFound from './components/Home/PageNotFound';
 import TicketsPorTecnico from './components/Tickets/TicketsPorTecnico';
 import TicketsList from './components/Tickets/TicketsList';
 import CreateTicket from './components/Tickets/CreateTicket';
+import EditTicket from './components/Tickets/EditTicket';
 import TicketsPorAdmi from './components/Tickets/TicketsPorAdmi';
 import TicketsPorCliente from './components/Tickets/TicketsPorCliente';
 import DetalleTicket from './components/Tickets/DetalleTicket';
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/tickets/cliente" element={<TicketsPorCliente />} />
           <Route path="/tickets/tecnico" element={<TicketsPorTecnico />} />
           <Route path="/tickets/:id" element={<DetalleTicket />} />
+          <Route path="/tickets/editar/:id" element={<EditTicket />} />
           <Route path="/tecnicos/*" element={<TecnicosHub />} >
             <Route index element={<Navigate to="listado" replace />} />
             <Route path="listado" element={<TecnicosList />} />
