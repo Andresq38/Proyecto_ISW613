@@ -159,4 +159,17 @@ class ticket
         }
     }
     
+    //DELETE eliminar
+    public function delete($idTicket)
+    {
+        try {
+            $response = new Response();
+            $ticket = new TicketModel();
+            $result = $ticket->delete($idTicket);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+    
 }

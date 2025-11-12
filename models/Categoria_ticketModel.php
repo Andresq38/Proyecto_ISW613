@@ -27,6 +27,71 @@ class Categoria_ticketModel
         }
     }
 
+    /** Crear categoría con SLA y etiquetas relacionadas */
+    public function create($obj)
+    {
+        try {
+            if (empty($obj->nombre) || empty($obj->id_sla)) {
+                throw new Exception('Nombre e id_sla son requeridos');
+            }
+            $nombre = trim($obj->nombre);
+            $idSla = (int)$obj->id_sla;
+            $sqlIns = "INSERT INTO categoria_ticket (nombre, id_sla) VALUES (?, ?)";
+            $newId = $this->enlace->executePrepared_DML_last($sqlIns, 'si', [ $nombre, $idSla ]);
+
+            // Etiquetas opcionales
+            if (isset($obj->etiquetas) && is_array($obj->etiquetas) && !empty($obj->etiquetas)) {
+                foreach ($obj->etiquetas as $idEtiqueta) {
+                    $this->enlace->executePrepared_DML(
+                        "INSERT INTO categoria_etiqueta (id_categoria_ticket, id_etiqueta) VALUES (?, ?)",
+                        'ii', [ (int)$newId, (int)$idEtiqueta ]
+                    );
+                }
+            }
+
+            return $this->get($newId);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    /** Actualizar categoría y relaciones de etiquetas */
+    public function update($obj)
+    {
+        try {
+            if (empty($obj->id_categoria)) {
+                throw new Exception('id_categoria requerido');
+            }
+            $id = (int)$obj->id_categoria;
+
+            // Construir actualización parcial
+            $parts = [];
+            $types = '';
+            $params = [];
+            if (isset($obj->nombre)) { $parts[] = 'nombre = ?'; $types .= 's'; $params[] = trim($obj->nombre); }
+            if (isset($obj->id_sla)) { $parts[] = 'id_sla = ?'; $types .= 'i'; $params[] = (int)$obj->id_sla; }
+            if (!empty($parts)) {
+                $types .= 'i';
+                $params[] = $id;
+                $this->enlace->executePrepared_DML("UPDATE categoria_ticket SET ".implode(', ', $parts)." WHERE id_categoria = ?", $types, $params);
+            }
+
+            // Actualizar etiquetas si vienen
+            if (isset($obj->etiquetas) && is_array($obj->etiquetas)) {
+                $this->enlace->executePrepared_DML("DELETE FROM categoria_etiqueta WHERE id_categoria_ticket = ?", 'i', [ $id ]);
+                foreach ($obj->etiquetas as $idEtiqueta) {
+                    $this->enlace->executePrepared_DML(
+                        "INSERT INTO categoria_etiqueta (id_categoria_ticket, id_etiqueta) VALUES (?, ?)",
+                        'ii', [ $id, (int)$idEtiqueta ]
+                    );
+                }
+            }
+
+            return $this->get($id);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
     /*Obtener */
     public function get($id)
     {

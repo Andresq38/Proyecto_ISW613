@@ -62,6 +62,17 @@ CREATE TABLE tecnico (
   FOREIGN KEY (id_usuario) REFERENCES usuario(id_usuario)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+-- Tabla intermedia para relacionar técnicos con especialidades (relación muchos a muchos)
+CREATE TABLE tecnico_especialidad (
+  id_tecnico INT NOT NULL,
+  id_especialidad INT NOT NULL,
+  PRIMARY KEY (id_tecnico, id_especialidad),
+  FOREIGN KEY (id_tecnico) REFERENCES tecnico(id_tecnico)
+    ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (id_especialidad) REFERENCES especialidad(id_especialidad)
+    ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 CREATE TABLE categoria_ticket (
   id_categoria INT NOT NULL AUTO_INCREMENT,
   nombre VARCHAR(100) NOT NULL,

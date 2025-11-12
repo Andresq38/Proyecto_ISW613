@@ -18,6 +18,7 @@ import FolderSpecialIcon from '@mui/icons-material/FolderSpecial';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+// Vista de catálogo: solo listado, sin formulario de creación
 
 const CategoriasList = () => {
   const [categorias, setCategorias] = useState([]);
@@ -37,8 +38,7 @@ const CategoriasList = () => {
     return currentUrl;
   };
 
-  useEffect(() => {
-    const fetchCategorias = async () => {
+  const fetchCategorias = async () => {
       try {
         setLoading(true);
         setError(null);
@@ -69,8 +69,9 @@ const CategoriasList = () => {
       } finally {
         setLoading(false);
       }
-    };
+  };
 
+  useEffect(() => {
     fetchCategorias();
   }, []);
 
@@ -103,8 +104,7 @@ const CategoriasList = () => {
 
   return (
     <Container sx={{ py: 4 }}>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
+      <Box sx={{ mb: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 2 }}>
         <Typography 
           variant="h4" 
           gutterBottom 
@@ -125,7 +125,13 @@ const CategoriasList = () => {
         </Typography>
       </Box>
 
-      {categorias.length === 0 ? (
+      {loading ? (
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error">{error}</Alert>
+      ) : categorias.length === 0 ? (
         <Alert severity="info">No hay categorías disponibles.</Alert>
       ) : (
         <Grid container spacing={3}>

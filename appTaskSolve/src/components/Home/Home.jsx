@@ -21,13 +21,21 @@ import {
   FormControl,
   InputLabel,
   Select,
-  MenuItem
+  MenuItem,
+  IconButton,
+  Tooltip,
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import ErrorIcon from '@mui/icons-material/Error';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 import { getApiOrigin } from '../../utils/apiBase';
 
 // Datos simulados como fallback
@@ -43,6 +51,11 @@ const Home = () => {
   const [order, setOrder] = useState('desc');
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [targetTicket, setTargetTicket] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null); // { id, ticket, timerId }
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   // Detectar automáticamente la base del API o tomarla de variables de entorno
   const apiBase = getApiOrigin();
   const theme = useTheme();
@@ -128,6 +141,50 @@ const Home = () => {
     }
   };
 
+  const requestDelete = (ticket) => {
+    if (pendingDelete) {
+      setSnackbar({ open: true, message: `Espera a terminar la eliminación del ticket #${pendingDelete.id}`, severity: 'warning' });
+      return;
+    }
+    setTargetTicket(ticket);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (!targetTicket) return;
+    const t = targetTicket;
+    setConfirmOpen(false);
+    setTargetTicket(null);
+
+    // Quitar optimistamente de la UI y programar borrado real en 5s con opción a deshacer
+    setTickets(prev => prev.filter(x => x.id_ticket !== t.id_ticket));
+    const timerId = setTimeout(async () => {
+      try {
+        await axios.delete(`${apiBase}/apiticket/ticket/delete/${t.id_ticket}`);
+        setSnackbar({ open: true, message: `Ticket #${t.id_ticket} eliminado`, severity: 'success' });
+      } catch (err) {
+        console.error('Error eliminando ticket:', err?.response?.status, err?.response?.data || err?.message);
+        // Restaurar en UI si falló el backend
+        setTickets(prev => [t, ...prev]);
+        setSnackbar({ open: true, message: err?.response?.data?.error || err?.response?.data?.result || 'No se pudo eliminar', severity: 'error' });
+      } finally {
+        setPendingDelete(null);
+      }
+    }, 5000);
+
+    setPendingDelete({ id: t.id_ticket, ticket: t, timerId });
+    setSnackbar({ open: true, message: `Se eliminará el ticket #${t.id_ticket} en 5 segundos`, severity: 'info' });
+  };
+
+  const undoDelete = () => {
+    if (!pendingDelete) return;
+    clearTimeout(pendingDelete.timerId);
+    // Restaurar el ticket a la lista (al inicio por simplicidad)
+    setTickets(prev => [pendingDelete.ticket, ...prev]);
+    setPendingDelete(null);
+    setSnackbar({ open: true, message: `Eliminación de #${pendingDelete.id} cancelada`, severity: 'success' });
+  };
+
   useEffect(() => {
     fetchTickets();
   }, []);
@@ -201,6 +258,15 @@ const Home = () => {
           </Select>
         </FormControl>
         <Button size="small" variant="outlined" onClick={fetchTickets} disabled={loading}>Recargar</Button>
+        <Button
+          size="small"
+          variant={deleteMode ? 'contained' : 'outlined'}
+          color="error"
+          startIcon={<DeleteForeverIcon />}
+          onClick={() => setDeleteMode((v) => !v)}
+        >
+          {deleteMode ? 'Cancelar eliminación' : 'Eliminar'}
+        </Button>
       </Box>
 
       <Typography variant="h5" align="center" color="text.secondary" mb={6}>
@@ -271,7 +337,12 @@ const Home = () => {
               {paginated.map((t) => {
                 const urgency = getSlaUrgency(t.sla);
                 return (
-                  <TableRow key={t.id_ticket} hover sx={{ cursor: 'pointer' }} onClick={() => navigate(`/tickets/${t.id_ticket}`)}>
+                  <TableRow
+                    key={t.id_ticket}
+                    hover
+                    sx={{ cursor: deleteMode ? 'default' : 'pointer' }}
+                    onClick={() => { if (!deleteMode) navigate(`/tickets/${t.id_ticket}`); }}
+                  >
                     <TableCell width={90}>#{t.id_ticket}</TableCell>
                     <TableCell>{t.titulo}</TableCell>
                     <TableCell width={160}>
@@ -293,7 +364,15 @@ const Home = () => {
                       )}
                     </TableCell>
                     <TableCell align="right">
-                      <Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); navigate(`/tickets/${t.id_ticket}`); }}>Ver</Button>
+                      {deleteMode ? (
+                        <Tooltip title={`Eliminar #${t.id_ticket}`}>
+                          <IconButton color="error" onClick={(e) => { e.stopPropagation(); requestDelete(t); }}>
+                            <DeleteForeverIcon />
+                          </IconButton>
+                        </Tooltip>
+                      ) : (
+                        <Button size="small" variant="outlined" onClick={(e) => { e.stopPropagation(); navigate(`/tickets/${t.id_ticket}`); }}>Ver</Button>
+                      )}
                     </TableCell>
                   </TableRow>
                 );
@@ -319,6 +398,31 @@ const Home = () => {
           />
         </TableContainer>
       )}
+
+      {/* Diálogo de confirmación */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          ¿Seguro que deseas eliminar el ticket #{targetTicket?.id_ticket}?
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
+          <Button color="error" variant="contained" onClick={confirmDelete}>Eliminar</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Snackbar con opción de deshacer cuando hay eliminación pendiente */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        message={snackbar.message}
+        action={pendingDelete ? (
+          <Button color="secondary" size="small" onClick={undoDelete}>
+            Deshacer
+          </Button>
+        ) : null}
+      />
     </Container>
   );
 };

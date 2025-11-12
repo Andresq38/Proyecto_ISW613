@@ -23,7 +23,6 @@ const schema = yup.object({
   correo: yup.string().email('Debe ser un correo válido').required('El correo es requerido'),
   password: yup.string().min(6, 'Mínimo 6 caracteres').required('La contraseña es requerida'),
   disponibilidad: yup.boolean().required(),
-  estado: yup.string().required('El estado es requerido'),
   especialidades: yup.array().of(yup.mixed()).min(1, 'Seleccione al menos una especialidad'),
 });
 
@@ -31,21 +30,16 @@ export default function CreateTecnico() {
   const navigate = useNavigate();
   const { control, handleSubmit, formState: { errors } } = useForm({
     defaultValues: {
-      id_usuario: '', nombre: '', correo: '', password: '', disponibilidad: true, carga_trabajo: 0, estado: '', especialidades: [],
+      id_usuario: '', nombre: '', correo: '', password: '', disponibilidad: true, especialidades: [],
     }, resolver: yupResolver(schema),
   });
-  const [estados, setEstados] = useState([]);
   const [especialidades, setEspecialidades] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   useEffect(() => {
     const abort = new AbortController();
     (async () => {
       try {
-        const [estRes, espRes] = await Promise.all([
-          fetch(`${apiBase}/apiticket/estado`, { signal: abort.signal }),
-          fetch(`${apiBase}/apiticket/especialidad`, { signal: abort.signal }),
-        ]);
-        setEstados(await estRes.json());
+        const espRes = await fetch(`${apiBase}/apiticket/especialidad`, { signal: abort.signal });
         setEspecialidades(await espRes.json());
       } catch (_) { }
     })();
@@ -55,7 +49,7 @@ export default function CreateTecnico() {
     try {
       const payload = {
         id_usuario: v.id_usuario, nombre: v.nombre, correo: v.correo, password: v.password,
-        disponibilidad: v.disponibilidad ? 1 : 0, estado: v.estado,
+        disponibilidad: v.disponibilidad ? 1 : 0,
         especialidades: (v.especialidades || []).map(e => e.id_especialidad),
       };
       const { data } = await TecnicoService.createTecnico(payload);
@@ -127,26 +121,10 @@ export default function CreateTecnico() {
             </Grid>
             <Grid item xs={12} md={6}>
               <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
-                <Controller name="estado" control={control} render={({ field }) => (
-                  <TextField {...field} id="estado" label="Estado" select error={Boolean(errors.estado)} helperText={errors.estado ? errors.estado.message : ''}>
-                    {estados.map(e => <MenuItem key={e.id_estado} value={e.id_estado}>{e.nombre}</MenuItem>)}
-                  </TextField>
-                )} />
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
                 <Controller name="especialidades" control={control} render={({ field }) => (
                   <Autocomplete multiple id="especialidades" options={Array.isArray(especialidades) ? especialidades : []} getOptionLabel={(o) => o.nombre} value={field.value} onChange={(_, v) => field.onChange(v)} isOptionEqualToValue={(o, v) => o.id_especialidad === v.id_especialidad} renderInput={(params) => (
                     <TextField {...params} label="Especialidades" error={Boolean(errors.especialidades)} helperText={errors.especialidades ? errors.especialidades.message : ''} />
                   )} />
-                )} />
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
-                <Controller name="carga_trabajo" control={control} render={({ field }) => (
-                  <TextField {...field} id="carga_trabajo" label="Carga de Trabajo Actual" type="number" InputProps={{ readOnly: true }} helperText="Se calcula automáticamente" />
                 )} />
               </FormControl>
             </Grid>

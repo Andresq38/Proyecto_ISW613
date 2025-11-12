@@ -126,6 +126,24 @@ class TicketModel
         }
     }
 
+    /**
+     * Eliminar un ticket por ID.
+     * Se aprovechan las constraints ON DELETE CASCADE para historial_estados e imágenes relacionadas.
+     */
+    public function delete($id)
+    {
+        try {
+            if (!isset($id)) {
+                throw new Exception('ID de ticket requerido');
+            }
+            $sql = "DELETE FROM ticket WHERE id_ticket = ?";
+            $this->enlace->executePrepared($sql, 'i', [(int)$id]);
+            return [ 'success' => true, 'id_ticket' => (int)$id ];
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
 
     /*Obtener */
     public function get($id)

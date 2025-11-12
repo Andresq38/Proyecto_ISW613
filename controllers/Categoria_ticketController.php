@@ -77,4 +77,35 @@ class categoria_ticket
             handleException($e);
         }
     }
+
+    public function create()
+    {
+        try {
+            $request = new Request();
+            $response = new Response();
+            $inputJSON = $request->getJSON();
+            $model = new Categoria_ticketModel();
+            $result = $model->create($inputJSON);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    public function update($id = null)
+    {
+        try {
+            $request = new Request();
+            $response = new Response();
+            $inputJSON = $request->getJSON();
+            if ($id && empty($inputJSON->id_categoria)) {
+                $inputJSON->id_categoria = (int)$id; // permitir /categoria_ticket/update/{id}
+            }
+            $model = new Categoria_ticketModel();
+            $result = $model->update($inputJSON);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }

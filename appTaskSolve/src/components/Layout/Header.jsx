@@ -10,18 +10,34 @@ const Header = () => {
   // Función para verificar si una ruta está activa
   const isActive = (path) => {
     if (path === '/') return location.pathname === '/';
-    // Para MANTENIMIENTOS, considerar subrutas relacionadas
+    
+    // Para MANTENIMIENTOS, solo activar en rutas específicas de mantenimiento
     if (path === '/mantenimientos') {
-      // Todas las rutas de mantenimientos y sus submódulos
       const mantenimientosPaths = [
         '/mantenimientos',
-        '/tecnicos',
+        '/mantenimientos/categorias',
         '/tecnicos/crear',
-        '/categorias',
+        '/tecnicos/editar',
+        '/categorias/crear', // legacy direct paths
+        '/categorias/editar',
         '/tickets/crear',
+        '/tickets/editar',
       ];
       return mantenimientosPaths.some((p) => location.pathname.startsWith(p));
     }
+    
+    // Para TÉCNICOS, excluir rutas de mantenimiento (crear/editar)
+    if (path === '/tecnicos') {
+      return location.pathname.startsWith('/tecnicos') && 
+             !location.pathname.includes('/crear') && 
+             !location.pathname.includes('/editar');
+    }
+    
+    // Para CATEGORÍAS: ahora mostrar activo también en crear/editar (resalte naranja solicitado)
+    if (path === '/categorias') {
+      return location.pathname.startsWith('/categorias');
+    }
+    
     return location.pathname.startsWith(path);
   };
 
@@ -35,9 +51,13 @@ const Header = () => {
     minWidth: 'auto',
     borderBottom: isActive(path) ? '3px solid white' : '3px solid transparent',
     borderRadius: 0,
-    backgroundColor: isActive(path) ? 'rgba(255, 255, 255, 0.15)' : 'transparent',
+    backgroundColor: isActive(path)
+      ? 'rgba(255, 255, 255, 0.15)'
+      : 'transparent',
     '&:hover': {
-      backgroundColor: isActive(path) ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+      backgroundColor: isActive(path)
+        ? 'rgba(255, 255, 255, 0.25)'
+        : 'rgba(255, 255, 255, 0.1)',
     },
   });
   // Tickets menu / warning message state
