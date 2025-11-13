@@ -492,7 +492,7 @@ export default function EditTicket() {
         subtitle={success || undefined}
         actions={[
           { label: 'Ver detalle', onClick: () => navigate(`/tickets/${id}`), variant: 'contained', color: 'success' },
-          { label: 'Ir al listado', onClick: () => navigate('/tickets'), variant: 'outlined', color: 'success' }
+          { label: 'Ir al listado', onClick: () => navigate('/'), variant: 'outlined', color: 'success' }
         ]}
       />
     </Container>

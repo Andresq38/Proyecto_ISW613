@@ -11,10 +11,22 @@ import {
   Chip,
   Box,
   Paper,
-  Divider
+  Divider,
+  Button,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Snackbar
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import FolderSpecialIcon from '@mui/icons-material/FolderSpecial';
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import CloseIcon from '@mui/icons-material/Close';
+import SuccessOverlay from '../common/SuccessOverlay';
 import AccessTimeIcon from '@mui/icons-material/AccessTime';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
@@ -24,6 +36,12 @@ const CategoriasList = () => {
   const [categorias, setCategorias] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [targetCategoria, setTargetCategoria] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
+  const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
+  const [deletedInfo, setDeletedInfo] = useState(null);
   const navigate = useNavigate();
 
   // Detección dinámica de la API base
@@ -125,6 +143,20 @@ const CategoriasList = () => {
         </Typography>
       </Box>
 
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 3, gap: 2 }}>
+        <Button
+          variant={deleteMode ? 'outlined' : 'contained'}
+          color={deleteMode ? 'inherit' : 'error'}
+          startIcon={deleteMode ? <CloseIcon /> : <DeleteOutlineIcon />}
+          onClick={() => {
+            setDeleteMode(d => !d);
+            setTargetCategoria(null);
+          }}
+        >
+          {deleteMode ? 'Cancelar eliminación' : 'Eliminar'}
+        </Button>
+      </Box>
+
       {loading ? (
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
           <CircularProgress />
@@ -158,7 +190,7 @@ const CategoriasList = () => {
                     }
                   }
                 }}
-                onClick={() => handleCategoriaClick(cat.id_categoria)}
+                onClick={() => !deleteMode && handleCategoriaClick(cat.id_categoria)}
               >
                 {/* Edición desde detalle: se removió botón de edición directo en el listado */}
                 {/* Barra superior de color */}
@@ -168,6 +200,23 @@ const CategoriasList = () => {
                     background: 'linear-gradient(90deg, #1976d2 0%, #42a5f5 100%)'
                   }} 
                 />
+                {deleteMode && (
+                  <Tooltip title={`Eliminar categoría #${cat.id_categoria}`}>
+                    <Button
+                      size="small"
+                      color="error"
+                      variant="contained"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setTargetCategoria(cat);
+                        setConfirmOpen(true);
+                      }}
+                      sx={{ position: 'absolute', top: 8, right: 8, zIndex: 2, minWidth: 'auto', p: 0.6 }}
+                    >
+                      <DeleteForeverIcon fontSize="small" />
+                    </Button>
+                  </Tooltip>
+                )}
                 
                 <CardContent sx={{ p: 3 }}>
                   {/* ID Badge */}
@@ -295,6 +344,55 @@ const CategoriasList = () => {
           ))}
         </Grid>
       )}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ¿Seguro que deseas eliminar la categoría "{targetCategoria?.nombre}" (ID {targetCategoria?.id_categoria})? Esta acción no se puede deshacer.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
+          <Button
+            color="error"
+            variant="contained"
+            onClick={async () => {
+              if (!targetCategoria) return;
+              try {
+                const apiBase = getApiBase();
+                const idDel = targetCategoria.id_categoria;
+                await axios.delete(`${apiBase}/apiticket/categoria_ticket/${idDel}`);
+                setCategorias(cats => cats.filter(c => c.id_categoria !== idDel));
+                setDeletedInfo({ id: idDel, nombre: targetCategoria.nombre });
+                setShowDeleteSuccess(true);
+              } catch (err) {
+                setSnackbar({ open: true, message: err?.response?.data?.error || err.message || 'Error al eliminar', severity: 'error' });
+              } finally {
+                setConfirmOpen(false);
+                setTargetCategoria(null);
+              }
+            }}
+          >Eliminar</Button>
+        </DialogActions>
+      </Dialog>
+      <SuccessOverlay
+        open={showDeleteSuccess}
+        mode="delete"
+        entity="Categoría"
+        subtitle={deletedInfo ? `Se eliminó "${deletedInfo.nombre}" (ID ${deletedInfo.id}).` : undefined}
+        onClose={() => setShowDeleteSuccess(false)}
+        actions={[
+          { label: 'Cerrar', onClick: () => setShowDeleteSuccess(false), variant: 'contained', color: 'error' },
+          { label: 'Crear nueva', onClick: () => { setShowDeleteSuccess(false); navigate('/categorias/crear'); }, variant: 'outlined', color: 'error' }
+        ]}
+      />
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={5000}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+        message={snackbar.message}
+      />
     </Container>
   );
 };

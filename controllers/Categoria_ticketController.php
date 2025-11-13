@@ -95,4 +95,20 @@ class categoria_ticket
             handleException($e);
         }
     }
+
+    /** Eliminar categoría si no tiene tickets asociados */
+    public function delete($id = null)
+    {
+        try {
+            if (empty($id)) {
+                throw new Exception('id de categoría requerido para eliminar');
+            }
+            $response = new Response();
+            $model = new Categoria_ticketModel();
+            $result = $model->delete((int)$id);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }

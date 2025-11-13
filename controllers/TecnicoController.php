@@ -87,4 +87,20 @@ class tecnico
             handleException($e);
         }
     }
+
+    /** DELETE eliminar técnico si no tiene tickets asociados (FK restrict) */
+    public function delete($id = null)
+    {
+        try {
+            if (empty($id)) {
+                throw new Exception('id_tecnico requerido');
+            }
+            $response = new Response();
+            $tecnico = new TecnicoModel();
+            $result = $tecnico->delete((int)$id);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }

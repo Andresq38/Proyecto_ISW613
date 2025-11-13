@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Container, Typography, Grid, Card, CardContent, Chip, Box, CircularProgress, Alert, Avatar, Button, Divider } from '@mui/material';
+import { Container, Typography, Grid, Card, CardContent, Chip, Box, CircularProgress, Alert, Avatar, Button, Divider, Dialog, DialogTitle, DialogContent, DialogActions, IconButton, Tooltip, Snackbar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { getApiOrigin } from '../../utils/apiBase';
@@ -8,6 +8,8 @@ import EmailIcon from '@mui/icons-material/Email';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import WarningIcon from '@mui/icons-material/Warning';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
+import SuccessOverlay from '../common/SuccessOverlay';
 
 // Centralizado
 const getApiBase = () => getApiOrigin();
@@ -16,6 +18,12 @@ export default function TecnicosList() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [deleteMode, setDeleteMode] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [targetTecnico, setTargetTecnico] = useState(null);
+  const [showDeleteSuccess, setShowDeleteSuccess] = useState(false);
+  const [deletedInfo, setDeletedInfo] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'info' });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,12 +56,51 @@ export default function TecnicosList() {
     return () => controller.abort();
   }, []);
 
+  const requestDelete = (tecnico) => {
+    setTargetTecnico(tecnico);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!targetTecnico) return;
+    const t = targetTecnico;
+    setConfirmOpen(false);
+    setTargetTecnico(null);
+    try {
+      const apiBase = getApiBase();
+      await axios.delete(`${apiBase}/apiticket/tecnico/${t.id_tecnico}`);
+      setItems(prev => prev.filter(x => x.id_tecnico !== t.id_tecnico));
+      setDeletedInfo(t);
+      setShowDeleteSuccess(true);
+    } catch (err) {
+      console.error('Error eliminando técnico:', err);
+      setSnackbar({ open: true, message: err?.response?.data?.error || err?.message || 'No se pudo eliminar', severity: 'error' });
+    }
+  };
+
+  const closeOverlay = () => {
+    setShowDeleteSuccess(false);
+    setDeletedInfo(null);
+  };
+
   return (
     <Container sx={{ py: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: 'text.primary' }}>
           👨‍💻 Técnicos
         </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button variant="outlined" size="small" onClick={() => navigate('/tecnicos/crear')}>Nuevo</Button>
+          <Button
+            size="small"
+            variant={deleteMode ? 'contained' : 'outlined'}
+            color="error"
+            startIcon={<DeleteForeverIcon />}
+            onClick={() => setDeleteMode(v => !v)}
+          >
+            {deleteMode ? 'Cancelar' : 'Eliminar'}
+          </Button>
+        </Box>
       </Box>
 
       {loading && (
@@ -98,7 +145,7 @@ export default function TecnicosList() {
                   display: 'flex',
                   flexDirection: 'column'
                 }} 
-                onClick={() => navigate(`/tecnicos/${t.id_tecnico}`)}
+                onClick={() => { if (!deleteMode) navigate(`/tecnicos/${t.id_tecnico}`); }}
               >
                 <CardContent sx={{ 
                   p: 2.5, 
@@ -152,6 +199,13 @@ export default function TecnicosList() {
                         }}
                       />
                     </Box>
+                    {deleteMode && (
+                      <Tooltip title={`Eliminar técnico #${t.id_tecnico}`}> 
+                        <IconButton color="error" size="small" onClick={(e) => { e.stopPropagation(); requestDelete(t); }}>
+                          <DeleteForeverIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </Box>
 
                   {/* Correo */}
@@ -242,6 +296,43 @@ export default function TecnicosList() {
           );
         })}
       </Grid>
+      {/* Diálogo confirmación */}
+      <Dialog open={confirmOpen} onClose={() => setConfirmOpen(false)}>
+        <DialogTitle>Confirmar eliminación</DialogTitle>
+        <DialogContent>
+          ¿Seguro que deseas eliminar el técnico #{targetTecnico?.id_tecnico}? Esta acción es permanente.
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)}>Cancelar</Button>
+          <Button color="error" variant="contained" onClick={confirmDelete}>Eliminar</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(s => ({ ...s, open: false }))}
+        message={snackbar.message}
+      />
+
+      <SuccessOverlay
+        open={showDeleteSuccess}
+        mode="delete"
+        entity="Técnico"
+        subtitle={`El técnico #${deletedInfo?.id_tecnico} ha sido eliminado correctamente.`}
+        onClose={closeOverlay}
+        actions={[{
+          label: 'Cerrar',
+          onClick: closeOverlay,
+          variant: 'contained',
+          color: 'error'
+        }, {
+          label: 'Crear Técnico',
+          onClick: () => { closeOverlay(); navigate('/tecnicos/crear'); },
+          variant: 'outlined',
+          color: 'error'
+        }]}
+      />
     </Container>
   );
 }

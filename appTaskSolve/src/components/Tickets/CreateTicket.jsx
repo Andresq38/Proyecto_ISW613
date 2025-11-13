@@ -43,7 +43,9 @@ export default function CreateTicket() {
 
   const [prioridades, setPrioridades] = useState([]);
   const [etiquetas, setEtiquetas] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
+  const [usuarios, setUsuarios] = useState([]); // Solo clientes filtrados
+  const [allRoles, setAllRoles] = useState([]);
+  const [clienteRolId, setClienteRolId] = useState(null);
   const [categoriaPreview, setCategoriaPreview] = useState(null);
 
   const [form, setForm] = useState({
@@ -93,14 +95,22 @@ export default function CreateTicket() {
       try {
         setError('');
         // Cargar prioridades, etiquetas y usuarios
-        const [pRes, eRes, usersRes] = await Promise.all([
+        const [pRes, eRes, usersRes, rolesRes] = await Promise.all([
           axios.get(`${apiBase}/ticket/prioridades`, { signal: controller.signal }),
           axios.get(`${apiBase}/etiqueta`, { signal: controller.signal }),
-          axios.get(`${apiBase}/usuario`, { signal: controller.signal })
+          axios.get(`${apiBase}/usuario`, { signal: controller.signal }),
+          axios.get(`${apiBase}/rol`, { signal: controller.signal })
         ]);
         setPrioridades(Array.isArray(pRes.data) ? pRes.data : []);
         setEtiquetas(Array.isArray(eRes.data) ? eRes.data : (eRes.data?.data || []));
-        setUsuarios(Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.data || []));
+        const rawUsuarios = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.data || []);
+        const roles = Array.isArray(rolesRes.data) ? rolesRes.data : (rolesRes.data?.data || []);
+        setAllRoles(roles);
+        const clienteRol = roles.find(r => (r.descripcion || '').toLowerCase() === 'cliente');
+        const assumedClienteId = clienteRol ? clienteRol.id_rol : 3; // fallback a 3 si no se encuentra
+        setClienteRolId(assumedClienteId);
+        const filtrados = rawUsuarios.filter(u => String(u.id_rol) === String(assumedClienteId));
+        setUsuarios(filtrados);
       } catch (e) {
         if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
           setError(e.response?.data?.error || e.message || 'Error al cargar datos iniciales');
@@ -361,7 +371,7 @@ export default function CreateTicket() {
             <Grid item xs={12} md={6}>
               <Autocomplete
                 options={usuarios}
-                loading={usuarios.length === 0}
+                loading={usuarios.length === 0 && !error}
                 getOptionLabel={(opt) => {
                   if (!opt) return '';
                   return `${opt.nombre || ''} (${opt.id_usuario || ''})`;
@@ -387,7 +397,12 @@ export default function CreateTicket() {
                     required
                     onBlur={() => markTouched('id_usuario')}
                     error={Boolean(touched.id_usuario && errors.id_usuario)}
-                    helperText={touched.id_usuario && errors.id_usuario || (usuarioInfo?.correo ? `Correo: ${usuarioInfo.correo}` : 'Seleccione el usuario que reporta el problema')}
+                    helperText={
+                      touched.id_usuario && errors.id_usuario
+                        || (usuarioInfo?.correo
+                          ? `Correo: ${usuarioInfo.correo}`
+                          : `Solo se muestran usuarios con rol Cliente${clienteRolId ? ` (ID rol ${clienteRolId})` : ''}`)
+                    }
                     InputProps={{
                       ...params.InputProps,
                       startAdornment: <PersonOutlineIcon sx={{ mr: 1, color: 'primary.main' }} />
@@ -395,6 +410,7 @@ export default function CreateTicket() {
                   />
                 )}
                 isOptionEqualToValue={(o, v) => o.id_usuario === v.id_usuario}
+                noOptionsText={clienteRolId ? 'No hay usuarios con rol Cliente disponibles' : 'Cargando roles...'}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -444,7 +460,7 @@ export default function CreateTicket() {
         actions={[
           { label: 'Crear otro', onClick: () => { setShowSuccessOverlay(false); setForm({ titulo:'', descripcion:'', prioridad:'Media', id_usuario:'', id_etiqueta:'' }); }, variant: 'contained', color: 'success' },
           { label: 'Ver detalle', onClick: () => { if (createdId) navigate(`/tickets/${createdId}`); }, variant: 'outlined', color: 'success' },
-          { label: 'Ir al listado', onClick: () => { navigate('/tickets'); }, variant: 'outlined', color: 'success' }
+          { label: 'Ir al listado', onClick: () => { navigate('/'); }, variant: 'outlined', color: 'success' }
         ]}
       />
     </Container>

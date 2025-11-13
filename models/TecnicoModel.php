@@ -310,4 +310,44 @@ class TecnicoModel
             handleException($e);
         }
     }
+
+    /** Eliminar técnico solo si no tiene tickets asociados (FK restrict) */
+    public function delete($id)
+    {
+        try {
+            $id = (int)$id;
+            if ($id <= 0) {
+                throw new Exception('ID técnico inválido');
+            }
+            // Verificar tickets asociados
+            $sqlCount = "SELECT COUNT(*) AS total FROM ticket WHERE id_tecnico = ?";
+            $resCount = $this->enlace->executePrepared($sqlCount, 'i', [ $id ]);
+            $total = (int)($resCount[0]->total ?? 0);
+            if ($total > 0) {
+                throw new Exception('No se puede eliminar: técnico con tickets asociados');
+            }
+            // Obtener id_usuario vinculado para limpieza opcional
+            $sqlUsr = "SELECT id_usuario FROM tecnico WHERE id_tecnico = ?";
+            $resUsr = $this->enlace->executePrepared($sqlUsr, 'i', [ $id ]);
+            $idUsuario = $resUsr[0]->id_usuario ?? null;
+            // Eliminar técnico
+            $this->enlace->executePrepared_DML('DELETE FROM tecnico WHERE id_tecnico = ?', 'i', [ $id ]);
+            // Opcional: eliminar usuario si rol = 2 y no es utilizado por otro técnico
+            if ($idUsuario) {
+                $sqlRol = "SELECT id_rol FROM usuario WHERE id_usuario = ?";
+                $rolRes = $this->enlace->executePrepared($sqlRol, 's', [ $idUsuario ]);
+                $rol = $rolRes[0]->id_rol ?? null;
+                if ((int)$rol === 2) {
+                    // Asegurar que no queda relación
+                    $chkTec = $this->enlace->executePrepared('SELECT COUNT(*) AS c FROM tecnico WHERE id_usuario = ?', 's', [ $idUsuario ]);
+                    if ((int)($chkTec[0]->c ?? 0) === 0) {
+                        $this->enlace->executePrepared_DML('DELETE FROM usuario WHERE id_usuario = ?', 's', [ $idUsuario ]);
+                    }
+                }
+            }
+            return (object)[ 'deleted' => true, 'id_tecnico' => $id, 'message' => 'Técnico eliminado correctamente' ];
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }

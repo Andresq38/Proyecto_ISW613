@@ -2,12 +2,13 @@ import React from 'react';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Box, Typography, Button } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
 
 /**
  * SuccessOverlay reusable dialog.
  * Props:
  *  - open: boolean
- *  - mode: 'create' | 'update'
+ *  - mode: 'create' | 'update' | 'delete'
  *  - entity: string (e.g. 'Categoría', 'Técnico', 'Ticket')
  *  - onClose: () => void
  *  - actions: array of { label, onClick, variant ('contained'|'outlined'), color }
@@ -22,10 +23,16 @@ export default function SuccessOverlay({
   subtitle,
 }) {
   const isCreate = mode === 'create';
-  const title = isCreate ? `¡${entity} creada!` : `¡${entity} actualizada!`;
+  const isUpdate = mode === 'update';
+  const isDelete = mode === 'delete';
+
+  const verb = isCreate ? 'creada' : isUpdate ? 'actualizada' : 'eliminada';
+  const title = `¡${entity} ${verb}!`;
   const defaultSubtitle = isCreate
     ? `La ${entity.toLowerCase()} se registró correctamente. Puedes continuar sin abandonar la pantalla.`
-    : `Los cambios de la ${entity.toLowerCase()} se guardaron correctamente.`;
+    : isUpdate
+      ? `Los cambios de la ${entity.toLowerCase()} se guardaron correctamente.`
+      : `La ${entity.toLowerCase()} se eliminó correctamente. Esta acción no se puede deshacer.`;
 
   return (
     <Dialog
@@ -48,18 +55,16 @@ export default function SuccessOverlay({
         <Box sx={{
           width: 100,
           height: 100,
-          bgcolor: isCreate ? 'success.main' : 'info.main',
+          bgcolor: isCreate ? 'success.main' : isUpdate ? 'info.main' : 'error.main',
           borderRadius: '50%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           boxShadow: '0 6px 24px rgba(0,0,0,0.25)'
         }}>
-          {isCreate ? (
-            <CheckCircleIcon sx={{ fontSize: 64, color: 'common.white' }} />
-          ) : (
-            <AutoFixHighIcon sx={{ fontSize: 64, color: 'common.white' }} />
-          )}
+          {isCreate && <CheckCircleIcon sx={{ fontSize: 64, color: 'common.white' }} />}
+          {isUpdate && <AutoFixHighIcon sx={{ fontSize: 64, color: 'common.white' }} />}
+          {isDelete && <DeleteForeverIcon sx={{ fontSize: 64, color: 'common.white' }} />}
         </Box>
       </Box>
       <DialogTitle sx={{ mt: 6, fontWeight: 800, textAlign: 'center' }}>{title}</DialogTitle>
@@ -79,14 +84,14 @@ export default function SuccessOverlay({
             key={idx}
             onClick={a.onClick}
             variant={a.variant || 'contained'}
-            color={a.color || (isCreate ? 'success' : 'info')}
+            color={a.color || (isCreate ? 'success' : isUpdate ? 'info' : 'error')}
             sx={{ minWidth: 160, fontWeight: 700 }}
           >
             {a.label}
           </Button>
         ))}
         {!actions.length && (
-          <Button onClick={onClose} variant="contained" color={isCreate ? 'success' : 'info'} sx={{ minWidth: 160, fontWeight: 700 }}>
+          <Button onClick={onClose} variant="contained" color={isCreate ? 'success' : isUpdate ? 'info' : 'error'} sx={{ minWidth: 160, fontWeight: 700 }}>
             Cerrar
           </Button>
         )}

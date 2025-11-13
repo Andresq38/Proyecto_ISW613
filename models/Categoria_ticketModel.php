@@ -206,4 +206,29 @@ class Categoria_ticketModel
             handleException($e);
         }
     }
+
+    /** Eliminar una categoría si no tiene tickets asociados */
+    public function delete($id)
+    {
+        try {
+            $id = (int)$id;
+            if ($id <= 0) {
+                throw new Exception('ID de categoría inválido');
+            }
+
+            // Verificar si existen tickets asociados
+            $sqlCount = "SELECT COUNT(*) AS total FROM ticket WHERE id_categoria = ?";
+            $countRes = $this->enlace->executePrepared($sqlCount, 'i', [ $id ]);
+            $total = (int)($countRes[0]->total ?? 0);
+            if ($total > 0) {
+                throw new Exception('No se puede eliminar: categoría con tickets asociados');
+            }
+
+            // Eliminar categoría; relaciones con especialidad y categoria_etiqueta se eliminan por cascada
+            $this->enlace->executePrepared_DML('DELETE FROM categoria_ticket WHERE id_categoria = ?', 'i', [ $id ]);
+            return (object)[ 'deleted' => true, 'id_categoria' => $id, 'message' => 'Categoría eliminada correctamente' ];
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }

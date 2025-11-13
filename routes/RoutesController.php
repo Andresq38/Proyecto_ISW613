@@ -180,21 +180,49 @@ class RoutesController
                                     break;
 
                                 case 'DELETE':
-                                    if ($param1) {
-                                        $response->delete($param1);
-                                    } elseif ($action) {
-                                        if (method_exists($controllerClass, $action)) {
-                                            $response->$action();
+                                        // DELETE routing flexible: allow /controller/{id} or /controller/delete/{id}
+                                        if ($param1) {
+                                            // Pattern /controller/action/{id} e.g. /categoria_ticket/delete/5
+                                            if ($action && $action !== $param1 && method_exists($controllerClass, $action)) {
+                                                // If action exists and param1 is present, call action with param1
+                                                $response->$action($param1);
+                                            } else {
+                                                // Fallback: treat param1 as id for delete
+                                                if (method_exists($controllerClass, 'delete')) {
+                                                    $response->delete($param1);
+                                                } else {
+                                                    $json = array(
+                                                        'status' => 404,
+                                                        'result' => 'Método delete no disponible en este controlador'
+                                                    );
+                                                    echo json_encode($json, http_response_code($json["status"]));
+                                                }
+                                            }
+                                        } elseif ($action) {
+                                            // Pattern /controller/{id} with DELETE (action is numeric id)
+                                            if (ctype_digit($action) && method_exists($controllerClass, 'delete')) {
+                                                $response->delete($action);
+                                            } elseif (method_exists($controllerClass, $action)) {
+                                                $response->$action();
+                                            } else {
+                                                $json = array(
+                                                    'status' => 404,
+                                                    'result' => 'Acción no encontrada'
+                                                );
+                                                echo json_encode($json, http_response_code($json["status"]));
+                                            }
                                         } else {
-                                            $json = array(
-                                                'status' => 404,
-                                                'result' => 'Acción no encontrada'
-                                            );
-                                            echo json_encode($json, http_response_code($json["status"]));
+                                            // Pattern /controller with DELETE (no id)
+                                            if (method_exists($controllerClass, 'delete')) {
+                                                $response->delete();
+                                            } else {
+                                                $json = array(
+                                                    'status' => 404,
+                                                    'result' => 'ID requerido para eliminar'
+                                                );
+                                                echo json_encode($json, http_response_code($json["status"]));
+                                            }
                                         }
-                                    } else {
-                                        $response->delete();
-                                    }
                                     break;
 
                                 default:
