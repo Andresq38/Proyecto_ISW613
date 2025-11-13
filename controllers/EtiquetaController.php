@@ -26,18 +26,18 @@ class etiqueta
             handleException($e);
         }
     }
-    //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
-    /*public function getActorMovie($id)
+    
+     public function create()
     {
         try {
+            $request = new Request();
             $response = new Response();
-            $genero = new Categoria_ticketModel;
-            $result = $genero->getActorMovie($id);
-            //Dar respuesta
+            $inputJSON = $request->getJSON();
+            $model = new EtiquetaModel();
+            $result = $model->create($inputJSON);
             $response->toJSON($result);
         } catch (Exception $e) {
             handleException($e);
         }
     }
-    */
 }

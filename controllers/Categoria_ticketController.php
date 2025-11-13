@@ -51,20 +51,7 @@ class categoria_ticket
         }
     }
 
-    //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
-    /*public function getActorMovie($id)
-    {
-        try {
-            $response = new Response();
-            $genero = new Categoria_ticketModel;
-            $result = $genero->getActorMovie($id);
-            //Dar respuesta
-            $response->toJSON($result);
-        } catch (Exception $e) {
-            handleException($e);
-        }
-    }
-    */
+
 
     public function getCategoriaByEtiqueta($idEtiqueta)
     {

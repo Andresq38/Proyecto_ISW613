@@ -36,24 +36,7 @@ class Categoria_etiquetaModel
             handleException($e);
         }
     }
-     //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
-    /*Obtener los actores de una pelicula */
-    /*/public function getActorMovie($idMovie)
-    {
-        try {
-            //Consulta SQL
-            $vSQL = "SELECT g.id, g.fname, g.lname, mg.role".
-            " FROM actor g, movie_cast mg".
-            " where g.id=mg.actor_id and mg.movie_id=$idMovie;";
-            //Establecer conexión
-            
-            //Ejecutar la consulta
-            $vResultado = $this->enlace->executeSQL($vSQL);
-            //Retornar el resultado
-            return $vResultado;
-        } catch (Exception $e) {
-            handleException($e);
-        }
-    }*/
+
+    
     
 }

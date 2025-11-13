@@ -36,24 +36,32 @@ class EtiquetaModel
             handleException($e);
         }
     }
-     //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
-    /*Obtener los actores de una pelicula */
-    /*/public function getActorMovie($idMovie)
+
+    /** Crear etiqueta y opcionalmente asociarla a categorías */
+    public function create($obj)
     {
         try {
-            //Consulta SQL
-            $vSQL = "SELECT g.id, g.fname, g.lname, mg.role".
-            " FROM actor g, movie_cast mg".
-            " where g.id=mg.actor_id and mg.movie_id=$idMovie;";
-            //Establecer conexión
-            
-            //Ejecutar la consulta
-            $vResultado = $this->enlace->executeSQL($vSQL);
-            //Retornar el resultado
-            return $vResultado;
+            if (empty($obj->nombre)) {
+                throw new Exception('Nombre es requerido');
+            }
+            $nombre = trim($obj->nombre);
+            $sqlIns = "INSERT INTO etiqueta (nombre) VALUES (?)";
+            $newId = $this->enlace->executePrepared_DML_last($sqlIns, 's', [ $nombre ]);
+
+            // Asociaciones opcionales con categorias
+            if (isset($obj->categorias) && is_array($obj->categorias) && !empty($obj->categorias)) {
+                foreach ($obj->categorias as $idCat) {
+                    $this->enlace->executePrepared_DML(
+                        "INSERT INTO categoria_etiqueta (id_categoria_ticket, id_etiqueta) VALUES (?, ?)",
+                        'ii', [ (int)$idCat, (int)$newId ]
+                    );
+                }
+            }
+
+            return $this->get($newId);
         } catch (Exception $e) {
             handleException($e);
         }
-    }*/
-    
+    }
+
 }

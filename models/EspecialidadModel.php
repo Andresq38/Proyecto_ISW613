@@ -36,24 +36,30 @@ class EspecialidadModel
             handleException($e);
         }
     }
-     //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
-    /*Obtener los actores de una pelicula */
-    /*/public function getActorMovie($idMovie)
+  
+    /** Crear especialidad (nombre, id_sla, id_categoria son requeridos). descripcion = nombre */
+    public function create($obj)
     {
         try {
-            //Consulta SQL
-            $vSQL = "SELECT g.id, g.fname, g.lname, mg.role".
-            " FROM actor g, movie_cast mg".
-            " where g.id=mg.actor_id and mg.movie_id=$idMovie;";
-            //Establecer conexión
-            
-            //Ejecutar la consulta
-            $vResultado = $this->enlace->executeSQL($vSQL);
-            //Retornar el resultado
-            return $vResultado;
+            if (empty($obj->nombre) || empty($obj->id_sla) || !isset($obj->id_categoria)) {
+                throw new Exception('Nombre, id_sla e id_categoria son requeridos');
+            }
+            $nombre = trim($obj->nombre);
+            // según requerimiento, la descripción será igual al nombre
+            $descripcion = $nombre;
+            $idSla = (int)$obj->id_sla;
+            $idCategoria = (int)$obj->id_categoria;
+
+            $sqlIns = "INSERT INTO especialidad (nombre, descripcion, id_sla, id_categoria) VALUES (?, ?, ?, ?)";
+            $types = 'ssii';
+            $params = [ $nombre, $descripcion, $idSla, $idCategoria ];
+
+            $newId = $this->enlace->executePrepared_DML_last($sqlIns, $types, $params);
+
+            return $this->get($newId);
         } catch (Exception $e) {
             handleException($e);
         }
-    }*/
+    }
     
 }
