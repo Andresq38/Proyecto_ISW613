@@ -19,6 +19,7 @@ import {
   Chip,
   Fade,
 } from '@mui/material';
+import SuccessOverlay from '../common/SuccessOverlay';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
@@ -30,9 +31,6 @@ import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
 import { getApiOrigin } from '../../utils/apiBase';
 import { formatDate } from '../../utils/format';
 
-// Usuario solicitante fijo mientras no hay autenticación
-const CURRENT_USER = '1-1343-0736';
-
 export default function CreateTicket() {
   const navigate = useNavigate();
   const apiBase = useMemo(() => `${getApiOrigin()}/apiticket`, []);
@@ -41,28 +39,44 @@ export default function CreateTicket() {
   const [success, setSuccess] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [createdId, setCreatedId] = useState(null);
 
   const [prioridades, setPrioridades] = useState([]);
   const [etiquetas, setEtiquetas] = useState([]);
+  const [usuarios, setUsuarios] = useState([]);
   const [categoriaPreview, setCategoriaPreview] = useState(null);
 
   const [form, setForm] = useState({
     titulo: '',
     descripcion: '',
     prioridad: 'Media',
-    id_usuario: CURRENT_USER,
+    id_usuario: '',
     id_etiqueta: ''
   });
+  const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const [usuarioInfo, setUsuarioInfo] = useState(null);
   const [fechaCreacion] = useState(() => new Date());
   const [touched, setTouched] = useState({});
 
   const errors = {
-    titulo: !form.titulo?.trim() ? 'Requerido' : '',
-    descripcion: !form.descripcion?.trim() ? 'Requerido' : '',
-    id_etiqueta: !form.id_etiqueta ? 'Seleccione una etiqueta' : '',
+    titulo: !form.titulo?.trim() 
+      ? 'El título es requerido' 
+      : form.titulo.trim().length < 5 
+      ? 'El título debe tener al menos 5 caracteres' 
+      : form.titulo.trim().length > 200 
+      ? 'El título no puede exceder 200 caracteres' 
+      : '',
+    descripcion: !form.descripcion?.trim() 
+      ? 'La descripción es requerida' 
+      : form.descripcion.trim().length < 10 
+      ? 'La descripción debe tener al menos 10 caracteres' 
+      : form.descripcion.trim().length > 1000 
+      ? 'La descripción no puede exceder 1000 caracteres' 
+      : '',
+    id_etiqueta: !form.id_etiqueta ? 'Debe seleccionar una etiqueta' : '',
+    id_usuario: !form.id_usuario ? 'Debe seleccionar un usuario solicitante' : '',
   };
-  const isValid = !errors.titulo && !errors.descripcion && !errors.id_etiqueta;
+  const isValid = !errors.titulo && !errors.descripcion && !errors.id_etiqueta && !errors.id_usuario;
 
   const prioridadColor = (p) => {
     switch (p) {
@@ -78,23 +92,15 @@ export default function CreateTicket() {
     async function load() {
       try {
         setError('');
-        // Cargar prioridades, etiquetas y usuario solicitante
-        const [pRes, eRes, uRes] = await Promise.all([
+        // Cargar prioridades, etiquetas y usuarios
+        const [pRes, eRes, usersRes] = await Promise.all([
           axios.get(`${apiBase}/ticket/prioridades`, { signal: controller.signal }),
           axios.get(`${apiBase}/etiqueta`, { signal: controller.signal }),
-          axios.get(`${apiBase}/usuario/${CURRENT_USER}`, { signal: controller.signal })
+          axios.get(`${apiBase}/usuario`, { signal: controller.signal })
         ]);
         setPrioridades(Array.isArray(pRes.data) ? pRes.data : []);
         setEtiquetas(Array.isArray(eRes.data) ? eRes.data : (eRes.data?.data || []));
-        // Normalizar usuario
-        const u = uRes?.data;
-        if (u && (u.id_usuario || u.nombre)) {
-          setUsuarioInfo({
-            id: u.id_usuario ?? CURRENT_USER,
-            nombre: u.nombre ?? 'Usuario',
-            correo: u.correo ?? '—'
-          });
-        }
+        setUsuarios(Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data?.data || []));
       } catch (e) {
         if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
           setError(e.response?.data?.error || e.message || 'Error al cargar datos iniciales');
@@ -104,6 +110,21 @@ export default function CreateTicket() {
     load();
     return () => controller.abort();
   }, [apiBase]);
+
+  // Cargar información del usuario cuando se selecciona
+  useEffect(() => {
+    if (usuarioSeleccionado) {
+      setUsuarioInfo({
+        id: usuarioSeleccionado.id_usuario,
+        nombre: usuarioSeleccionado.nombre,
+        correo: usuarioSeleccionado.correo
+      });
+      setForm(f => ({ ...f, id_usuario: usuarioSeleccionado.id_usuario }));
+    } else {
+      setUsuarioInfo(null);
+      setForm(f => ({ ...f, id_usuario: '' }));
+    }
+  }, [usuarioSeleccionado]);
 
   // Al elegir etiqueta, obtenemos la categoría asociada para mostrarla (optimizado vía endpoint directo)
   useEffect(() => {
@@ -134,8 +155,8 @@ export default function CreateTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isValid) {
-      setSnackbar({ open: true, message: 'Completa los campos requeridos', severity: 'warning' });
-      setTouched({ titulo: true, descripcion: true, id_etiqueta: true });
+      setSnackbar({ open: true, message: 'Por favor complete todos los campos requeridos correctamente', severity: 'warning' });
+      setTouched({ titulo: true, descripcion: true, id_etiqueta: true, id_usuario: true });
       return;
     }
     setLoading(true);
@@ -155,14 +176,11 @@ export default function CreateTicket() {
         throw new Error('No se recibió el ID del ticket creado');
       }
 
-  const successMessage = `Ticket ${idTicket} creado exitosamente`;
+      const successMessage = `✓ Ticket #${idTicket} creado exitosamente`;
+      setCreatedId(idTicket);
       setSuccess(successMessage);
       setSnackbar({ open: true, message: successMessage, severity: 'success' });
       setShowSuccessOverlay(true);
-      // Redirigir al inicio principal después de un breve delay
-      setTimeout(() => {
-        navigate('/', { state: { toast: successMessage, refresh: true, id: idTicket }, replace: true });
-      }, 1500);
     } catch (e) {
       const msg = e.response?.data?.message || e.response?.data?.error || e.message || 'Error al crear el ticket';
       setError(msg);
@@ -212,14 +230,15 @@ export default function CreateTicket() {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Título"
+                label="Título del Ticket"
                 name="titulo"
                 value={form.titulo}
                 onChange={handleChange}
                 onBlur={() => markTouched('titulo')}
                 required
                 error={Boolean(touched.titulo && errors.titulo)}
-                helperText={touched.titulo && errors.titulo}
+                helperText={touched.titulo && errors.titulo || 'Resuma el problema en 5-200 caracteres'}
+                placeholder="Ej: Error al iniciar sesión"
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -243,14 +262,15 @@ export default function CreateTicket() {
                 fullWidth
                 multiline
                 minRows={4}
-                label="Descripción"
+                label="Descripción del Problema"
                 name="descripcion"
                 value={form.descripcion}
                 onChange={handleChange}
                 onBlur={() => markTouched('descripcion')}
                 required
                 error={Boolean(touched.descripcion && errors.descripcion)}
-                helperText={touched.descripcion && errors.descripcion}
+                helperText={touched.descripcion && errors.descripcion || 'Describa detalladamente el problema (10-1000 caracteres)'}
+                placeholder="Explique el problema con el mayor detalle posible, incluyendo cuándo ocurrió, qué estaba haciendo, mensajes de error, etc."
                 InputProps={{
                   startAdornment: <DescriptionOutlinedIcon sx={{ mr: 1, color: 'primary.main' }} />,
                 }}
@@ -339,15 +359,42 @@ export default function CreateTicket() {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Usuario solicitante"
-                value={usuarioInfo ? usuarioInfo.nombre : ''}
-                InputProps={{
-                  readOnly: true,
-                  startAdornment: <PersonOutlineIcon sx={{ mr: 1, color: 'primary.main' }} />
+              <Autocomplete
+                options={usuarios}
+                loading={usuarios.length === 0}
+                getOptionLabel={(opt) => {
+                  if (!opt) return '';
+                  return `${opt.nombre || ''} (${opt.id_usuario || ''})`;
                 }}
-                helperText={usuarioInfo?.correo ? usuarioInfo.correo : ''}
+                renderOption={(props, option) => (
+                  <li {...props} key={option.id_usuario}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', py: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {option.nombre}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {option.correo} • ID: {option.id_usuario}
+                      </Typography>
+                    </Box>
+                  </li>
+                )}
+                onChange={(_, val) => setUsuarioSeleccionado(val)}
+                value={usuarioSeleccionado}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Usuario Solicitante"
+                    required
+                    onBlur={() => markTouched('id_usuario')}
+                    error={Boolean(touched.id_usuario && errors.id_usuario)}
+                    helperText={touched.id_usuario && errors.id_usuario || (usuarioInfo?.correo ? `Correo: ${usuarioInfo.correo}` : 'Seleccione el usuario que reporta el problema')}
+                    InputProps={{
+                      ...params.InputProps,
+                      startAdornment: <PersonOutlineIcon sx={{ mr: 1, color: 'primary.main' }} />
+                    }}
+                  />
+                )}
+                isOptionEqualToValue={(o, v) => o.id_usuario === v.id_usuario}
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -388,34 +435,31 @@ export default function CreateTicket() {
         </form>
       </Paper>
 
-      {/* Overlay de éxito */}
-      {showSuccessOverlay && (
-        <Fade in={showSuccessOverlay}>
-          <Box sx={{
-            position: 'fixed',
-            inset: 0,
-            bgcolor: 'rgba(0,0,0,0.35)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: (theme) => theme.zIndex.modal + 1
-          }}>
-            <Paper elevation={6} sx={{ p: 4, borderRadius: 3, textAlign: 'center', minWidth: 320 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Ticket creado exitosamente</Typography>
-              <Typography variant="body2" sx={{ mb: 2 }}>Redirigiendo...</Typography>
-              <CircularProgress size={32} />
-            </Paper>
-          </Box>
-        </Fade>
-      )}
+      <SuccessOverlay
+        open={showSuccessOverlay}
+        mode="create"
+        entity="Ticket"
+        onClose={() => setShowSuccessOverlay(false)}
+        subtitle={success || undefined}
+        actions={[
+          { label: 'Crear otro', onClick: () => { setShowSuccessOverlay(false); setForm({ titulo:'', descripcion:'', prioridad:'Media', id_usuario:'', id_etiqueta:'' }); }, variant: 'contained', color: 'success' },
+          { label: 'Ver detalle', onClick: () => { if (createdId) navigate(`/tickets/${createdId}`); }, variant: 'outlined', color: 'success' },
+          { label: 'Ir al listado', onClick: () => { navigate('/tickets'); }, variant: 'outlined', color: 'success' }
+        ]}
+      />
     </Container>
     <Snackbar
       open={snackbar.open}
-      autoHideDuration={3500}
+      autoHideDuration={6000}
       onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
     >
-      <Alert severity={snackbar.severity} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} sx={{ width: '100%' }}>
+      <Alert 
+        severity={snackbar.severity} 
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))} 
+        variant="filled"
+        sx={{ width: '100%', fontSize: '1rem', fontWeight: 500 }}
+      >
         {snackbar.message}
       </Alert>
     </Snackbar>

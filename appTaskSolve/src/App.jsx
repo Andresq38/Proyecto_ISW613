@@ -21,6 +21,7 @@ const EditTecnico = lazy(() => import('./components/Tecnicos/EditTecnico'));
 const CategoriasList = lazy(() => import('./components/Categorias/CategoriasList'));
 const CategoriaDetalle = lazy(() => import('./components/Categorias/CategoriaDetalle'));
 const CreateCategoria = lazy(() => import('./components/Categorias/CreateCategoria')); // mantenido para compatibilidad si se accede directo
+const EditCategoria = lazy(() => import('./components/Categorias/EditCategoria'));
 const Dashboard = lazy(() => import('./components/Dashboard/Dashboard'));
 const AsignacionesTecnicos = lazy(() => import('./components/Asignaciones/AsignacionesTecnicos'));
 const MantenimientosHome = lazy(() => import('./components/Mantenimientos/MantenimientosHome'));
@@ -55,6 +56,7 @@ export default function App() {
             <Route path="/categorias" element={<CategoriasList />} />
             <Route path="/categorias/crear" element={<Navigate to="/categorias" replace />} />
             <Route path="/categorias/:id" element={<CategoriaDetalle />} />
+            <Route path="/categorias/editar/:id" element={<EditCategoria />} />
             <Route path="/mantenimientos" element={<MantenimientosHome />} />
             <Route path="/mantenimientos/categorias" element={<MantenimientosCategorias />} />
             <Route path="*" element={<PageNotFound />} />

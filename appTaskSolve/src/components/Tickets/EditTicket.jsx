@@ -18,7 +18,10 @@ import {
   Divider,
   Chip,
   Fade,
+  Breadcrumbs,
+  Link,
 } from '@mui/material';
+import SuccessOverlay from '../common/SuccessOverlay';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
 import CancelRoundedIcon from '@mui/icons-material/CancelRounded';
@@ -27,6 +30,8 @@ import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import EditIcon from '@mui/icons-material/Edit';
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import { getApiOrigin } from '../../utils/apiBase';
 import { formatDate } from '../../utils/format';
 
@@ -39,6 +44,7 @@ export default function EditTicket() {
   const [loadError, setLoadError] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
+  const [success, setSuccess] = useState('');
 
   const [prioridades, setPrioridades] = useState([]);
   const [etiquetas, setEtiquetas] = useState([]);
@@ -56,9 +62,21 @@ export default function EditTicket() {
   const [touched, setTouched] = useState({});
 
   const errors = {
-    titulo: !form.titulo?.trim() ? 'Requerido' : '',
-    descripcion: !form.descripcion?.trim() ? 'Requerido' : '',
-    id_etiqueta: !form.id_etiqueta ? 'Seleccione una etiqueta' : '',
+    titulo: !form.titulo?.trim() 
+      ? 'El título es requerido' 
+      : form.titulo.trim().length < 5 
+      ? 'El título debe tener al menos 5 caracteres' 
+      : form.titulo.trim().length > 200 
+      ? 'El título no puede exceder 200 caracteres' 
+      : '',
+    descripcion: !form.descripcion?.trim() 
+      ? 'La descripción es requerida' 
+      : form.descripcion.trim().length < 10 
+      ? 'La descripción debe tener al menos 10 caracteres' 
+      : form.descripcion.trim().length > 1000 
+      ? 'La descripción no puede exceder 1000 caracteres' 
+      : '',
+    id_etiqueta: !form.id_etiqueta ? 'Debe seleccionar una etiqueta' : '',
   };
   const isValid = !errors.titulo && !errors.descripcion && !errors.id_etiqueta;
 
@@ -165,7 +183,7 @@ export default function EditTicket() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isValid) {
-      setSnackbar({ open: true, message: 'Completa los campos requeridos', severity: 'warning' });
+      setSnackbar({ open: true, message: 'Por favor complete todos los campos requeridos correctamente', severity: 'warning' });
       setTouched({ titulo: true, descripcion: true, id_etiqueta: true });
       return;
     }
@@ -179,13 +197,10 @@ export default function EditTicket() {
         id_etiqueta: form.id_etiqueta ? Number(form.id_etiqueta) : undefined
       });
 
-      const successMessage = `Ticket ${id} actualizado exitosamente`;
+      const successMessage = `✓ Ticket #${id} actualizado exitosamente`;
+      setSuccess(successMessage);
       setSnackbar({ open: true, message: successMessage, severity: 'success' });
       setShowSuccessOverlay(true);
-      
-      setTimeout(() => {
-        navigate(`/tickets/${id}`, { replace: true });
-      }, 1500);
     } catch (e) {
       const msg = e.response?.data?.message || e.response?.data?.error || e.message || 'Error al actualizar el ticket';
       setSnackbar({ open: true, message: msg, severity: 'error' });
@@ -217,6 +232,42 @@ export default function EditTicket() {
   return (
     <>
     <Container maxWidth="lg" sx={{ py: 5, position: 'relative' }}>
+      {/* Breadcrumb */}
+      <Breadcrumbs 
+        separator={<NavigateNextIcon fontSize="small" />} 
+        sx={{ mb: 2 }}
+      >
+        <Link 
+          underline="hover" 
+          color="inherit" 
+          href="#" 
+          onClick={(e) => { e.preventDefault(); navigate('/'); }}
+          sx={{ display: 'flex', alignItems: 'center' }}
+        >
+          Inicio
+        </Link>
+        <Link 
+          underline="hover" 
+          color="inherit" 
+          href="#" 
+          onClick={(e) => { e.preventDefault(); navigate('/mantenimientos'); }}
+        >
+          Mantenimientos
+        </Link>
+        <Link 
+          underline="hover" 
+          color="inherit" 
+          href="#" 
+          onClick={(e) => { e.preventDefault(); navigate(`/tickets/${id}`); }}
+        >
+          Ticket #{id}
+        </Link>
+        <Typography color="warning.main" sx={{ display: 'flex', alignItems: 'center', gap: 0.5, fontWeight: 600 }}>
+          <EditIcon fontSize="small" />
+          Editar
+        </Typography>
+      </Breadcrumbs>
+
       {/* Encabezado */}
       <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
@@ -236,8 +287,9 @@ export default function EditTicket() {
           borderRadius: 3,
           position: 'relative',
           overflow: 'hidden',
-          background: 'linear-gradient(135deg, #ffffff 0%, #fff8e1 60%)',
-          border: '1px solid #ffe0b2',
+          bgcolor: 'background.paper',
+          borderTop: 4,
+          borderTopColor: 'warning.main',
         }}
       >
         {/* Ribbon Prioridad */}
@@ -254,14 +306,15 @@ export default function EditTicket() {
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Título"
+                label="Título del Ticket"
                 name="titulo"
                 value={form.titulo}
                 onChange={handleChange}
                 onBlur={() => markTouched('titulo')}
                 required
                 error={Boolean(touched.titulo && errors.titulo)}
-                helperText={touched.titulo && errors.titulo}
+                helperText={touched.titulo && errors.titulo || 'Resuma el problema en 5-200 caracteres'}
+                placeholder="Ej: Error al iniciar sesión"
               />
             </Grid>
             <Grid item xs={12} md={6}>
@@ -285,14 +338,15 @@ export default function EditTicket() {
                 fullWidth
                 multiline
                 minRows={4}
-                label="Descripción"
+                label="Descripción del Problema"
                 name="descripcion"
                 value={form.descripcion}
                 onChange={handleChange}
                 onBlur={() => markTouched('descripcion')}
                 required
                 error={Boolean(touched.descripcion && errors.descripcion)}
-                helperText={touched.descripcion && errors.descripcion}
+                helperText={touched.descripcion && errors.descripcion || 'Describa detalladamente el problema (10-1000 caracteres)'}
+                placeholder="Explique el problema con el mayor detalle posible, incluyendo cuándo ocurrió, qué estaba haciendo, mensajes de error, etc."
                 InputProps={{
                   startAdornment: <DescriptionOutlinedIcon sx={{ mr: 1, color: 'primary.main' }} />,
                 }}
@@ -430,34 +484,30 @@ export default function EditTicket() {
         </form>
       </Paper>
 
-      {/* Overlay de éxito */}
-      {showSuccessOverlay && (
-        <Fade in={showSuccessOverlay}>
-          <Box sx={{
-            position: 'fixed',
-            inset: 0,
-            bgcolor: 'rgba(0,0,0,0.35)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: (theme) => theme.zIndex.modal + 1
-          }}>
-            <Paper elevation={6} sx={{ p: 4, borderRadius: 3, textAlign: 'center', minWidth: 320 }}>
-              <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>Ticket actualizado exitosamente</Typography>
-              <Typography variant="body2" sx={{ mb: 2 }}>Redirigiendo...</Typography>
-              <CircularProgress size={32} />
-            </Paper>
-          </Box>
-        </Fade>
-      )}
+      <SuccessOverlay
+        open={showSuccessOverlay}
+        mode="update"
+        entity="Ticket"
+        onClose={() => setShowSuccessOverlay(false)}
+        subtitle={success || undefined}
+        actions={[
+          { label: 'Ver detalle', onClick: () => navigate(`/tickets/${id}`), variant: 'contained', color: 'success' },
+          { label: 'Ir al listado', onClick: () => navigate('/tickets'), variant: 'outlined', color: 'success' }
+        ]}
+      />
     </Container>
     <Snackbar
       open={snackbar.open}
-      autoHideDuration={3500}
+      autoHideDuration={6000}
       onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
     >
-      <Alert severity={snackbar.severity} onClose={() => setSnackbar((s) => ({ ...s, open: false }))} sx={{ width: '100%' }}>
+      <Alert 
+        severity={snackbar.severity} 
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))} 
+        variant="filled"
+        sx={{ width: '100%', fontSize: '1rem', fontWeight: 500 }}
+      >
         {snackbar.message}
       </Alert>
     </Snackbar>

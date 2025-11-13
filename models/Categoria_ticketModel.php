@@ -131,24 +131,26 @@ class Categoria_ticketModel
             handleException($e);
         }
     }
-    public function getEspecialidadesByCategoria($id_categoria)
+    public function getEspecialidadesByCategoria($id)
     {
         try {
+            $id_local = (int)$id;
             $vSql = "SELECT id_especialidad, nombre AS especialidad 
                  FROM especialidad 
-                 WHERE id_categoria = $id_categoria
+                 WHERE id_categoria = ?
                  ORDER BY nombre";
 
-            $vResultado = $this->enlace->ExecuteSQL($vSql);
+            $vResultado = $this->enlace->executePrepared($vSql, 'i', [ $id_local ]);
             return $vResultado;
         } catch (Exception $e) {
             handleException($e);
         }
     }
 
-    public function getEtiquetasByCategoria($id_categoria)
+    public function getEtiquetasByCategoria($id)
     {
         try {
+            $id_local = (int)$id;
             $vSql =     "SELECT 
                         c.id_categoria AS categoria,
                         e.id_etiqueta,
@@ -156,10 +158,10 @@ class Categoria_ticketModel
                 FROM categoria_ticket c
                 JOIN categoria_etiqueta ce ON c.id_categoria = ce.id_categoria_ticket
                 JOIN etiqueta e ON e.id_etiqueta = ce.id_etiqueta
-                WHERE c.id_categoria = $id_categoria
+                WHERE c.id_categoria = ?
                 ORDER BY e.id_etiqueta;";
 
-            $vResultado = $this->enlace->ExecuteSQL($vSql);
+            $vResultado = $this->enlace->executePrepared($vSql, 'i', [ $id_local ]);
             return $vResultado;
         } catch (Exception $e) {
             handleException($e);

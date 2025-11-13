@@ -17,8 +17,21 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Chip,
+  IconButton,
+  Divider,
+  Autocomplete,
+  Backdrop,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
+import LabelIcon from '@mui/icons-material/Label';
+import WorkIcon from '@mui/icons-material/Work';
+import CloseIcon from '@mui/icons-material/Close';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CelebrationIcon from '@mui/icons-material/Celebration';
+import SuccessOverlay from '../common/SuccessOverlay';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
 import axios from "axios";
 import { getApiOrigin } from "../../utils/apiBase";
 
@@ -45,11 +58,13 @@ export default function CreateCategoria({
   const [form, setForm] = useState({
     nombre: "",
     id_sla: "",
-    etiquetas: [],
-    especialidades: [],
+    etiquetas: [], // Cambiado a array
+    especialidades: [], // Cambiado a array
   });
-  const [selectedEtiqueta, setSelectedEtiqueta] = useState("");
-  const [selectedEspecialidad, setSelectedEspecialidad] = useState("");
+  const [successOpen, setSuccessOpen] = useState(false);
+  // Control de apertura manual para cerrar después de cada selección
+  const [openEtq, setOpenEtq] = useState(false);
+  const [openEsp, setOpenEsp] = useState(false);
 
   // catálogos ordenados para los combo-box (selects): id ascendente
   const sortedCatalogEtiquetas = (etiquetas || []).slice().sort((a, b) => {
@@ -94,31 +109,52 @@ export default function CreateCategoria({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.nombre.trim() || !form.id_sla) {
+    
+      // Validaciones mejoradas
+      if (!form.nombre.trim()) {
+        setSnackbar({
+          open: true,
+          message: "El nombre es requerido",
+          severity: "warning",
+        });
+        return;
+      }
+
+      if (form.nombre.trim().length < 3) {
+        setSnackbar({
+          open: true,
+          message: "El nombre debe tener al menos 3 caracteres",
+          severity: "warning",
+        });
+        return;
+      }
+
+      if (form.nombre.trim().length > 100) {
+        setSnackbar({
+          open: true,
+          message: "El nombre no puede exceder 100 caracteres",
+          severity: "warning",
+        });
+        return;
+      }
+
+      if (!form.id_sla) {
       setSnackbar({
         open: true,
-        message: "Nombre y SLA son requeridos",
+          message: "El SLA es requerido",
         severity: "warning",
       });
       return;
     }
+
     try {
       setLoading(true);
-      const toIntArray = (arr, key) =>
-        (arr || [])
-          .map((e) => {
-            const v = e?.[key];
-            if (v == null) return null;
-            const n = Number(v);
-            return Number.isFinite(n) && n > 0 ? n : null;
-          })
-          .filter((x) => x != null);
 
       const payload = {
         nombre: form.nombre.trim(),
         id_sla: parseInt(form.id_sla, 10),
-        etiquetas: toIntArray(form.etiquetas, 'id_etiqueta'),
-        especialidades: toIntArray(form.especialidades, 'id_especialidad'),
+        etiquetas: (form.etiquetas || []).map(e => parseInt(e.id_etiqueta, 10)),
+        especialidades: (form.especialidades || []).map(e => parseInt(e.id_especialidad, 10)),
       };
       const res = await axios.post(
         `${apiBase}/apiticket/categoria_ticket`,
@@ -126,23 +162,10 @@ export default function CreateCategoria({
         { headers: { "Content-Type": "application/json" } }
       );
       if (res?.data?.id_categoria || res?.data) {
-        setSnackbar({
-          open: true,
-          message: "Categoría creada correctamente",
-          severity: "success",
-        });
-        if (embedded) {
-          // Reset form y refrescar listado si corresponde
-          setForm({
-            nombre: "",
-            id_sla: "",
-            etiquetas: [],
-            especialidades: [],
-          });
-          if (typeof onCreated === "function") onCreated();
-        } else {
-          setTimeout(() => navigate("/categorias"), 800);
-        }
+        // Mostrar overlay de éxito centralizado y limpiar formulario (sin redirigir ni invocar callbacks)
+        setSuccessOpen(true);
+        setForm({ nombre: "", id_sla: "", etiquetas: [], especialidades: [] });
+        window.scrollTo(0,0);
       } else {
         setSnackbar({
           open: true,
@@ -216,6 +239,7 @@ export default function CreateCategoria({
               onChange={(e) =>
                 setForm((f) => ({ ...f, nombre: e.target.value }))
               }
+                helperText="3-100 caracteres. Ejemplo: Soporte Técnico"
               sx={{ minWidth: { md: 300 } }}
             />
           </Grid>
@@ -237,140 +261,289 @@ export default function CreateCategoria({
               ))}
             </TextField>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <TextField
-              select
-              fullWidth
-              label="Etiqueta (agregar)"
-              InputLabelProps={{ shrink: true }}
-              value={selectedEtiqueta}
-              onChange={(e) => {
-                const sel = e.target.value;
-                if (sel && typeof sel === 'object') {
-                  const exists = (form.etiquetas || []).some(it => {
-                    if (!it) return false;
-                    if (it.id_etiqueta && sel.id_etiqueta) return it.id_etiqueta === sel.id_etiqueta;
-                    return String(it.nombre || '').trim().toLowerCase() === String(sel.nombre || '').trim().toLowerCase();
-                  });
-                  if (!exists) setForm(f => ({ ...f, etiquetas: [...(f.etiquetas||[]), sel] }));
-                }
-                setSelectedEtiqueta("");
+          <Grid item xs={12} md={6}>
+              <Autocomplete
+              multiple
+              options={sortedCatalogEtiquetas}
+              disableCloseOnSelect
+              getOptionLabel={(option) => option.nombre || ''}
+              value={form.etiquetas}
+              onChange={(_, newValue) => {
+                setForm(f => ({ ...f, etiquetas: newValue }));
+                // Cerrar el popup tras una selección
+                setOpenEtq(false);
               }}
-              sx={{
-                minWidth: { md: 170 },
-                '& .MuiSelect-select': {
-                  minHeight: 45,
-                  display: 'flex',
-                  alignItems: 'center',
-                  py: 1,
-                }
-              }}
+              renderTags={() => null}
+              isOptionEqualToValue={(option, value) => option.id_etiqueta === value.id_etiqueta}
+              open={openEtq}
+              onOpen={() => setOpenEtq(true)}
+              onClose={() => setOpenEtq(false)}
+              disableClearable={false}
+              renderOption={(props, option, { selected }) => (
+                <li {...props}>
+                  <Checkbox
+                    icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
+                    checkedIcon={<CheckBoxIcon fontSize="small" />}
+                    style={{ marginRight: 8 }}
+                    checked={selected}
+                  />
+                    <LabelIcon fontSize="small" sx={{ mr: 1, color: 'success.main' }} />
+                    <Box sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                      {`${option.id_etiqueta} - ${option.nombre}`}
+                    </Box>
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Etiquetas"
+                  placeholder="Seleccione etiquetas"
+                  helperText={`${form.etiquetas.length} seleccionada(s)`}
+                />
+              )}
+                ListboxProps={{
+                  style: { maxHeight: 480 }
+                }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      width: { xs: '90vw', sm: 520, md: 640 },
+                      '& .MuiAutocomplete-listbox .MuiAutocomplete-option': {
+                        alignItems: 'flex-start',
+                        whiteSpace: 'normal',
+                        lineHeight: 1.4,
+                        py: 1.25
+                      }
+                    }
+                  }
+                }}
+            />
+            <Button
+              size="small"
+              onClick={() => setOpenEtiquetaDialog(true)}
+              sx={{ mt: 1 }}
             >
-              <MenuItem value="">-- Seleccione --</MenuItem>
-              {sortedCatalogEtiquetas.map((et) => (
-                <MenuItem key={et.id_etiqueta} value={et}>{et.nombre}</MenuItem>
-              ))}
-              <MenuItem
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => { setOpenEtiquetaDialog(true); setSelectedEtiqueta(""); }}
-              >
-                Otros…
-              </MenuItem>
-            </TextField>
+              + Crear nueva etiqueta
+            </Button>
           </Grid>
-          <Grid item xs={12} md={4}>
-            <TextField
-              select
-              fullWidth
-              label="Especialidad (agregar)"
-              InputLabelProps={{ shrink: true }}
-              value={selectedEspecialidad}
-              onChange={(e) => {
-                const sel = e.target.value;
-                if (sel && typeof sel === 'object') {
-                  const exists = (form.especialidades || []).some(it => {
-                    if (!it) return false;
-                    if (it.id_especialidad && sel.id_especialidad) return it.id_especialidad === sel.id_especialidad;
-                    return String(it.nombre || '').trim().toLowerCase() === String(sel.nombre || '').trim().toLowerCase();
-                  });
-                  if (!exists) setForm(f => ({ ...f, especialidades: [...(f.especialidades||[]), sel] }));
-                }
-                setSelectedEspecialidad("");
+          <Grid item xs={12} md={6}>
+              <Autocomplete
+              multiple
+              options={sortedCatalogEspecialidades}
+              disableCloseOnSelect
+              getOptionLabel={(option) => option.nombre || ''}
+              value={form.especialidades}
+              onChange={(_, newValue) => {
+                setForm(f => ({ ...f, especialidades: newValue }));
+                setOpenEsp(false);
               }}
-              sx={{
-                minWidth: { md: 170},
-                '& .MuiSelect-select': {
-                  minHeight: 45,
-                  display: 'flex',
-                  alignItems: 'center',
-                  py: 1,
-                }
-              }}
+              renderTags={() => null}
+              isOptionEqualToValue={(option, value) => option.id_especialidad === value.id_especialidad}
+              open={openEsp}
+              onOpen={() => setOpenEsp(true)}
+              onClose={() => setOpenEsp(false)}
+              disableClearable={false}
+              renderOption={(props, option, { selected }) => (
+                <li {...props}>
+                  <Checkbox
+                    icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
+                    checkedIcon={<CheckBoxIcon fontSize="small" />}
+                    style={{ marginRight: 8 }}
+                    checked={selected}
+                  />
+                    <WorkIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} />
+                    <Box sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                      {`${option.id_especialidad} - ${option.nombre}`}
+                    </Box>
+                </li>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Especialidades"
+                  placeholder="Seleccione especialidades"
+                  helperText={`${form.especialidades.length} seleccionada(s)`}
+                />
+              )}
+                ListboxProps={{
+                  style: { maxHeight: 480 }
+                }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      width: { xs: '90vw', sm: 520, md: 640 },
+                      '& .MuiAutocomplete-listbox .MuiAutocomplete-option': {
+                        alignItems: 'flex-start',
+                        whiteSpace: 'normal',
+                        lineHeight: 1.4,
+                        py: 1.25
+                      }
+                    }
+                  }
+                }}
+            />
+            <Button
+              size="small"
+              onClick={() => setOpenEspDialog(true)}
+              sx={{ mt: 1 }}
             >
-              <MenuItem value="">-- Seleccione --</MenuItem>
-              {sortedCatalogEspecialidades.map((esp) => (
-                <MenuItem key={esp.id_especialidad} value={esp}>{esp.nombre}</MenuItem>
-              ))}
-              <MenuItem
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => { setOpenEspDialog(true); setSelectedEspecialidad(""); }}
-              >
-                Otros…
-              </MenuItem>
-            </TextField>
+              + Crear nueva especialidad
+            </Button>
           </Grid>
-          <Grid item xs={12}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Paper variant="outlined" sx={{ borderColor: 'primary.main', borderWidth: 1.5, borderRadius: 2, p: 2, minHeight: 180 }}>
-                  <Typography sx={{ mb: 1, fontWeight: 700 }}>
-                    Etiquetas
-                  </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    {(form.etiquetas || []).map((et) => (
-                      <Box key={`et-${String(et.id_etiqueta || et.nombre)}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1.5px solid', borderColor: 'primary.main', borderRadius: 2, p: 2, mb: 2, backgroundColor: 'transparent' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          {`${et.id_etiqueta ? et.id_etiqueta + ' - ' : ''}${et.nombre}`}
+            <Grid item xs={12}>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, color: 'text.primary' }}>
+                Selección Actual ({form.etiquetas.length + form.especialidades.length} items)
+              </Typography>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      borderRadius: 3,
+                      bgcolor: form.etiquetas.length > 0 ? 'success.50' : 'grey.50',
+                      border: '2px solid',
+                      borderColor: form.etiquetas.length > 0 ? 'success.main' : 'grey.300',
+                      p: 3,
+                      minHeight: 180,
+                      position: 'relative',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: form.etiquetas.length > 0 ? '0 4px 20px rgba(46, 125, 50, 0.15)' : '0 4px 12px rgba(0,0,0,0.08)'
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <LabelIcon sx={{ color: form.etiquetas.length > 0 ? 'success.main' : 'text.secondary' }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                          Etiquetas
                         </Typography>
-                        <Button size="small" onClick={() => setForm(f => ({ ...f, etiquetas: (f.etiquetas||[]).filter(x => {
-                          if (!x) return false;
-                          if (x.id_etiqueta && et.id_etiqueta) return x.id_etiqueta !== et.id_etiqueta;
-                          return String(x.nombre || '').trim().toLowerCase() !== String(et.nombre || '').trim().toLowerCase();
-                        }) }))}>Quitar</Button>
                       </Box>
-                    ))}
-                    {(!(form.etiquetas || []).length) && (
-                      <Typography variant="body2" color="text.secondary">No hay etiquetas seleccionadas</Typography>
-                    )}
-                  </Box>
-                </Paper>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Paper variant="outlined" sx={{ borderColor: 'primary.main', borderWidth: 1.5, borderRadius: 2, p: 2, minHeight: 180 }}>
-                  <Typography sx={{ mb: 1, fontWeight: 700 }}>
-                    Especialidades
-                  </Typography>
-                  <Box sx={{ mt: 1 }}>
-                    {(form.especialidades || []).map((esp) => (
-                      <Box key={`esp-${String(esp.id_especialidad || esp.nombre)}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1.5px solid', borderColor: 'primary.main', borderRadius: 2, p: 2, mb: 2, backgroundColor: 'transparent' }}>
-                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                          {`${esp.id_especialidad ? esp.id_especialidad + ' - ' : ''}${esp.nombre}`}
+                      <Chip
+                        label={form.etiquetas.length}
+                        size="small"
+                        color={form.etiquetas.length > 0 ? 'success' : 'default'}
+                        sx={{ fontWeight: 600 }}
+                      />
+                    </Box>
+                    {form.etiquetas.length > 0 ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 1,
+                          maxHeight: 200,
+                          overflowY: 'auto',
+                          p: 1
+                        }}
+                      >
+                        {form.etiquetas.map(etq => (
+                          <Chip
+                            key={etq.id_etiqueta}
+                            icon={<LabelIcon />}
+                            label={`${etq.id_etiqueta} - ${etq.nombre || etq.etiqueta || 'Sin nombre'}`}
+                            onDelete={() => setForm(f => ({ ...f, etiquetas: f.etiquetas.filter(e => e.id_etiqueta !== etq.id_etiqueta) }))}
+                            color="success"
+                            variant="outlined"
+                            sx={{
+                              bgcolor: 'white',
+                              fontWeight: 500,
+                              '& .MuiChip-deleteIcon': {
+                                color: 'error.main',
+                                '&:hover': { color: 'error.dark' }
+                              }
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
+                        <Typography variant="body2" color="text.secondary" align="center">
+                          No hay etiquetas seleccionadas
                         </Typography>
-                        <Button size="small" onClick={() => setForm(f => ({ ...f, especialidades: (f.especialidades||[]).filter(x => {
-                          if (!x) return false;
-                          if (x.id_especialidad && esp.id_especialidad) return x.id_especialidad !== esp.id_especialidad;
-                          return String(x.nombre || '').trim().toLowerCase() !== String(esp.nombre || '').trim().toLowerCase();
-                        }) }))}>Quitar</Button>
+                        <Typography variant="caption" color="text.disabled" align="center" sx={{ mt: 0.5 }}>
+                          Seleccione etiquetas usando el campo superior
+                        </Typography>
                       </Box>
-                    ))}
-                    {(!(form.especialidades || []).length) && (
-                      <Typography variant="body2" color="text.secondary">No hay especialidades seleccionadas</Typography>
                     )}
-                  </Box>
-                </Paper>
+                  </Paper>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      borderRadius: 3,
+                      bgcolor: form.especialidades.length > 0 ? 'info.50' : 'grey.50',
+                      border: '2px solid',
+                      borderColor: form.especialidades.length > 0 ? 'info.main' : 'grey.300',
+                      p: 3,
+                      minHeight: 180,
+                      position: 'relative',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: form.especialidades.length > 0 ? '0 4px 20px rgba(25, 118, 210, 0.15)' : '0 4px 12px rgba(0,0,0,0.08)'
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <WorkIcon sx={{ color: form.especialidades.length > 0 ? 'info.main' : 'text.secondary' }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                          Especialidades
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={form.especialidades.length}
+                        size="small"
+                        color={form.especialidades.length > 0 ? 'info' : 'default'}
+                        sx={{ fontWeight: 600 }}
+                      />
+                    </Box>
+                    {form.especialidades.length > 0 ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 1,
+                          maxHeight: 200,
+                          overflowY: 'auto',
+                          p: 1
+                        }}
+                      >
+                        {form.especialidades.map(esp => (
+                          <Chip
+                            key={esp.id_especialidad}
+                            icon={<WorkIcon />}
+                            label={`${esp.id_especialidad} - ${esp.nombre || esp.especialidad || 'Sin nombre'}`}
+                            onDelete={() => setForm(f => ({ ...f, especialidades: f.especialidades.filter(e => e.id_especialidad !== esp.id_especialidad) }))}
+                            color="info"
+                            variant="outlined"
+                            sx={{
+                              bgcolor: 'white',
+                              fontWeight: 500,
+                              '& .MuiChip-deleteIcon': {
+                                color: 'error.main',
+                                '&:hover': { color: 'error.dark' }
+                              }
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 120 }}>
+                        <Typography variant="body2" color="text.secondary" align="center">
+                          No hay especialidades seleccionadas
+                        </Typography>
+                        <Typography variant="caption" color="text.disabled" align="center" sx={{ mt: 0.5 }}>
+                          Seleccione especialidades usando el campo superior
+                        </Typography>
+                      </Box>
+                    )}
+                  </Paper>
+                </Grid>
               </Grid>
             </Grid>
-          </Grid>
         </Grid>
 
         <Box
@@ -387,14 +560,7 @@ export default function CreateCategoria({
           {embedded && (
             <Button
               variant="outlined"
-              onClick={() =>
-                setForm({
-                  nombre: "",
-                  id_sla: "",
-                  etiquetas: [],
-                  especialidades: [],
-                })
-              }
+              onClick={() => setForm({ nombre: "", id_sla: "", etiquetas: [], especialidades: [] })}
             >
               Limpiar
             </Button>
@@ -434,13 +600,12 @@ export default function CreateCategoria({
                 const res = await axios.post(`${apiBase}/apiticket/etiqueta`, { nombre }, { headers: { 'Content-Type': 'application/json' } });
                 const created = res?.data;
                 if (created && created.id_etiqueta) {
-                  const existsInForm = (form.etiquetas || []).some(it => it && ((it.id_etiqueta && it.id_etiqueta === created.id_etiqueta) || String(it.nombre||'').trim().toLowerCase() === String(created.nombre||'').trim().toLowerCase()));
-                  if (!existsInForm) setForm((f) => ({ ...f, etiquetas: [...(f.etiquetas || []), created] }));
+                    setForm((f) => ({ ...f, etiquetas: [...f.etiquetas, created] }));
                   setEtiquetas((prev) => {
                     const already = (prev || []).some(it => it && it.id_etiqueta === created.id_etiqueta);
                     return already ? prev : [...prev, created];
                   });
-                  setSnackbar({ open: true, message: "Etiqueta creada", severity: "success" });
+                    setSnackbar({ open: true, message: "Etiqueta creada y agregada correctamente", severity: "success" });
                 } else {
                   setSnackbar({ open: true, message: "No se pudo crear la etiqueta", severity: "error" });
                 }
@@ -486,13 +651,12 @@ export default function CreateCategoria({
                 const res = await axios.post(`${apiBase}/apiticket/especialidad`, { nombre, id_sla: idSla, id_categoria: 1 }, { headers: { 'Content-Type': 'application/json' } });
                 const created = res?.data;
                 if (created && created.id_especialidad) {
-                  const existsInForm = (form.especialidades || []).some(it => it && ((it.id_especialidad && it.id_especialidad === created.id_especialidad) || String(it.nombre||'').trim().toLowerCase() === String(created.nombre||'').trim().toLowerCase()));
-                  if (!existsInForm) setForm((f) => ({ ...f, especialidades: [...(f.especialidades || []), created] }));
+                    setForm((f) => ({ ...f, especialidades: [...f.especialidades, created] }));
                   setEspecialidades((prev) => {
                     const already = (prev || []).some(it => it && it.id_especialidad === created.id_especialidad);
                     return already ? prev : [...prev, created];
                   });
-                  setSnackbar({ open: true, message: "Especialidad creada", severity: "success" });
+                    setSnackbar({ open: true, message: "Especialidad creada y agregada correctamente", severity: "success" });
                 } else {
                   setSnackbar({ open: true, message: "No se pudo crear la especialidad", severity: "error" });
                 }
@@ -512,38 +676,29 @@ export default function CreateCategoria({
     </Paper>
   );
 
-  // If embedded, keep the same compact layout
-  if (embedded) {
-    return (
-      <Box>
-        {FormContent}
-        <Snackbar
-          open={snackbar.open}
-          autoHideDuration={4000}
-          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-        >
-          <Alert
-            severity={snackbar.severity}
-            onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
-          >
-            {snackbar.message}
-          </Alert>
-        </Snackbar>
-      </Box>
-    );
-  }
-
-  // For the full page view: return a single full-width container (the form Paper)
+  // Retorno único para modo embedded y página completa, incluye overlay de éxito siempre
   return (
     <Box sx={{ width: '100%', p: 0 }}>
       {FormContent}
+      <SuccessOverlay
+        open={successOpen}
+        mode="create"
+        entity="Categoría"
+        onClose={() => setSuccessOpen(false)}
+        actions={[
+          { label: 'Crear otra', onClick: () => setSuccessOpen(false), variant: 'contained', color: 'success' },
+          { label: 'Ir al listado', onClick: () => { setSuccessOpen(false); navigate('/categorias'); }, variant: 'outlined', color: 'success' }
+        ]}
+      />
       <Snackbar
         open={snackbar.open}
-        autoHideDuration={4000}
+          autoHideDuration={6000}
         onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+          anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
         <Alert
           severity={snackbar.severity}
+            variant="filled"
           onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
         >
           {snackbar.message}

@@ -33,9 +33,11 @@ const Header = () => {
              !location.pathname.includes('/editar');
     }
     
-    // Para CATEGORÍAS: ahora mostrar activo también en crear/editar (resalte naranja solicitado)
+    // Para CATEGORÍAS: excluir rutas de mantenimiento (crear/editar) para que solo se subraye MANTENIMIENTOS en esas vistas
     if (path === '/categorias') {
-      return location.pathname.startsWith('/categorias');
+      return location.pathname.startsWith('/categorias') &&
+             !location.pathname.includes('/crear') &&
+             !location.pathname.includes('/editar');
     }
     
     return location.pathname.startsWith(path);
@@ -62,7 +64,7 @@ const Header = () => {
   });
   // Tickets menu / warning message state
   const [anchorEl, setAnchorEl] = useState(null);
-  const [message] = useState(''); // set this to a non-empty string to show a message bar
+  const [message, setMessage] = useState(''); // set this to a non-empty string to show a message bar
   const WARNING_COLOR = '#ff9800';
 
   const handleMenuClick = (e) => setAnchorEl(e.currentTarget);

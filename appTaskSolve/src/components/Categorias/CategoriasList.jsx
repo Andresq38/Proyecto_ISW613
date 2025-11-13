@@ -160,6 +160,7 @@ const CategoriasList = () => {
                 }}
                 onClick={() => handleCategoriaClick(cat.id_categoria)}
               >
+                {/* Edición desde detalle: se removió botón de edición directo en el listado */}
                 {/* Barra superior de color */}
                 <Box 
                   sx={{ 

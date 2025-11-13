@@ -18,6 +18,7 @@ import {
   ListItemText
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import EditIcon from '@mui/icons-material/Edit';
 import LabelIcon from '@mui/icons-material/Label';
 import EngineeringIcon from '@mui/icons-material/Engineering';
 import TimerIcon from '@mui/icons-material/Timer';
@@ -114,13 +115,19 @@ const CategoriaDetalle = () => {
 
   return (
     <Container sx={{ mt: 4, mb: 4 }}>
-      <Button 
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate('/categorias')}
-        sx={{ mb: 3 }}
-      >
-        Volver a Categorías
-      </Button>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, gap: 2, flexWrap: 'wrap' }}>
+        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate('/categorias')}>
+          Volver a Categorías
+        </Button>
+        <Button
+          variant="contained"
+          color="warning"
+          startIcon={<EditIcon />}
+          onClick={() => navigate(`/categorias/editar/${id}`)}
+        >
+          Editar Categoría
+        </Button>
+      </Box>
 
       <Typography variant="h4" gutterBottom sx={{ mb: 3, fontWeight: 600 }}>
         {`${categoria?.id_categoria ?? categoria?.id ?? ''}${(categoria?.id_categoria || categoria?.id) ? ' - ' : ''}${categoria?.nombre ?? ''}`}
