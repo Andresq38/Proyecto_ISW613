@@ -438,7 +438,8 @@ export default function CreateTicket() {
                   <Button
                     variant="outlined"
                     color="inherit"
-                    onClick={() => navigate('/tickets', { replace: true })}
+                    // Redirigir a Inicio en lugar del listado de tickets
+                    onClick={() => navigate('/', { replace: true })}
                     startIcon={<CancelRoundedIcon />}
                     sx={{ minWidth: 140 }}
                   >
@@ -455,10 +456,22 @@ export default function CreateTicket() {
         open={showSuccessOverlay}
         mode="create"
         entity="Ticket"
+        variant="extended"
+        details={{
+          id: createdId,
+          prioridad: form.prioridad,
+          categoria: categoriaPreview?.nombre,
+          etiqueta: etiquetas.find(e => String(e.id_etiqueta) === String(form.id_etiqueta))?.nombre,
+          extra: [
+            usuarioInfo ? { label: 'Solicitante', value: usuarioInfo.nombre } : null,
+            usuarioInfo ? { label: 'Correo', value: usuarioInfo.correo } : null,
+            form.descripcion ? { label: 'Resumen', value: (form.descripcion.length > 60 ? form.descripcion.slice(0,57)+'…' : form.descripcion) } : null
+          ].filter(Boolean)
+        }}
         onClose={() => setShowSuccessOverlay(false)}
         subtitle={success || undefined}
         actions={[
-          { label: 'Crear otro', onClick: () => { setShowSuccessOverlay(false); setForm({ titulo:'', descripcion:'', prioridad:'Media', id_usuario:'', id_etiqueta:'' }); }, variant: 'contained', color: 'success' },
+          { label: 'Crear otro', onClick: () => { setShowSuccessOverlay(false); setForm({ titulo:'', descripcion:'', prioridad:'Media', id_usuario:'', id_etiqueta:'' }); setUsuarioSeleccionado(null); }, variant: 'contained', color: 'success' },
           { label: 'Ver detalle', onClick: () => { if (createdId) navigate(`/tickets/${createdId}`); }, variant: 'outlined', color: 'success' },
           { label: 'Ir al listado', onClick: () => { navigate('/'); }, variant: 'outlined', color: 'success' }
         ]}

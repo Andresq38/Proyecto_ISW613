@@ -238,10 +238,11 @@ export default function EditTecnico() {
           open={successOpen}
           mode="update"
           entity="Técnico"
+          subtitle={`✓ Técnico #${id} actualizado exitosamente`}
           onClose={() => setSuccessOpen(false)}
           actions={[
-            { label: 'Ver detalle', onClick: () => { setSuccessOpen(false); navigate(`/tecnicos/${id}`); }, variant: 'contained', color: 'info' },
-            { label: 'Ir al listado', onClick: () => { setSuccessOpen(false); navigate('/tecnicos'); }, variant: 'outlined', color: 'info' }
+            { label: 'Ver detalle', onClick: () => { setSuccessOpen(false); navigate(`/tecnicos/${id}`); }, variant: 'contained', color: 'warning' },
+            { label: 'Ir al listado', onClick: () => { setSuccessOpen(false); navigate('/tecnicos'); }, variant: 'outlined', color: 'warning' }
           ]}
         />
         <form onSubmit={handleSubmit(onSubmit, onError)} noValidate>
@@ -390,7 +391,7 @@ export default function EditTecnico() {
           </Grid>
           <Divider sx={{ my: 3 }} />
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <Button type="submit" variant="contained" color="primary" startIcon={<SaveIcon />} sx={{ m: 0 }}>Actualizar Técnico</Button>
+            <Button type="submit" variant="contained" color="warning" startIcon={<SaveIcon />} sx={{ m: 0 }}>Actualizar Técnico</Button>
             <Button variant="outlined" onClick={() => navigate(`/tecnicos/${id}`)} sx={{ m: 0 }}>Cancelar</Button>
           </Box>
         </form>

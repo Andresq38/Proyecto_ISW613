@@ -489,10 +489,10 @@ export default function EditTicket() {
         mode="update"
         entity="Ticket"
         onClose={() => setShowSuccessOverlay(false)}
-        subtitle={success || undefined}
+        subtitle={success || `✓ Ticket #${id} actualizado exitosamente`}
         actions={[
-          { label: 'Ver detalle', onClick: () => navigate(`/tickets/${id}`), variant: 'contained', color: 'success' },
-          { label: 'Ir al listado', onClick: () => navigate('/'), variant: 'outlined', color: 'success' }
+          { label: 'Ver detalle', onClick: () => navigate(`/tickets/${id}`), variant: 'contained', color: 'warning' },
+          { label: 'Ir al listado', onClick: () => navigate('/'), variant: 'outlined', color: 'warning' }
         ]}
       />
     </Container>

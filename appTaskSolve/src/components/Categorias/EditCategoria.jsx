@@ -309,10 +309,11 @@ export default function EditCategoria() {
           open={successOpen}
           mode="update"
           entity="Categoría"
+          subtitle={`✓ Categoría #${id} actualizada exitosamente`}
           onClose={() => setSuccessOpen(false)}
           actions={[
-            { label: 'Ver detalle', onClick: () => { setSuccessOpen(false); navigate(`/categorias/${id}`); }, variant: 'contained', color: 'info' },
-            { label: 'Ir al listado', onClick: () => { setSuccessOpen(false); navigate('/categorias'); }, variant: 'outlined', color: 'info' }
+            { label: 'Ver detalle', onClick: () => { setSuccessOpen(false); navigate(`/categorias/${id}`); }, variant: 'contained', color: 'warning' },
+            { label: 'Ir al listado', onClick: () => { setSuccessOpen(false); navigate('/categorias'); }, variant: 'outlined', color: 'warning' }
           ]}
         />
         <Box
@@ -664,7 +665,7 @@ export default function EditCategoria() {
           <Box
             sx={{ display: "flex", gap: 2, justifyContent: "flex-end", mt: 4 }}
           >
-            <Button type="submit" variant="contained" disabled={loading}>
+            <Button type="submit" variant="contained" color="warning" disabled={loading}>
               Actualizar
             </Button>
             <Button variant="outlined" onClick={() => navigate("/categorias")}>
