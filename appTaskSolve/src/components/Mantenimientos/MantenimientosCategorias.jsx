@@ -9,7 +9,7 @@ import { useNavigate } from 'react-router-dom';
 export default function MantenimientosCategorias() {
   const navigate = useNavigate();
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Box sx={{ width: '100%', py: 4 }}>
       {/* Encabezado estilo mantenimiento profesional */}
       <Box sx={{ mb: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
         <Stack direction="row" spacing={1} alignItems="center">
@@ -24,14 +24,14 @@ export default function MantenimientosCategorias() {
         </Button>
       </Box>
 
-      {/* Contenedor del formulario */}
-      <Paper elevation={3} sx={{ p: { xs: 2, md: 3 }, borderRadius: 3, borderTop: 6, borderTopColor: 'primary.main' }}>
+      {/* Renderizar solo el formulario (CreateCategoria incluye su propio Paper cuando está embedded) */}
+      <Box>
         <CreateCategoria
           embedded
           hideEmbeddedHeader
           onCreated={() => setTimeout(() => navigate('/categorias'), 800)}
         />
-      </Paper>
-    </Container>
+      </Box>
+    </Box>
   );
 }

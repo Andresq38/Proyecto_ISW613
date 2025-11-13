@@ -48,6 +48,27 @@ export default function CreateCategoria({
     etiquetas: [],
     especialidades: [],
   });
+  const [selectedEtiqueta, setSelectedEtiqueta] = useState("");
+  const [selectedEspecialidad, setSelectedEspecialidad] = useState("");
+
+  // catálogos ordenados para los combo-box (selects): id ascendente
+  const sortedCatalogEtiquetas = (etiquetas || []).slice().sort((a, b) => {
+    const ai = a?.id_etiqueta;
+    const bi = b?.id_etiqueta;
+    if (ai != null && bi != null) return Number(ai) - Number(bi);
+    if (ai != null) return -1;
+    if (bi != null) return 1;
+    return String(a?.nombre || "").localeCompare(String(b?.nombre || ""));
+  });
+
+  const sortedCatalogEspecialidades = (especialidades || []).slice().sort((a, b) => {
+    const ai = a?.id_especialidad;
+    const bi = b?.id_especialidad;
+    if (ai != null && bi != null) return Number(ai) - Number(bi);
+    if (ai != null) return -1;
+    if (bi != null) return 1;
+    return String(a?.nombre || "").localeCompare(String(b?.nombre || ""));
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,15 +104,21 @@ export default function CreateCategoria({
     }
     try {
       setLoading(true);
+      const toIntArray = (arr, key) =>
+        (arr || [])
+          .map((e) => {
+            const v = e?.[key];
+            if (v == null) return null;
+            const n = Number(v);
+            return Number.isFinite(n) && n > 0 ? n : null;
+          })
+          .filter((x) => x != null);
+
       const payload = {
         nombre: form.nombre.trim(),
         id_sla: parseInt(form.id_sla, 10),
-        etiquetas: (form.etiquetas || [])
-          .map((e) => e?.id_etiqueta)
-          .filter((id) => Number.isInteger(id) && id > 0),
-        especialidades: (form.especialidades || [])
-          .map((e) => e?.id_especialidad)
-          .filter((id) => Number.isInteger(id) && id > 0),
+        etiquetas: toIntArray(form.etiquetas, 'id_etiqueta'),
+        especialidades: toIntArray(form.especialidades, 'id_especialidad'),
       };
       const res = await axios.post(
         `${apiBase}/apiticket/categoria_ticket`,
@@ -214,21 +241,20 @@ export default function CreateCategoria({
             <TextField
               select
               fullWidth
-              label="Etiquetas relacionadas"
+              label="Etiqueta (agregar)"
               InputLabelProps={{ shrink: true }}
-              SelectProps={{
-                multiple: true,
-                renderValue: (selected) => {
-                  const count = (selected || []).length;
-                  return count > 0 ? `${count} seleccionadas` : '';
-                },
-              }}
-              value={form.etiquetas}
+              value={selectedEtiqueta}
               onChange={(e) => {
-                const values = (e.target.value || [])
-                  .filter((v) => v && typeof v === 'object')
-                  .filter((v, idx, arr) => arr.findIndex(x => x && x.id_etiqueta === v.id_etiqueta) === idx);
-                setForm((f) => ({ ...f, etiquetas: values }));
+                const sel = e.target.value;
+                if (sel && typeof sel === 'object') {
+                  const exists = (form.etiquetas || []).some(it => {
+                    if (!it) return false;
+                    if (it.id_etiqueta && sel.id_etiqueta) return it.id_etiqueta === sel.id_etiqueta;
+                    return String(it.nombre || '').trim().toLowerCase() === String(sel.nombre || '').trim().toLowerCase();
+                  });
+                  if (!exists) setForm(f => ({ ...f, etiquetas: [...(f.etiquetas||[]), sel] }));
+                }
+                setSelectedEtiqueta("");
               }}
               sx={{
                 minWidth: { md: 170 },
@@ -240,20 +266,13 @@ export default function CreateCategoria({
                 }
               }}
             >
-              {etiquetas.map((et) => {
-                const checked = (form.etiquetas || []).some(
-                  (sel) => sel && sel.id_etiqueta === et.id_etiqueta
-                );
-                return (
-                  <MenuItem key={et.id_etiqueta} value={et}>
-                    <Checkbox size="small" checked={checked} />
-                    <ListItemText primary={et.nombre} />
-                  </MenuItem>
-                );
-              })}
+              <MenuItem value="">-- Seleccione --</MenuItem>
+              {sortedCatalogEtiquetas.map((et) => (
+                <MenuItem key={et.id_etiqueta} value={et}>{et.nombre}</MenuItem>
+              ))}
               <MenuItem
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setOpenEtiquetaDialog(true)}
+                onClick={() => { setOpenEtiquetaDialog(true); setSelectedEtiqueta(""); }}
               >
                 Otros…
               </MenuItem>
@@ -263,21 +282,20 @@ export default function CreateCategoria({
             <TextField
               select
               fullWidth
-              label="Especialidades"
+              label="Especialidad (agregar)"
               InputLabelProps={{ shrink: true }}
-              SelectProps={{
-                multiple: true,
-                renderValue: (selected) => {
-                  const count = (selected || []).length;
-                  return count > 0 ? `${count} seleccionadas` : '';
-                },
-              }}
-              value={form.especialidades}
+              value={selectedEspecialidad}
               onChange={(e) => {
-                const values = (e.target.value || [])
-                  .filter((v) => v && typeof v === 'object')
-                  .filter((v, idx, arr) => arr.findIndex(x => x && x.id_especialidad === v.id_especialidad) === idx);
-                setForm((f) => ({ ...f, especialidades: values }));
+                const sel = e.target.value;
+                if (sel && typeof sel === 'object') {
+                  const exists = (form.especialidades || []).some(it => {
+                    if (!it) return false;
+                    if (it.id_especialidad && sel.id_especialidad) return it.id_especialidad === sel.id_especialidad;
+                    return String(it.nombre || '').trim().toLowerCase() === String(sel.nombre || '').trim().toLowerCase();
+                  });
+                  if (!exists) setForm(f => ({ ...f, especialidades: [...(f.especialidades||[]), sel] }));
+                }
+                setSelectedEspecialidad("");
               }}
               sx={{
                 minWidth: { md: 170},
@@ -289,56 +307,69 @@ export default function CreateCategoria({
                 }
               }}
             >
-              {especialidades.map((esp) => {
-                const checked = (form.especialidades || []).some(
-                  (sel) => sel && sel.id_especialidad === esp.id_especialidad
-                );
-                return (
-                  <MenuItem key={esp.id_especialidad} value={esp}>
-                    <Checkbox size="small" checked={checked} />
-                    <ListItemText primary={esp.nombre} />
-                  </MenuItem>
-                );
-              })}
+              <MenuItem value="">-- Seleccione --</MenuItem>
+              {sortedCatalogEspecialidades.map((esp) => (
+                <MenuItem key={esp.id_especialidad} value={esp}>{esp.nombre}</MenuItem>
+              ))}
               <MenuItem
                 onMouseDown={(e) => e.preventDefault()}
-                onClick={() => setOpenEspDialog(true)}
+                onClick={() => { setOpenEspDialog(true); setSelectedEspecialidad(""); }}
               >
                 Otros…
               </MenuItem>
             </TextField>
           </Grid>
           <Grid item xs={12}>
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5, mt: 1 }}>
-              {(form.etiquetas || []).map((et) => (
-                <Paper
-                  key={`${et.id_etiqueta ?? "nuevo"}-${et.nombre}`}
-                  variant="outlined"
-                  sx={{
-                    px: 1.5,
-                    py: 0.5,
-                    borderRadius: 2,
-                    typography: "caption",
-                  }}
-                >
-                  {et.nombre}
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Paper variant="outlined" sx={{ borderColor: 'primary.main', borderWidth: 1.5, borderRadius: 2, p: 2, minHeight: 180 }}>
+                  <Typography sx={{ mb: 1, fontWeight: 700 }}>
+                    Etiquetas
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    {(form.etiquetas || []).map((et) => (
+                      <Box key={`et-${String(et.id_etiqueta || et.nombre)}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1.5px solid', borderColor: 'primary.main', borderRadius: 2, p: 2, mb: 2, backgroundColor: 'transparent' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                          {`${et.id_etiqueta ? et.id_etiqueta + ' - ' : ''}${et.nombre}`}
+                        </Typography>
+                        <Button size="small" onClick={() => setForm(f => ({ ...f, etiquetas: (f.etiquetas||[]).filter(x => {
+                          if (!x) return false;
+                          if (x.id_etiqueta && et.id_etiqueta) return x.id_etiqueta !== et.id_etiqueta;
+                          return String(x.nombre || '').trim().toLowerCase() !== String(et.nombre || '').trim().toLowerCase();
+                        }) }))}>Quitar</Button>
+                      </Box>
+                    ))}
+                    {(!(form.etiquetas || []).length) && (
+                      <Typography variant="body2" color="text.secondary">No hay etiquetas seleccionadas</Typography>
+                    )}
+                  </Box>
                 </Paper>
-              ))}
-              {(form.especialidades || []).map((esp) => (
-                <Paper
-                  key={`${esp.id_especialidad ?? "nuevo"}-${esp.nombre}`}
-                  variant="outlined"
-                  sx={{
-                    px: 1.5,
-                    py: 0.5,
-                    borderRadius: 2,
-                    typography: "caption",
-                  }}
-                >
-                  {esp.nombre}
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Paper variant="outlined" sx={{ borderColor: 'primary.main', borderWidth: 1.5, borderRadius: 2, p: 2, minHeight: 180 }}>
+                  <Typography sx={{ mb: 1, fontWeight: 700 }}>
+                    Especialidades
+                  </Typography>
+                  <Box sx={{ mt: 1 }}>
+                    {(form.especialidades || []).map((esp) => (
+                      <Box key={`esp-${String(esp.id_especialidad || esp.nombre)}`} sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', border: '1.5px solid', borderColor: 'primary.main', borderRadius: 2, p: 2, mb: 2, backgroundColor: 'transparent' }}>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                          {`${esp.id_especialidad ? esp.id_especialidad + ' - ' : ''}${esp.nombre}`}
+                        </Typography>
+                        <Button size="small" onClick={() => setForm(f => ({ ...f, especialidades: (f.especialidades||[]).filter(x => {
+                          if (!x) return false;
+                          if (x.id_especialidad && esp.id_especialidad) return x.id_especialidad !== esp.id_especialidad;
+                          return String(x.nombre || '').trim().toLowerCase() !== String(esp.nombre || '').trim().toLowerCase();
+                        }) }))}>Quitar</Button>
+                      </Box>
+                    ))}
+                    {(!(form.especialidades || []).length) && (
+                      <Typography variant="body2" color="text.secondary">No hay especialidades seleccionadas</Typography>
+                    )}
+                  </Box>
                 </Paper>
-              ))}
-            </Box>
+              </Grid>
+            </Grid>
           </Grid>
         </Grid>
 
@@ -394,15 +425,32 @@ export default function CreateCategoria({
           <Button onClick={() => setOpenEtiquetaDialog(false)}>Cancelar</Button>
           <Button
             disabled={!newEtiqueta.trim()}
-            onClick={() => {
+            onClick={async () => {
               const nombre = newEtiqueta.trim();
               if (!nombre) return;
-              const temp = { id_etiqueta: undefined, nombre };
-              setEtiquetas((prev) => [...prev, temp]);
-              setForm((f) => ({ ...f, etiquetas: [...(f.etiquetas || []), temp] }));
-              setNewEtiqueta("");
-              setOpenEtiquetaDialog(false);
-              setSnackbar({ open: true, message: "Etiqueta agregada (se creará al guardar)", severity: "info" });
+              try {
+                setLoading(true);
+                // crear etiqueta en servidor
+                const res = await axios.post(`${apiBase}/apiticket/etiqueta`, { nombre }, { headers: { 'Content-Type': 'application/json' } });
+                const created = res?.data;
+                if (created && created.id_etiqueta) {
+                  const existsInForm = (form.etiquetas || []).some(it => it && ((it.id_etiqueta && it.id_etiqueta === created.id_etiqueta) || String(it.nombre||'').trim().toLowerCase() === String(created.nombre||'').trim().toLowerCase()));
+                  if (!existsInForm) setForm((f) => ({ ...f, etiquetas: [...(f.etiquetas || []), created] }));
+                  setEtiquetas((prev) => {
+                    const already = (prev || []).some(it => it && it.id_etiqueta === created.id_etiqueta);
+                    return already ? prev : [...prev, created];
+                  });
+                  setSnackbar({ open: true, message: "Etiqueta creada", severity: "success" });
+                } else {
+                  setSnackbar({ open: true, message: "No se pudo crear la etiqueta", severity: "error" });
+                }
+              } catch (err) {
+                setSnackbar({ open: true, message: err?.response?.data?.error || 'Error creando etiqueta', severity: 'error' });
+              } finally {
+                setNewEtiqueta("");
+                setOpenEtiquetaDialog(false);
+                setLoading(false);
+              }
             }}
           >
             Agregar
@@ -427,15 +475,34 @@ export default function CreateCategoria({
           <Button onClick={() => setOpenEspDialog(false)}>Cancelar</Button>
           <Button
             disabled={!newEspecialidad.trim()}
-            onClick={() => {
+            onClick={async () => {
               const nombre = newEspecialidad.trim();
               if (!nombre) return;
-              const temp = { id_especialidad: undefined, nombre };
-              setEspecialidades((prev) => [...prev, temp]);
-              setForm((f) => ({ ...f, especialidades: [...(f.especialidades || []), temp] }));
-              setNewEspecialidad("");
-              setOpenEspDialog(false);
-              setSnackbar({ open: true, message: "Especialidad agregada (se creará al guardar)", severity: "info" });
+              try {
+                setLoading(true);
+                // id_sla: use selected SLA if provided, otherwise fallback to 1
+                const idSla = form.id_sla ? parseInt(form.id_sla, 10) : 1;
+                // create especialidad with temporary id_categoria = 1 as requested
+                const res = await axios.post(`${apiBase}/apiticket/especialidad`, { nombre, id_sla: idSla, id_categoria: 1 }, { headers: { 'Content-Type': 'application/json' } });
+                const created = res?.data;
+                if (created && created.id_especialidad) {
+                  const existsInForm = (form.especialidades || []).some(it => it && ((it.id_especialidad && it.id_especialidad === created.id_especialidad) || String(it.nombre||'').trim().toLowerCase() === String(created.nombre||'').trim().toLowerCase()));
+                  if (!existsInForm) setForm((f) => ({ ...f, especialidades: [...(f.especialidades || []), created] }));
+                  setEspecialidades((prev) => {
+                    const already = (prev || []).some(it => it && it.id_especialidad === created.id_especialidad);
+                    return already ? prev : [...prev, created];
+                  });
+                  setSnackbar({ open: true, message: "Especialidad creada", severity: "success" });
+                } else {
+                  setSnackbar({ open: true, message: "No se pudo crear la especialidad", severity: "error" });
+                }
+              } catch (err) {
+                setSnackbar({ open: true, message: err?.response?.data?.error || 'Error creando especialidad', severity: 'error' });
+              } finally {
+                setNewEspecialidad("");
+                setOpenEspDialog(false);
+                setLoading(false);
+              }
             }}
           >
             Agregar
@@ -445,6 +512,7 @@ export default function CreateCategoria({
     </Paper>
   );
 
+  // If embedded, keep the same compact layout
   if (embedded) {
     return (
       <Box>
@@ -465,8 +533,9 @@ export default function CreateCategoria({
     );
   }
 
+  // For the full page view: return a single full-width container (the form Paper)
   return (
-    <Container sx={{ py: 4 }}>
+    <Box sx={{ width: '100%', p: 0 }}>
       {FormContent}
       <Snackbar
         open={snackbar.open}
@@ -480,6 +549,6 @@ export default function CreateCategoria({
           {snackbar.message}
         </Alert>
       </Snackbar>
-    </Container>
+    </Box>
   );
 }
