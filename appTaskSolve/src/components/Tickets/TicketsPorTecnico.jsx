@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Container, Typography, FormControl, InputLabel,
   Select, MenuItem, Grid, Card, CardContent, Box, CircularProgress, Alert, Chip, useTheme, Button,
@@ -109,6 +109,10 @@ const TicketsPorTecnico = () => {
   });
   const filteredEvents = events.filter(Boolean);
 
+  if (process.env.NODE_ENV !== 'production') {
+    console.debug('TicketsPorTecnico - events for calendar:', filteredEvents);
+  }
+
   const eventStyleGetter = (event) => ({
     style: {
       backgroundColor: '#d32f2f', // change this color to adjust calendar event color for técnicos
@@ -122,6 +126,8 @@ const TicketsPorTecnico = () => {
   const [hoveredTicket, setHoveredTicket] = useState(null);
   const [hoverPos, setHoverPos] = useState(null);
   const [selectedTicket, setSelectedTicket] = useState(null);
+  const [calendarDate, setCalendarDate] = useState(new Date());
+  const hoverTimeoutRef = useRef(null);
 
   const handleSelectEvent = (ev) => {
     // clear hover preview when opening dialog
@@ -134,19 +140,81 @@ const TicketsPorTecnico = () => {
   const CalendarEvent = ({ event }) => (
     <div
       onMouseEnter={(e) => {
+        if (hoverTimeoutRef.current) { clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = null; }
         const x = e.clientX;
         const y = e.clientY;
         const left = Math.min(x + 12, window.innerWidth - 320);
         const top = Math.min(y + 12, window.innerHeight - 120);
         setHoverPos({ left, top });
         setHoveredTicket({ title: event.title, msg: 'Haga clic para ver un resumen detallado de este ticket.' });
+        hoverTimeoutRef.current = setTimeout(() => { setHoveredTicket(null); setHoverPos(null); hoverTimeoutRef.current = null; }, 2500);
       }}
-      onMouseLeave={() => { setHoveredTicket(null); setHoverPos(null); }}
+      onMouseLeave={() => { if (hoverTimeoutRef.current) { clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = null; } setHoveredTicket(null); setHoverPos(null); }}
       style={{ padding: 4 }}
     >
       {event.title}
     </div>
   );
+
+  useEffect(() => {
+    if (!hoveredTicket) return;
+    const onMove = (e) => {
+      try {
+        if (!e.target || !e.target.closest || !e.target.closest('.rbc-event')) {
+          if (hoverTimeoutRef.current) { clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = null; }
+          setHoveredTicket(null);
+          setHoverPos(null);
+        }
+      } catch (err) {}
+    };
+    window.addEventListener('mousemove', onMove);
+    return () => window.removeEventListener('mousemove', onMove);
+  }, [hoveredTicket]);
+
+  useEffect(() => { setHoveredTicket(null); setHoverPos(null); if (hoverTimeoutRef.current) { clearTimeout(hoverTimeoutRef.current); hoverTimeoutRef.current = null; } }, [tickets, calendarDate]);
+
+  const CustomToolbar = (toolbarProps) => {
+    const years = Array.from({ length: 9 }, (_, i) => 2020 + i); // 2020..2028
+    const months = [
+      'Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'
+    ];
+
+    const currentDate = toolbarProps.date || new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonth = currentDate.getMonth();
+
+    const onChangeYear = (e) => {
+      const y = Number(e.target.value);
+      const newDate = new Date(y, currentMonth, 1);
+      // Use DATE action so the calendar receives a specific date to navigate to
+      toolbarProps.onNavigate('DATE', newDate);
+    };
+
+    const onChangeMonth = (e) => {
+      const m = Number(e.target.value);
+      const newDate = new Date(currentYear, m, 1);
+      toolbarProps.onNavigate('DATE', newDate);
+    };
+
+    return (
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+        <div style={{ marginLeft: 16 }}>
+          <button onClick={() => toolbarProps.onNavigate('TODAY')}>Today</button>
+          <button onClick={() => toolbarProps.onNavigate('PREV')}>Back</button>
+          <button onClick={() => toolbarProps.onNavigate('NEXT')}>Next</button>
+        </div>
+        <div style={{ fontWeight: 600 }}>{toolbarProps.label}</div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <Select value={currentYear} onChange={onChangeYear} size="small">
+            {years.map(y => <MenuItem key={y} value={y}>{y}</MenuItem>)}
+          </Select>
+          <Select value={currentMonth} onChange={onChangeMonth} size="small">
+            {months.map((m, idx) => <MenuItem key={m} value={idx}>{m}</MenuItem>)}
+          </Select>
+        </div>
+      </div>
+    );
+  };
 
   const getField = (raw, names) => {
     for (const n of names) if (raw[n]) return raw[n];
@@ -154,7 +222,7 @@ const TicketsPorTecnico = () => {
   };
 
   return (
-    <Container sx={{ py: 4 }}>
+    <Container sx={{ py: 4, pb: 8 }}>
       <Typography variant="h4" gutterBottom sx={{ mb: 3, color: 'primary.main', fontWeight: 700 }}>
         Tickets Asignados por Técnico
       </Typography>
@@ -225,30 +293,34 @@ const TicketsPorTecnico = () => {
       </Grid>
 
       {/* Calendar view below the tickets list */}
-      <Box sx={{ mt: 4 }}>
+  <Box sx={{ mt: 2 }}>
         <Typography variant="h5" sx={{ mb: 2 }}>Calendario de tickets (por fecha de asignación)</Typography>
         <Card>
-          <CardContent>
-            <div style={{ height: 520 }}>
+          <CardContent sx={{ p: 0 }}>
+            <div style={{ height: 640, paddingTop: 8, paddingRight: 8, overflow: 'hidden' }}>
               <Calendar
                 localizer={localizer}
                 events={filteredEvents}
                 startAccessor="start"
                 endAccessor="end"
                 style={{ height: '100%' }}
+                date={calendarDate}
+                toolbar={true}
+                onNavigate={(date, view) => { console.debug('TicketsPorTecnico Calendar navigate:', date, view); setCalendarDate(date); }}
+                onView={(view) => console.debug('TicketsPorTecnico Calendar view:', view)}
                 defaultView="month"
                 views={["month", "week", "day"]}
                 eventPropGetter={eventStyleGetter}
                 onSelectEvent={handleSelectEvent}
                 // Disable native/browser tooltip (prevents duplicate tooltip when hovering events)
                 tooltipAccessor={() => null}
-                components={{ event: CalendarEvent }}
+                components={{ event: CalendarEvent, toolbar: CustomToolbar }}
               />
             </div>
           </CardContent>
         </Card>
         <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          Los eventos se generan desde la fecha de asignación del ticket fecha_asignacion.
+          Los eventos se generan desde la fecha de asignación del ticket (fecha_asignacion). Solo se muestran eventos con fecha de asignación explícita.
         </Typography>
       </Box>
       {/* Dialog summary (opens on click) */}
@@ -257,7 +329,7 @@ const TicketsPorTecnico = () => {
         <DialogContent dividers>
           {selectedTicket ? (
             <Box sx={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: 1 }}>
-              <Typography variant="subtitle2" color="text.secondary">Ticket</Typography>
+              <Typography variant="subtitle2" color="text.secondary">ID</Typography>
               <Typography variant="body1">{selectedTicket.id_ticket ?? selectedTicket.id}</Typography>
 
               <Typography variant="subtitle2" color="text.secondary">Título</Typography>
