@@ -49,6 +49,17 @@ class Categoria_ticketModel
                 }
             }
 
+            // Especialidades opcionales: reasignar especialidades seleccionadas a la nueva categoría
+            if (isset($obj->especialidades) && is_array($obj->especialidades) && !empty($obj->especialidades)) {
+                // Construir placeholders dinámicos para IN (...)
+                $ids = array_map('intval', $obj->especialidades);
+                $placeholders = implode(',', array_fill(0, count($ids), '?'));
+                $types = 'i' . str_repeat('i', count($ids)); // primero id_categoria, luego ids
+                $params = array_merge([ (int)$newId ], $ids);
+                $sqlUpd = "UPDATE especialidad SET id_categoria = ? WHERE id_especialidad IN ($placeholders)";
+                $this->enlace->executePrepared_DML($sqlUpd, $types, $params);
+            }
+
             return $this->get($newId);
         } catch (Exception $e) {
             handleException($e);
