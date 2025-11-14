@@ -4,7 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
-  Box, Grid, Paper, Divider, Typography, FormControl, TextField, MenuItem, InputAdornment, Button, Snackbar, Alert, Autocomplete, CircularProgress, Breadcrumbs, Link,
+  Box, Grid, Paper, Divider, Typography, FormControl, TextField, MenuItem, InputAdornment, Button, Snackbar, Alert, Autocomplete, CircularProgress, Breadcrumbs, Link, Checkbox, Chip,
 } from '@mui/material';
 import SuccessOverlay from '../common/SuccessOverlay';
 import SaveIcon from '@mui/icons-material/Save';
@@ -18,6 +18,9 @@ import AssignmentIcon from '@mui/icons-material/Assignment';
 import EditIcon from '@mui/icons-material/Edit';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import SecurityIcon from '@mui/icons-material/Security';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import WorkIcon from '@mui/icons-material/Work';
 import TecnicoService from '../../services/TecnicoService';
 
 const apiBase = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || 'http://localhost:81';
@@ -49,7 +52,7 @@ const schema = yup.object({
     pw ? schema.required('Confirme la contraseña').oneOf([yup.ref('password')], 'Las contraseñas deben coincidir') : schema
   )),
   disponibilidad: yup.boolean().required('Debe seleccionar la disponibilidad'),
-  especialidad: yup.mixed().required('Debe seleccionar una especialidad'),
+  especialidades: yup.array().of(yup.object()).required('Debe seleccionar al menos una especialidad'),
   carga_trabajo: yup.number().min(0, 'La carga debe ser 0 o mayor').optional(),
 });
 
@@ -60,7 +63,7 @@ export default function EditTecnico() {
   const [loadError, setLoadError] = useState('');
   const { control, handleSubmit, reset, formState: { errors }, watch } = useForm({
     defaultValues: {
-      id_rol: 0, id_usuario: '', nombre: '', correo: '', password: '', confirm_password: '', disponibilidad: true, especialidad: null, carga_trabajo: 0,
+      id_rol: 0, id_usuario: '', nombre: '', correo: '', password: '', confirm_password: '', disponibilidad: true, especialidades: [], carga_trabajo: 0,
     }, resolver: yupResolver(schema),
   });
   const pwd = watch('password');
@@ -70,11 +73,21 @@ export default function EditTecnico() {
   const [roles, setRoles] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [successOpen, setSuccessOpen] = useState(false);
+  const [openEsp, setOpenEsp] = useState(false);
 
   // Ordenar roles por ID ascendente
   const sortedRoles = (roles || []).slice().sort((a, b) => {
     const ai = a?.id_rol;
     const bi = b?.id_rol;
+    if (ai != null && bi != null) return Number(ai) - Number(bi);
+    if (ai != null) return -1;
+    if (bi != null) return 1;
+    return 0;
+  });
+
+  const sortedEspecialidades = (especialidades || []).slice().sort((a, b) => {
+    const ai = a?.id_especialidad;
+    const bi = b?.id_especialidad;
     if (ai != null && bi != null) return Number(ai) - Number(bi);
     if (ai != null) return -1;
     if (bi != null) return 1;
@@ -122,10 +135,10 @@ export default function EditTecnico() {
 
         // Precargar datos del técnico en el formulario
         if (tecnicoData) {
-          // Obtener la primera especialidad (selección única)
-          const especialidadTecnico = Array.isArray(tecnicoData.especialidades) && tecnicoData.especialidades.length > 0
-            ? tecnicoData.especialidades[0]
-            : null;
+          // Obtener todas las especialidades (selección múltiple)
+          const especialidadesTecnico = Array.isArray(tecnicoData.especialidades) && tecnicoData.especialidades.length > 0
+            ? tecnicoData.especialidades
+            : [];
 
           // Obtener info del usuario para obtener rol
           let userRole = 0;
@@ -146,7 +159,7 @@ export default function EditTecnico() {
             correo: tecnicoData.correo_usuario || tecnicoData.correo || '',
             password: '', // Dejar vacío en edición
             disponibilidad: tecnicoData.disponibilidad === 1 || tecnicoData.disponibilidad === true,
-            especialidad: especialidadTecnico,
+            especialidades: especialidadesTecnico,
             carga_trabajo: tecnicoData.carga_trabajo || 0,
           });
         }
@@ -174,7 +187,7 @@ export default function EditTecnico() {
         nombre: v.nombre,
         correo: v.correo,
         disponibilidad: v.disponibilidad ? 1 : 0,
-        especialidades: v.especialidad ? [v.especialidad.id_especialidad] : [],
+        especialidades: (v.especialidades || []).map(e => e.id_especialidad),
       };
       console.log('Payload a enviar:', payload);
 
@@ -404,7 +417,7 @@ export default function EditTecnico() {
           <Divider sx={{ my: 3 }} />
           <Typography variant="h6" sx={{ mt: 1, mb: 2, fontWeight: 700 }}>Datos técnicos</Typography>
           <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={4}>
               <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
                 <Controller name="disponibilidad" control={control} render={({ field }) => (
                   <TextField 
@@ -432,29 +445,7 @@ export default function EditTecnico() {
                 )} />
               </FormControl>
             </Grid>
-            <Grid item xs={12} md={6}>
-              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
-                <Controller name="especialidad" control={control} render={({ field }) => (
-                  <Autocomplete 
-                    id="especialidad" 
-                    options={Array.isArray(especialidades) ? especialidades : []} 
-                    getOptionLabel={(o) => o.nombre || ''} 
-                    value={field.value} 
-                    onChange={(_, v) => field.onChange(v)} 
-                    isOptionEqualToValue={(o, v) => o.id_especialidad === v.id_especialidad} 
-                    renderInput={(params) => (
-                      <TextField 
-                        {...params} 
-                        label="Especialidad" 
-                        error={Boolean(errors.especialidad)} 
-                        helperText={errors.especialidad ? errors.especialidad.message : 'Seleccione una especialidad'} 
-                      />
-                    )} 
-                  />
-                )} />
-              </FormControl>
-            </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12} md={8}>
               <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
                 <Controller name="carga_trabajo" control={control} render={({ field }) => (
                   <TextField 
@@ -472,6 +463,150 @@ export default function EditTecnico() {
                   />
                 )} />
               </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
+                <Controller name="especialidades" control={control} render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    id="especialidades"
+                    options={sortedEspecialidades}
+                    disableCloseOnSelect
+                    getOptionLabel={(o) => o.nombre || ''}
+                    value={field.value || []}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue || []);
+                      setOpenEsp(false);
+                    }}
+                    renderTags={() => null}
+                    isOptionEqualToValue={(o, v) => o.id_especialidad === v.id_especialidad}
+                    open={openEsp}
+                    onOpen={() => setOpenEsp(true)}
+                    onClose={() => setOpenEsp(false)}
+                    disableClearable={false}
+                    renderOption={(props, option, { selected }) => (
+                      <li {...props} style={{ display: 'flex', alignItems: 'center' }}>
+                        <Checkbox
+                          icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
+                          checkedIcon={<CheckBoxIcon fontSize="small" />}
+                          style={{ marginRight: 8 }}
+                          checked={selected}
+                        />
+                        <WorkIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} />
+                        <Box sx={{ whiteSpace: 'nowrap' }}>
+                          {`${option.id_especialidad} - ${option.nombre}`}
+                        </Box>
+                      </li>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Especialidades"
+                        placeholder="Seleccione especialidades"
+                        error={Boolean(errors.especialidades)}
+                        helperText={errors.especialidades ? errors.especialidades.message : `${(field.value || []).length} seleccionada(s)`}
+                        sx={{ '& .MuiInputBase-input': { minHeight: '48px', padding: '12px 14px' } }}
+                      />
+                    )}
+                    ListboxProps={{
+                      style: { maxHeight: 480 }
+                    }}
+                    slotProps={{
+                      paper: {
+                        sx: {
+                          width: { xs: '90vw', sm: 520, md: '100%' },
+                          '& .MuiAutocomplete-listbox .MuiAutocomplete-option': {
+                            alignItems: 'flex-start',
+                            whiteSpace: 'normal',
+                            lineHeight: 1.4,
+                            py: 1.25
+                          }
+                        }
+                      }
+                    }}
+                  />
+                )} />
+              </FormControl>
+            </Grid>
+          </Grid>
+
+          {/* Card de Especialidades Seleccionadas - En Grid separado */}
+          <Grid container spacing={3} sx={{ mt: 0 }}>
+            <Grid item xs={12}>
+              <Paper
+                elevation={0}
+                sx={{
+                  borderRadius: 3,
+                  bgcolor: (watch('especialidades') || []).length > 0 ? 'info.50' : 'grey.50',
+                  border: '2px solid',
+                  borderColor: (watch('especialidades') || []).length > 0 ? 'info.main' : 'grey.300',
+                  p: 3,
+                  minHeight: 120,
+                  transition: 'all 0.3s ease',
+                  '&:hover': {
+                    boxShadow: (watch('especialidades') || []).length > 0 ? '0 4px 20px rgba(25, 118, 210, 0.15)' : '0 4px 12px rgba(0,0,0,0.08)'
+                  }
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <WorkIcon sx={{ color: (watch('especialidades') || []).length > 0 ? 'info.main' : 'text.secondary' }} />
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                      Especialidades seleccionadas
+                    </Typography>
+                  </Box>
+                  <Chip
+                    label={(watch('especialidades') || []).length}
+                    size="small"
+                    color={(watch('especialidades') || []).length > 0 ? 'info' : 'default'}
+                    sx={{ fontWeight: 600 }}
+                  />
+                </Box>
+                {(watch('especialidades') || []).length > 0 ? (
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      flexWrap: 'wrap',
+                      gap: 1,
+                      maxHeight: 200,
+                      overflowY: 'auto',
+                      p: 1
+                    }}
+                  >
+                    {(watch('especialidades') || []).map(esp => (
+                      <Chip
+                        key={esp.id_especialidad}
+                        icon={<WorkIcon />}
+                        label={`${esp.id_especialidad} - ${esp.nombre}`}
+                        onDelete={() => {
+                          const updated = (watch('especialidades') || []).filter(e => e.id_especialidad !== esp.id_especialidad);
+                          const formVals = watch();
+                          reset({ ...formVals, especialidades: updated });
+                        }}
+                        color="info"
+                        variant="outlined"
+                        sx={{
+                          bgcolor: 'white',
+                          fontWeight: 500,
+                          '& .MuiChip-deleteIcon': {
+                            color: 'error.main',
+                            '&:hover': { color: 'error.dark' }
+                          }
+                        }}
+                      />
+                    ))}
+                  </Box>
+                ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 80 }}>
+                    <Typography variant="body2" color="text.secondary" align="center">
+                      No hay especialidades seleccionadas
+                    </Typography>
+                    <Typography variant="caption" color="text.disabled" align="center" sx={{ mt: 0.5 }}>
+                      Seleccione especialidades usando el campo anterior
+                    </Typography>
+                  </Box>
+                )}
+              </Paper>
             </Grid>
           </Grid>
           <Divider sx={{ my: 3 }} />

@@ -4,7 +4,7 @@ import { useForm, Controller } from 'react-hook-form';
 import * as yup from 'yup';
 import { yupResolver } from '@hookform/resolvers/yup';
 import {
-  Box, Grid, Paper, Divider, Typography, FormControl, TextField, MenuItem, InputAdornment, Button, Snackbar, Alert, Autocomplete,
+  Box, Grid, Paper, Divider, Typography, FormControl, TextField, MenuItem, InputAdornment, Button, Snackbar, Alert, Autocomplete, Checkbox, Chip,
 } from '@mui/material';
 import SuccessOverlay from '../common/SuccessOverlay';
 import SaveIcon from '@mui/icons-material/Save';
@@ -16,6 +16,9 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SecurityIcon from '@mui/icons-material/Security';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import WorkIcon from '@mui/icons-material/Work';
 import axios from 'axios';
 import { getApiOrigin } from '../../utils/apiBase';
 
@@ -52,7 +55,7 @@ const schema = yup.object({
       otherwise: yup.string().nullable(),
     }),
   disponibilidad: yup.boolean().nullable(),
-  especialidad: yup.mixed().nullable(),
+  especialidades: yup.array().of(yup.object()).nullable(),
   carga_trabajo: yup.number(),
 });
 
@@ -67,7 +70,7 @@ export default function CreateTecnico() {
       password: '',
       confirm_password: '',
       disponibilidad: true,
-      especialidad: null,
+      especialidades: [],
       carga_trabajo: 0,
     },
     resolver: yupResolver(schema),
@@ -79,6 +82,7 @@ export default function CreateTecnico() {
   const [successOpen, setSuccessOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [savedRol, setSavedRol] = useState(null);
+  const [openEsp, setOpenEsp] = useState(false);
   
   const selectedRol = watch('id_rol');
   const isTecnico = selectedRol === 2;
@@ -90,6 +94,15 @@ export default function CreateTecnico() {
   const sortedRoles = (roles || []).slice().sort((a, b) => {
     const ai = a?.id_rol;
     const bi = b?.id_rol;
+    if (ai != null && bi != null) return Number(ai) - Number(bi);
+    if (ai != null) return -1;
+    if (bi != null) return 1;
+    return 0;
+  });
+
+  const sortedEspecialidades = (especialidades || []).slice().sort((a, b) => {
+    const ai = a?.id_especialidad;
+    const bi = b?.id_especialidad;
     if (ai != null && bi != null) return Number(ai) - Number(bi);
     if (ai != null) return -1;
     if (bi != null) return 1;
@@ -142,17 +155,7 @@ export default function CreateTecnico() {
         }
       } else {
         // Si es técnico, crear usuario + técnico + especialidades
-        const especialidadesIds = [];
-        if (v.especialidad) {
-          // soportar objeto o array
-          if (Array.isArray(v.especialidad)) {
-            v.especialidad.forEach(e => {
-              if (e && (e.id_especialidad || e.id)) especialidadesIds.push(e.id_especialidad || e.id);
-            });
-          } else if (typeof v.especialidad === 'object') {
-            if (v.especialidad.id_especialidad || v.especialidad.id) especialidadesIds.push(v.especialidad.id_especialidad || v.especialidad.id);
-          }
-        }
+        const especialidadesIds = (v.especialidades || []).map(e => e.id_especialidad);
 
         const payloadTec = {
           id_usuario: v.id_usuario,
@@ -172,7 +175,7 @@ export default function CreateTecnico() {
           if (res?.data?.id_tecnico) {
             setSavedRol(2);
             setSuccessOpen(true);
-            reset();
+            reset({ id_rol: 0, id_usuario: '', nombre: '', correo: '', password: '', confirm_password: '', disponibilidad: true, especialidades: [], carga_trabajo: 0 });
             window.scrollTo(0, 0);
           } else {
             setSnackbar({ open: true, message: 'Respuesta inválida del servidor (técnico)', severity: 'warning' });
@@ -353,7 +356,7 @@ export default function CreateTecnico() {
               <Typography variant="h6" sx={{ mt: 1, mb: 2, fontWeight: 700 }}>Datos técnicos</Typography>
               <Grid container spacing={3}>
                 {/* Disponibilidad */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
                     <Controller name="disponibilidad" control={control} render={({ field }) => (
                       <TextField
@@ -363,11 +366,16 @@ export default function CreateTecnico() {
                         select
                         value={field.value ? 'true' : 'false'}
                         onChange={(e) => field.onChange(e.target.value === 'true')}
-                        helperText="Indica si el técnico está disponible para recibir tickets"
+                        InputProps={{
+                          readOnly: true,
+                          startAdornment: (<InputAdornment position="start"><CheckCircleOutlineIcon color="success" /></InputAdornment>)
+                        }}
+                        helperText="Se inicializa en Disponible - No editable"
+                        disabled
                       >
                         <MenuItem value="true">
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <CheckCircleOutlineIcon color="success" fontSize="small" /> Disponible
+                            Disponible
                           </Box>
                         </MenuItem>
                         <MenuItem value="false">
@@ -380,32 +388,8 @@ export default function CreateTecnico() {
                   </FormControl>
                 </Grid>
 
-                {/* Especialidad */}
-                <Grid item xs={12} md={6}>
-                  <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
-                    <Controller name="especialidad" control={control} render={({ field }) => (
-                      <Autocomplete
-                        id="especialidad"
-                        options={Array.isArray(especialidades) ? especialidades : []}
-                        getOptionLabel={(o) => o.nombre || ''}
-                        value={field.value}
-                        onChange={(_, v) => field.onChange(v)}
-                        isOptionEqualToValue={(o, v) => o.id_especialidad === v.id_especialidad}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Especialidad"
-                            error={Boolean(errors.especialidad)}
-                            helperText={errors.especialidad ? errors.especialidad.message : 'Seleccione una especialidad'}
-                          />
-                        )}
-                      />
-                    )} />
-                  </FormControl>
-                </Grid>
-
                 {/* Carga Actual */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
                     <Controller name="carga_trabajo" control={control} render={({ field }) => (
                           <TextField
@@ -423,6 +407,152 @@ export default function CreateTecnico() {
                           />
                         )} />
                   </FormControl>
+                </Grid>
+
+                {/* Especialidades (múltiples) */}
+                <Grid item xs={12}>
+                  <FormControl fullWidth>
+                    <Controller name="especialidades" control={control} render={({ field }) => (
+                      <Autocomplete
+                        multiple
+                        id="especialidades"
+                        options={sortedEspecialidades}
+                        disableCloseOnSelect
+                        getOptionLabel={(o) => o.nombre || ''}
+                        value={field.value || []}
+                        onChange={(_, newValue) => {
+                          field.onChange(newValue || []);
+                          setOpenEsp(false);
+                        }}
+                        renderTags={() => null}
+                        isOptionEqualToValue={(o, v) => o.id_especialidad === v.id_especialidad}
+                        open={openEsp}
+                        onOpen={() => setOpenEsp(true)}
+                        onClose={() => setOpenEsp(false)}
+                        disableClearable={false}
+                        renderOption={(props, option, { selected }) => (
+                          <li {...props} style={{ display: 'flex', alignItems: 'center' }}>
+                            <Checkbox
+                              icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
+                              checkedIcon={<CheckBoxIcon fontSize="small" />}
+                              style={{ marginRight: 8 }}
+                              checked={selected}
+                            />
+                            <WorkIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} />
+                            <Box sx={{ whiteSpace: 'nowrap' }}>
+                              {`${option.id_especialidad} - ${option.nombre}`}
+                            </Box>
+                          </li>
+                        )}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label="Especialidades"
+                            placeholder="Seleccione especialidades"
+                            error={Boolean(errors.especialidades)}
+                            helperText={errors.especialidades ? errors.especialidades.message : `${(field.value || []).length} seleccionada(s)`}
+                            sx={{ '& .MuiInputBase-input': { minHeight: '48px', padding: '12px 14px' } }}
+                          />
+                        )}
+                        ListboxProps={{
+                          style: { maxHeight: 480 }
+                        }}
+                        slotProps={{
+                          paper: {
+                            sx: {
+                              width: { xs: '90vw', sm: 520, md: '100%' },
+                              '& .MuiAutocomplete-listbox .MuiAutocomplete-option': {
+                                alignItems: 'flex-start',
+                                whiteSpace: 'normal',
+                                lineHeight: 1.4,
+                                py: 1.25
+                              }
+                            }
+                          }
+                        }}
+                      />
+                    )} />
+                  </FormControl>
+                </Grid>
+              </Grid>
+
+              {/* Card de Especialidades Seleccionadas - En Grid separado */}
+              <Grid container spacing={3} sx={{ mt: 0 }}>
+                <Grid item xs={12}>
+                  <Paper
+                    elevation={0}
+                    sx={{
+                      borderRadius: 3,
+                      bgcolor: (watch('especialidades') || []).length > 0 ? 'info.50' : 'grey.50',
+                      border: '2px solid',
+                      borderColor: (watch('especialidades') || []).length > 0 ? 'info.main' : 'grey.300',
+                      p: 3,
+                      minHeight: 120,
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        boxShadow: (watch('especialidades') || []).length > 0 ? '0 4px 20px rgba(25, 118, 210, 0.15)' : '0 4px 12px rgba(0,0,0,0.08)'
+                      }
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <WorkIcon sx={{ color: (watch('especialidades') || []).length > 0 ? 'info.main' : 'text.secondary' }} />
+                        <Typography variant="subtitle2" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                          Especialidades seleccionadas
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={(watch('especialidades') || []).length}
+                        size="small"
+                        color={(watch('especialidades') || []).length > 0 ? 'info' : 'default'}
+                        sx={{ fontWeight: 600 }}
+                      />
+                    </Box>
+                    {(watch('especialidades') || []).length > 0 ? (
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          flexWrap: 'wrap',
+                          gap: 1,
+                          maxHeight: 200,
+                          overflowY: 'auto',
+                          p: 1
+                        }}
+                      >
+                        {(watch('especialidades') || []).map(esp => (
+                          <Chip
+                            key={esp.id_especialidad}
+                            icon={<WorkIcon />}
+                            label={`${esp.id_especialidad} - ${esp.nombre}`}
+                            onDelete={() => {
+                              const updated = (watch('especialidades') || []).filter(e => e.id_especialidad !== esp.id_especialidad);
+                              const formVals = watch();
+                              reset({ ...formVals, especialidades: updated });
+                            }}
+                            color="info"
+                            variant="outlined"
+                            sx={{
+                              bgcolor: 'white',
+                              fontWeight: 500,
+                              '& .MuiChip-deleteIcon': {
+                                color: 'error.main',
+                                '&:hover': { color: 'error.dark' }
+                              }
+                            }}
+                          />
+                        ))}
+                      </Box>
+                    ) : (
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 80 }}>
+                        <Typography variant="body2" color="text.secondary" align="center">
+                          No hay especialidades seleccionadas
+                        </Typography>
+                        <Typography variant="caption" color="text.disabled" align="center" sx={{ mt: 0.5 }}>
+                          Seleccione especialidades usando el campo anterior
+                        </Typography>
+                      </Box>
+                    )}
+                  </Paper>
                 </Grid>
               </Grid>
             </>
