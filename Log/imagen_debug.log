@@ -1,0 +1,19 @@
+2025-11-15 00:39:35 - create() llamado
+FILES: {"file":{"name":"imagen.png","full_path":"imagen.png","type":"image\/png","tmp_name":"C:\\xampp\\tmp\\phpC65A.tmp","error":0,"size":144938}}
+POST: {"ticket_id":"100005"}
+Llamando uploadFile
+--- uploadFile inicio ---
+ticket_id: 100005
+file_name: imagen.png
+ticket_id (int): 100005
+Validando: size=144938, error=0, temp=C:\xampp\tmp\phpC65A.tmp
+newFileName: ticket_100005_6917bdb77ecb0.png
+Intentando move_uploaded_file
+Archivo movido, insertando en BD
+INSERT ejecutado, retornando true
+uploadFile retornó: true
+Éxito
+2025-11-15 00:41:10 - create() llamado
+FILES: {"imagen":{"name":"imagen.png","full_path":"imagen.png","type":"image\/png","tmp_name":"C:\\xampp\\tmp\\php39E0.tmp","error":0,"size":144938}}
+POST: {"id_ticket":"100005"}
+Error: falta file o ticket_id

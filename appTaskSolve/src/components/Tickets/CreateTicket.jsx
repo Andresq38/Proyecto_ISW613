@@ -18,7 +18,10 @@ import {
   Divider,
   Chip,
   Fade,
+  FormControl,
 } from '@mui/material';
+import { toast } from 'react-hot-toast';
+import ImageService from '../../services/ImageService';
 import SuccessOverlay from '../common/SuccessOverlay';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
@@ -28,6 +31,7 @@ import CategoryOutlinedIcon from '@mui/icons-material/CategoryOutlined';
 import FlagOutlinedIcon from '@mui/icons-material/FlagOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import DescriptionOutlinedIcon from '@mui/icons-material/DescriptionOutlined';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { getApiOrigin } from '../../utils/apiBase';
 import { formatDate } from '../../utils/format';
 
@@ -59,6 +63,8 @@ export default function CreateTicket() {
   const [usuarioInfo, setUsuarioInfo] = useState(null);
   const [fechaCreacion] = useState(() => new Date());
   const [touched, setTouched] = useState({});
+  const [file, setFile] = useState(null);
+  const [fileURL, setFileURL] = useState(null);
 
   const errors = {
     titulo: !form.titulo?.trim() 
@@ -162,6 +168,15 @@ export default function CreateTicket() {
   };
   const markTouched = (name) => setTouched((t) => ({ ...t, [name]: true }));
 
+  const handleChangeImage = (e) => {
+    if (e.target.files) {
+      setFileURL(
+        URL.createObjectURL(e.target.files[0], e.target.files[0].name)
+      );
+      setFile(e.target.files[0], e.target.files[0].name);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isValid) {
@@ -184,6 +199,29 @@ export default function CreateTicket() {
       const idTicket = created?.id_ticket;
       if (!idTicket) {
         throw new Error('No se recibió el ID del ticket creado');
+      }
+
+      // Gestionar imagen si fue seleccionada
+      if (file) {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('ticket_id', idTicket);
+        
+        try {
+          const imageRes = await ImageService.createImage(formData);
+          if (imageRes.data?.success) {
+            toast.success('Imagen subida exitosamente', {
+              duration: 3000,
+              position: 'top-center'
+            });
+          }
+        } catch (imageError) {
+          console.error('Error al subir imagen:', imageError);
+          toast.error('No se pudo subir la imagen', {
+            duration: 3000,
+            position: 'top-center'
+          });
+        }
       }
 
       const successMessage = `✓ Ticket #${idTicket} creado exitosamente`;
@@ -448,6 +486,38 @@ export default function CreateTicket() {
                 />
               </Grid>
             )}
+
+            <Grid item xs={12}>
+              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
+                <TextField
+                  type="file"
+                  label="Imagen del Ticket"
+                  inputProps={{ accept: 'image/*' }}
+                  onChange={handleChangeImage}
+                  InputLabelProps={{ shrink: true }}
+                  helperText="(Opcional) Adjunte una imagen relacionada con el problema"
+                />
+              </FormControl>
+              {fileURL && (
+                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 2, alignItems: 'flex-start' }}>
+                  <Box>
+                    <img src={fileURL} alt="preview" width={300} style={{ borderRadius: '8px', maxWidth: '100%' }} />
+                  </Box>
+                  <Button
+                    variant="contained"
+                    color="error"
+                    startIcon={<DeleteIcon />}
+                    onClick={() => {
+                      setFile(null);
+                      setFileURL(null);
+                    }}
+                    size="small"
+                  >
+                    Borrar imagen
+                  </Button>
+                </Box>
+              )}
+            </Grid>
 
             <Grid item xs={12}>
               <Divider sx={{ my: 1 }} />

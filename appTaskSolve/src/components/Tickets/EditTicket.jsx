@@ -20,7 +20,16 @@ import {
   Fade,
   Breadcrumbs,
   Link,
+  FormControl,
+  Card,
+  CardMedia,
+  CardActions,
+  ImageList,
+  ImageListItem,
 } from '@mui/material';
+import { toast } from 'react-hot-toast';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ImageService from '../../services/ImageService';
 import SuccessOverlay from '../common/SuccessOverlay';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import SaveRoundedIcon from '@mui/icons-material/SaveRounded';
@@ -60,6 +69,11 @@ export default function EditTicket() {
   const [usuarioInfo, setUsuarioInfo] = useState(null);
   const [fechaCreacion, setFechaCreacion] = useState('');
   const [touched, setTouched] = useState({});
+  const [imagenes, setImagenes] = useState([]);
+  const [file, setFile] = useState(null);
+  const [fileURL, setFileURL] = useState(null);
+  const [loadingImages, setLoadingImages] = useState(false);
+  const [imagenesAEliminar, setImagenesAEliminar] = useState([]);
 
   const errors = {
     titulo: !form.titulo?.trim() 
@@ -86,6 +100,20 @@ export default function EditTicket() {
       case 'Media': return 'warning';
       case 'Baja': return 'info';
       default: return 'default';
+    }
+  };
+
+  // Cargar imágenes del ticket
+  const cargarImagenes = async () => {
+    try {
+      setLoadingImages(true);
+      // Obtener imágenes del ticket por id_ticket
+      const res = await axios.get(`${apiBase}/imagen/getByTicket/${id}`);
+      setImagenes(Array.isArray(res.data) ? res.data : (res.data?.data || []));
+    } catch (e) {
+      console.error('Error al cargar imágenes:', e);
+    } finally {
+      setLoadingImages(false);
     }
   };
 
@@ -141,6 +169,8 @@ export default function EditTicket() {
           }
         }
 
+        // Cargar imágenes
+        await cargarImagenes();
         setLoadingData(false);
       } catch (e) {
         if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
@@ -180,6 +210,58 @@ export default function EditTicket() {
   };
   const markTouched = (name) => setTouched((t) => ({ ...t, [name]: true }));
 
+  const handleChangeImage = (e) => {
+    if (e.target.files) {
+      setFileURL(
+        URL.createObjectURL(e.target.files[0], e.target.files[0].name)
+      );
+      setFile(e.target.files[0], e.target.files[0].name);
+    }
+  };
+
+  const handleUploadImage = async () => {
+    if (!file) {
+      toast.error('Seleccione una imagen primero', {
+        duration: 3000,
+        position: 'top-center'
+      });
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('ticket_id', id);
+      
+      const imageRes = await ImageService.createImage(formData);
+      if (imageRes.data?.success) {
+        toast.success('Imagen subida exitosamente', {
+          duration: 3000,
+          position: 'top-center'
+        });
+        setFile(null);
+        setFileURL(null);
+        cargarImagenes();
+      }
+    } catch (imageError) {
+      console.error('Error al subir imagen:', imageError);
+      toast.error('No se pudo subir la imagen', {
+        duration: 3000,
+        position: 'top-center'
+      });
+    }
+  };
+
+  const handleDeleteImage = async (idImagen) => {
+    // Solo marcar para eliminar, no eliminar ahora
+    setImagenesAEliminar([...imagenesAEliminar, idImagen]);
+    setImagenes(imagenes.filter(img => img.id_imagen !== idImagen));
+    toast.success('Imagen marcada para eliminar', {
+      duration: 2000,
+      position: 'top-center'
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isValid) {
@@ -196,6 +278,44 @@ export default function EditTicket() {
         prioridad: form.prioridad,
         id_etiqueta: form.id_etiqueta ? Number(form.id_etiqueta) : undefined
       });
+
+      // Eliminar imágenes marcadas
+      if (imagenesAEliminar.length > 0) {
+        for (const idImagen of imagenesAEliminar) {
+          try {
+            await axios.delete(`${apiBase}/imagen/${idImagen}`);
+          } catch (deleteError) {
+            console.error('Error al eliminar imagen:', deleteError);
+          }
+        }
+        setImagenesAEliminar([]);
+      }
+
+      // Subir imagen si fue seleccionada
+      if (file) {
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('ticket_id', id);
+          
+          const imageRes = await ImageService.createImage(formData);
+          if (imageRes.data?.success) {
+            toast.success('Imagen subida exitosamente', {
+              duration: 3000,
+              position: 'top-center'
+            });
+            setFile(null);
+            setFileURL(null);
+            cargarImagenes();
+          }
+        } catch (imageError) {
+          console.error('Error al subir imagen:', imageError);
+          toast.error('Ticket actualizado pero no se pudo subir la imagen', {
+            duration: 3000,
+            position: 'top-center'
+          });
+        }
+      }
 
       const successMessage = `✓ Ticket #${id} actualizado exitosamente`;
       setSuccess(successMessage);
@@ -452,6 +572,71 @@ export default function EditTicket() {
                 value={fechaCreacion ? formatDate(new Date(fechaCreacion)) : ''}
                 InputProps={{ readOnly: true }}
               />
+            </Grid>
+
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>Imágenes del Ticket</Typography>
+              
+              {/* Seleccionar nueva imagen */}
+              <Paper sx={{ p: 2, mb: 3, bgcolor: 'background.default' }}>
+                <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
+                  <TextField
+                    type="file"
+                    label="Agregar imagen"
+                    inputProps={{ accept: 'image/*' }}
+                    onChange={handleChangeImage}
+                    InputLabelProps={{ shrink: true }}
+                    helperText="(Opcional) Adjunte una imagen. Se guardará al guardar el ticket."
+                  />
+                </FormControl>
+                {fileURL && (
+                  <Box sx={{ mt: 2 }}>
+                    <img src={fileURL} alt="preview" width={150} style={{ borderRadius: '8px' }} />
+                  </Box>
+                )}
+              </Paper>
+
+              {/* Galería de imágenes existentes */}
+              {loadingImages ? (
+                <Box sx={{ display: 'flex', justifyContent: 'center', py: 3 }}>
+                  <CircularProgress />
+                </Box>
+              ) : imagenes.length > 0 ? (
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 2, mb: 3 }}>
+                  {imagenes.map((img) => (
+                    <Card key={img.id_imagen} sx={{ height: '100%', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                      <CardMedia
+                        component="img"
+                        height="200"
+                        image={`${getApiOrigin()}/apiticket/uploads/${img.imagen}`}
+                        alt="ticket"
+                        sx={{ objectFit: 'cover' }}
+                        onError={(e) => {
+                          e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"%3E%3Crect fill="%23ddd" width="200" height="200"/%3E%3Ctext x="50%" y="50%" font-size="16" fill="%23999" text-anchor="middle" dominant-baseline="central"%3ENo disponible%3C/text%3E%3C/svg%3E';
+                        }}
+                      />
+                      <CardActions sx={{ p: 1, justifyContent: 'center', flexShrink: 0 }}>
+                        <Tooltip title="Eliminar imagen">
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="error"
+                            startIcon={<DeleteIcon />}
+                            onClick={() => handleDeleteImage(img.id_imagen)}
+                            fullWidth
+                          >
+                            Eliminar
+                          </Button>
+                        </Tooltip>
+                      </CardActions>
+                    </Card>
+                  ))}
+                </Box>
+              ) : (
+                <Typography variant="body2" color="text.secondary" sx={{ py: 2 }}>
+                  No hay imágenes asociadas a este ticket
+                </Typography>
+              )}
             </Grid>
 
             <Grid item xs={12}>
