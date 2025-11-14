@@ -1,5 +1,5 @@
 <?php
-class usuario
+class Usuario
 {
     public function index()
     {
@@ -34,13 +34,16 @@ class usuario
             $response = new Response();
             //Obtener json enviado
             $inputJSON = $request->getJSON();
+            error_log("DEBUG Usuario.create() - INPUT: " . json_encode($inputJSON));
             //Instancia del modelo
             $usuario = new UsuarioModel();
             //Acción del modelo a ejecutar
             $result = $usuario->create($inputJSON);
+            error_log("DEBUG Usuario.create() - RESULT: " . json_encode($result));
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
+            error_log("DEBUG Usuario.create() - ERROR: " . $e->getMessage());
             handleException($e);
         }
     }

@@ -6,6 +6,7 @@ import { yupResolver } from '@hookform/resolvers/yup';
 import {
   Box, Grid, Paper, Divider, Typography, FormControl, TextField, MenuItem, InputAdornment, Button, Snackbar, Alert, Autocomplete,
 } from '@mui/material';
+import SuccessOverlay from '../common/SuccessOverlay';
 import SaveIcon from '@mui/icons-material/Save';
 import PersonIcon from '@mui/icons-material/Person';
 import BadgeIcon from '@mui/icons-material/Badge';
@@ -15,8 +16,10 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import SecurityIcon from '@mui/icons-material/Security';
+import axios from 'axios';
+import { getApiOrigin } from '../../utils/apiBase';
 
-const apiBase = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || 'http://localhost:81';
+const apiBase = getApiOrigin();
 
 const schema = yup.object({
   id_rol: yup.number()
@@ -43,22 +46,14 @@ const schema = yup.object({
     .required('La contraseña es requerida')
     .min(6, 'La contraseña debe tener al menos 6 caracteres')
     .max(50, 'La contraseña no puede exceder 50 caracteres'),
-  disponibilidad: yup.boolean().when('id_rol', {
-    is: (id_rol) => id_rol === 2,
-    then: yup.boolean().required('Debe seleccionar la disponibilidad'),
-    otherwise: yup.boolean(),
-  }),
-  especialidad: yup.mixed().when('id_rol', {
-    is: (id_rol) => id_rol === 2,
-    then: yup.mixed().required('Debe seleccionar una especialidad'),
-    otherwise: yup.mixed(),
-  }),
+  disponibilidad: yup.boolean().nullable(),
+  especialidad: yup.mixed().nullable(),
   carga_trabajo: yup.number(),
 });
 
 export default function CreateTecnico() {
   const navigate = useNavigate();
-  const { control, handleSubmit, formState: { errors }, watch } = useForm({
+  const { control, handleSubmit, formState: { errors }, watch, reset } = useForm({
     defaultValues: {
       id_rol: 0,
       id_usuario: '',
@@ -75,9 +70,22 @@ export default function CreateTecnico() {
   const [roles, setRoles] = useState([]);
   const [especialidades, setEspecialidades] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [successOpen, setSuccessOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [savedRol, setSavedRol] = useState(null);
   
   const selectedRol = watch('id_rol');
   const isTecnico = selectedRol === 2;
+
+  // Ordenar roles por ID ascendente
+  const sortedRoles = (roles || []).slice().sort((a, b) => {
+    const ai = a?.id_rol;
+    const bi = b?.id_rol;
+    if (ai != null && bi != null) return Number(ai) - Number(bi);
+    if (ai != null) return -1;
+    if (bi != null) return 1;
+    return 0;
+  });
 
   useEffect(() => {
     const abort = new AbortController();
@@ -94,9 +102,85 @@ export default function CreateTecnico() {
   }, []);
 
   const onSubmit = async (v) => {
-    // Por ahora solo mostramos un mensaje
-    console.log('Formulario (sin guardar):', v);
-    setSnackbar({ open: true, message: 'Datos capturados (guardado deshabilitado por ahora)', severity: 'info' });
+    try {
+      setLoading(true);
+
+      // Si es admin/cliente, guardar usuario
+      if (v.id_rol !== 2) {
+        const payload = {
+          id_usuario: v.id_usuario,
+          nombre: v.nombre,
+          correo: v.correo,
+          password: v.password,
+          id_rol: v.id_rol,
+        };
+
+        const res = await axios.post(`${apiBase}/apiticket/usuario`, payload, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (res?.data?.id_usuario) {
+          setSavedRol(v.id_rol);
+          setSuccessOpen(true);
+          reset();
+          window.scrollTo(0, 0);
+        } else {
+          setSnackbar({
+            open: true,
+            message: 'Respuesta inválida del servidor',
+            severity: 'warning',
+          });
+        }
+      } else {
+        // Si es técnico, crear usuario + técnico + especialidades
+        const especialidadesIds = [];
+        if (v.especialidad) {
+          // soportar objeto o array
+          if (Array.isArray(v.especialidad)) {
+            v.especialidad.forEach(e => {
+              if (e && (e.id_especialidad || e.id)) especialidadesIds.push(e.id_especialidad || e.id);
+            });
+          } else if (typeof v.especialidad === 'object') {
+            if (v.especialidad.id_especialidad || v.especialidad.id) especialidadesIds.push(v.especialidad.id_especialidad || v.especialidad.id);
+          }
+        }
+
+        const payloadTec = {
+          id_usuario: v.id_usuario,
+          nombre: v.nombre,
+          correo: v.correo,
+          password: v.password,
+          id_rol: 2,
+          disponibilidad: !!v.disponibilidad,
+          carga_trabajo: v.carga_trabajo ? Number(v.carga_trabajo) : 0,
+          especialidades: especialidadesIds,
+        };
+
+        try {
+          const res = await axios.post(`${apiBase}/apiticket/tecnico`, payloadTec, {
+            headers: { 'Content-Type': 'application/json' }
+          });
+          if (res?.data?.id_tecnico) {
+            setSavedRol(2);
+            setSuccessOpen(true);
+            reset();
+            window.scrollTo(0, 0);
+          } else {
+            setSnackbar({ open: true, message: 'Respuesta inválida del servidor (técnico)', severity: 'warning' });
+          }
+        } catch (errTec) {
+          setSnackbar({ open: true, message: errTec?.response?.data?.message || errTec?.message || 'Error al crear técnico', severity: 'error' });
+        }
+      }
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: err?.response?.data?.message || err?.message || 'Error al guardar',
+        severity: 'error',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   const onError = () => setSnackbar({ open: true, message: 'Revisa los campos requeridos', severity: 'warning' });
@@ -137,7 +221,7 @@ export default function CreateTecnico() {
                     }}
                   >
                     <MenuItem value={0}>-- Seleccionar Rol --</MenuItem>
-                    {Array.isArray(roles) && roles.map(role => (
+                    {sortedRoles.map(role => (
                       <MenuItem key={role.id_rol} value={role.id_rol}>
                         {role.descripcion}
                       </MenuItem>
@@ -309,7 +393,7 @@ export default function CreateTecnico() {
 
           <Divider sx={{ my: 3 }} />
           <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            <Button type="submit" variant="contained" color="primary" startIcon={<SaveIcon />} sx={{ m: 0 }}>
+            <Button type="submit" variant="contained" color="primary" startIcon={<SaveIcon />} disabled={loading} sx={{ m: 0 }}>
               Guardar
             </Button>
             <Button variant="outlined" onClick={() => navigate(-1)} sx={{ m: 0 }}>
@@ -334,6 +418,20 @@ export default function CreateTecnico() {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      <SuccessOverlay
+        open={successOpen}
+        mode="create"
+        entity="usuario"
+        gender="masculine"
+        onClose={() => setSuccessOpen(false)}
+          actions={savedRol === 2 ? [
+            { label: 'Crear otro', onClick: () => setSuccessOpen(false), variant: 'contained', color: 'success' },
+            { label: 'Ir al listado de técnicos', onClick: () => { setSuccessOpen(false); navigate('/tecnicos'); }, variant: 'outlined', color: 'success' }
+          ] : [
+            { label: 'Cerrar', onClick: () => setSuccessOpen(false), variant: 'contained', color: 'success' }
+          ]}
+      />
     </>
   );
 }

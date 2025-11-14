@@ -10,6 +10,7 @@ import DeleteForeverIcon from '@mui/icons-material/DeleteForever';
  *  - open: boolean
  *  - mode: 'create' | 'update' | 'delete'
  *  - entity: string (e.g. 'Categoría', 'Técnico', 'Ticket')
+ *  - gender: 'masculine' | 'feminine' (default: 'feminine')
  *  - onClose: () => void
  *  - actions: array of { label, onClick, variant ('contained'|'outlined'), color }
  *  - subtitle: optional custom subtitle text
@@ -18,6 +19,7 @@ export default function SuccessOverlay({
   open,
   mode = 'create',
   entity = 'Registro',
+  gender = 'feminine',
   onClose,
   actions = [],
   subtitle,
@@ -28,14 +30,15 @@ export default function SuccessOverlay({
   const isCreate = mode === 'create';
   const isUpdate = mode === 'update';
   const isDelete = mode === 'delete';
+  const isMasculine = gender === 'masculine';
 
-  const verb = isCreate ? 'creada' : isUpdate ? 'actualizada' : 'eliminada';
+  const verb = isCreate ? (isMasculine ? 'creado' : 'creada') : isUpdate ? (isMasculine ? 'actualizado' : 'actualizada') : (isMasculine ? 'eliminado' : 'eliminada');
   const title = `¡${entity} ${verb}!`;
   const defaultSubtitle = isCreate
-    ? `La ${entity.toLowerCase()} se registró correctamente. Puedes continuar sin abandonar la pantalla.`
+    ? `${isMasculine ? 'El' : 'La'} ${entity.toLowerCase()} se registró correctamente. Puedes continuar sin abandonar la pantalla.`
     : isUpdate
-      ? `Los cambios de la ${entity.toLowerCase()} se guardaron correctamente.`
-      : `La ${entity.toLowerCase()} se eliminó correctamente. Esta acción no se puede deshacer.`;
+      ? `Los cambios ${isMasculine ? 'del' : 'de la'} ${entity.toLowerCase()} se guardaron correctamente.`
+      : `${isMasculine ? 'El' : 'La'} ${entity.toLowerCase()} se eliminó correctamente. Esta acción no se puede deshacer.`;
 
   const renderHero = () => {
     if (illustration) return (

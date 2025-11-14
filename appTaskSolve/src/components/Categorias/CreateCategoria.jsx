@@ -684,6 +684,7 @@ export default function CreateCategoria({
         open={successOpen}
         mode="create"
         entity="Categoría"
+        gender="feminine"
         onClose={() => setSuccessOpen(false)}
         actions={[
           { label: 'Crear otra', onClick: () => setSuccessOpen(false), variant: 'contained', color: 'success' },
