@@ -410,71 +410,74 @@ export default function CreateTecnico() {
                 </Grid>
 
                 {/* Especialidades (múltiples) */}
-                <Grid item xs={12}>
-                  <FormControl fullWidth>
-                    <Controller name="especialidades" control={control} render={({ field }) => (
-                      <Autocomplete
-                        multiple
-                        id="especialidades"
-                        options={sortedEspecialidades}
-                        disableCloseOnSelect
-                        getOptionLabel={(o) => o.nombre || ''}
-                        value={field.value || []}
-                        onChange={(_, newValue) => {
-                          field.onChange(newValue || []);
-                          setOpenEsp(false);
-                        }}
-                        renderTags={() => null}
-                        isOptionEqualToValue={(o, v) => o.id_especialidad === v.id_especialidad}
-                        open={openEsp}
-                        onOpen={() => setOpenEsp(true)}
-                        onClose={() => setOpenEsp(false)}
-                        disableClearable={false}
-                        renderOption={(props, option, { selected }) => (
-                          <li {...props} style={{ display: 'flex', alignItems: 'center' }}>
-                            <Checkbox
-                              icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
-                              checkedIcon={<CheckBoxIcon fontSize="small" />}
-                              style={{ marginRight: 8 }}
-                              checked={selected}
-                            />
-                            <WorkIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} />
-                            <Box sx={{ whiteSpace: 'nowrap' }}>
-                              {`${option.id_especialidad} - ${option.nombre}`}
-                            </Box>
-                          </li>
-                        )}
-                        renderInput={(params) => (
-                          <TextField
-                            {...params}
-                            label="Especialidades"
-                            placeholder="Seleccione especialidades"
-                            error={Boolean(errors.especialidades)}
-                            helperText={errors.especialidades ? errors.especialidades.message : `${(field.value || []).length} seleccionada(s)`}
-                            sx={{ '& .MuiInputBase-input': { minHeight: '48px', padding: '12px 14px' } }}
-                          />
-                        )}
-                        ListboxProps={{
-                          style: { maxHeight: 480 }
-                        }}
-                        slotProps={{
-                          paper: {
-                            sx: {
-                              width: { xs: '90vw', sm: 520, md: '100%' },
-                              '& .MuiAutocomplete-listbox .MuiAutocomplete-option': {
-                                alignItems: 'flex-start',
-                                whiteSpace: 'normal',
-                                lineHeight: 1.4,
-                                py: 1.25
-                              }
-                            }
-                          }
+                <Grid item xs={12} >
+              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
+                <Controller name="especialidades" control={control} render={({ field }) => (
+                  <Autocomplete
+                    multiple
+                    id="especialidades"
+                    options={sortedEspecialidades}
+                    disableCloseOnSelect
+                    getOptionLabel={(o) => o.nombre || ''}
+                    value={field.value || []}
+                    onChange={(_, newValue) => {
+                      field.onChange(newValue || []);
+                      setOpenEsp(false);
+                    }}
+                    renderTags={() => null}
+                    isOptionEqualToValue={(o, v) => o.id_especialidad === v.id_especialidad}
+                    open={openEsp}
+                    onOpen={() => setOpenEsp(true)}
+                    onClose={() => setOpenEsp(false)}
+                    disableClearable={false}
+                    renderOption={(props, option, { selected }) => (
+                      <li {...props}>
+                        <Checkbox
+                          icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
+                          checkedIcon={<CheckBoxIcon fontSize="small" />}
+                          style={{ marginRight: 8 }}
+                          checked={selected}
+                        />
+                        <WorkIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} />
+                        <Box sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
+                          {`${option.id_especialidad} - ${option.nombre}`}
+                        </Box>
+                      </li>
+                    )}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Especialidades"
+                        placeholder="Seleccione especialidades"
+                        error={Boolean(errors.especialidades)}
+                        helperText={errors.especialidades ? errors.especialidades.message : `${(field.value || []).length} seleccionada(s)`}
+                        InputProps={{
+                          ...params.InputProps,
+                          startAdornment: (<InputAdornment position="start"><WorkIcon color="action" /></InputAdornment>)
                         }}
                       />
-                    )} />
-                  </FormControl>
-                </Grid>
-              </Grid>
+                    )}
+                    ListboxProps={{
+                      style: { maxHeight: 480 }
+                    }}
+                    slotProps={{
+                      paper: {
+                        sx: {
+                          width: { xs: '90vw', sm: 520, md: 640 },
+                          '& .MuiAutocomplete-listbox .MuiAutocomplete-option': {
+                            alignItems: 'flex-start',
+                            whiteSpace: 'normal',
+                            lineHeight: 1.4,
+                            py: 1.25
+                          }
+                        }
+                      }
+                    }}
+                  />
+                )} />
+              </FormControl>
+            </Grid>
+          </Grid>
 
               {/* Card de Especialidades Seleccionadas - En Grid separado */}
               <Grid container spacing={3} sx={{ mt: 0 }}>
