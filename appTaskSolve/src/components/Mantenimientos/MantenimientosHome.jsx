@@ -26,7 +26,7 @@ export default function MantenimientosHome() {
   const modules = [
     {
       key: 'tecnicos',
-      title: 'Técnicos',
+      title: 'Usuarios',
       description: 'Administrar perfiles, especialidades y carga de trabajo.',
       primary: '/tecnicos/listado',
       create: '/tecnicos/crear',
