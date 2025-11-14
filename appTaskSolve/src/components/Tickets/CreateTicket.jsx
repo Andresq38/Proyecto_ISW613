@@ -368,24 +368,19 @@ export default function CreateTicket() {
               </Tooltip>
             </Grid>
 
-            <Grid item xs={12} md={6}>
+            <Grid item xs={12}>
               <Autocomplete
                 options={usuarios}
                 loading={usuarios.length === 0 && !error}
                 getOptionLabel={(opt) => {
                   if (!opt) return '';
-                  return `${opt.nombre || ''} (${opt.id_usuario || ''})`;
+                  return opt.nombre || '';
                 }}
                 renderOption={(props, option) => (
                   <li {...props} key={option.id_usuario}>
-                    <Box sx={{ display: 'flex', flexDirection: 'column', py: 0.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {option.nombre}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {option.correo} • ID: {option.id_usuario}
-                      </Typography>
-                    </Box>
+                    <Typography variant="body2">
+                      {option.nombre}
+                    </Typography>
                   </li>
                 )}
                 onChange={(_, val) => setUsuarioSeleccionado(val)}
@@ -399,9 +394,7 @@ export default function CreateTicket() {
                     error={Boolean(touched.id_usuario && errors.id_usuario)}
                     helperText={
                       touched.id_usuario && errors.id_usuario
-                        || (usuarioInfo?.correo
-                          ? `Correo: ${usuarioInfo.correo}`
-                          : `Solo se muestran usuarios con rol Cliente${clienteRolId ? ` (ID rol ${clienteRolId})` : ''}`)
+                        || `Solo se muestran usuarios con rol Cliente${clienteRolId ? ` (ID rol ${clienteRolId})` : ''}`
                     }
                     InputProps={{
                       ...params.InputProps,
@@ -413,14 +406,48 @@ export default function CreateTicket() {
                 noOptionsText={clienteRolId ? 'No hay usuarios con rol Cliente disponibles' : 'Cargando roles...'}
               />
             </Grid>
-            <Grid item xs={12} md={6}>
-              <TextField
-                fullWidth
-                label="Fecha de creación"
-                value={formatDate(fechaCreacion)}
-                InputProps={{ readOnly: true }}
-              />
-            </Grid>
+
+            {usuarioInfo && (
+              <>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    label="ID Usuario"
+                    value={usuarioInfo.id || ''}
+                    InputProps={{ readOnly: true }}
+                    helperText="Identificador único del usuario"
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Correo Electrónico"
+                    value={usuarioInfo.correo || ''}
+                    InputProps={{ readOnly: true }}
+                    helperText="Correo del usuario solicitante"
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    fullWidth
+                    label="Fecha de creación"
+                    value={formatDate(fechaCreacion)}
+                    InputProps={{ readOnly: true }}
+                  />
+                </Grid>
+              </>
+            )}
+
+            {!usuarioInfo && (
+              <Grid item xs={12} md={6}>
+                <TextField
+                  fullWidth
+                  label="Fecha de creación"
+                  value={formatDate(fechaCreacion)}
+                  InputProps={{ readOnly: true }}
+                />
+              </Grid>
+            )}
 
             <Grid item xs={12}>
               <Divider sx={{ my: 1 }} />
