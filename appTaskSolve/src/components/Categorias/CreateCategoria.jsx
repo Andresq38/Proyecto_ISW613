@@ -405,7 +405,7 @@ export default function CreateCategoria({
                       border: '2px solid',
                       borderColor: form.etiquetas.length > 0 ? 'success.main' : 'grey.300',
                       p: 3,
-                      minHeight: 180,
+                      minHeight: 220,
                       position: 'relative',
                       transition: 'all 0.3s ease',
                       '&:hover': {
@@ -433,7 +433,7 @@ export default function CreateCategoria({
                           display: 'flex',
                           flexWrap: 'wrap',
                           gap: 1,
-                          maxHeight: 200,
+                          maxHeight: 240,
                           overflowY: 'auto',
                           p: 1
                         }}
@@ -478,7 +478,7 @@ export default function CreateCategoria({
                       border: '2px solid',
                       borderColor: form.especialidades.length > 0 ? 'info.main' : 'grey.300',
                       p: 3,
-                      minHeight: 180,
+                      minHeight: 220,
                       position: 'relative',
                       transition: 'all 0.3s ease',
                       '&:hover': {
@@ -506,7 +506,7 @@ export default function CreateCategoria({
                           display: 'flex',
                           flexWrap: 'wrap',
                           gap: 1,
-                          maxHeight: 200,
+                          maxHeight: 240,
                           overflowY: 'auto',
                           p: 1
                         }}

@@ -485,7 +485,7 @@ export default function EditTecnico() {
                     onClose={() => setOpenEsp(false)}
                     disableClearable={false}
                     renderOption={(props, option, { selected }) => (
-                      <li {...props} style={{ display: 'flex', alignItems: 'center' }}>
+                      <li {...props}>
                         <Checkbox
                           icon={<CheckBoxOutlineBlankIcon fontSize="small" />}
                           checkedIcon={<CheckBoxIcon fontSize="small" />}
@@ -493,7 +493,7 @@ export default function EditTecnico() {
                           checked={selected}
                         />
                         <WorkIcon fontSize="small" sx={{ mr: 1, color: 'info.main' }} />
-                        <Box sx={{ whiteSpace: 'nowrap' }}>
+                        <Box sx={{ whiteSpace: 'normal', wordBreak: 'break-word' }}>
                           {`${option.id_especialidad} - ${option.nombre}`}
                         </Box>
                       </li>
@@ -505,7 +505,6 @@ export default function EditTecnico() {
                         placeholder="Seleccione especialidades"
                         error={Boolean(errors.especialidades)}
                         helperText={errors.especialidades ? errors.especialidades.message : `${(field.value || []).length} seleccionada(s)`}
-                        sx={{ '& .MuiInputBase-input': { minHeight: '48px', padding: '12px 14px' } }}
                       />
                     )}
                     ListboxProps={{
@@ -514,7 +513,7 @@ export default function EditTecnico() {
                     slotProps={{
                       paper: {
                         sx: {
-                          width: { xs: '90vw', sm: 520, md: '100%' },
+                          width: { xs: '90vw', sm: 520, md: 640 },
                           '& .MuiAutocomplete-listbox .MuiAutocomplete-option': {
                             alignItems: 'flex-start',
                             whiteSpace: 'normal',
