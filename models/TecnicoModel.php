@@ -103,14 +103,17 @@ class TecnicoModel
                 throw new Exception("Campos requeridos: id_usuario, nombre, correo, password");
             }
 
-            // Validar longitud de nombre (3-150 caracteres)
             if (strlen($objeto->nombre) < 3 || strlen($objeto->nombre) > 150) {
                 throw new Exception("El nombre debe tener entre 3 y 150 caracteres");
             }
 
-            // Validar formato de correo
             if (!filter_var($objeto->correo, FILTER_VALIDATE_EMAIL)) {
                 throw new Exception("Formato de correo inválido");
+            }
+
+            // Validar longitud mínima de password
+            if (strlen($objeto->password) < 6) {
+                throw new Exception("La contraseña debe tener al menos 6 caracteres");
             }
 
             // Validar que el correo no esté duplicado
@@ -127,55 +130,58 @@ class TecnicoModel
                 throw new Exception("El ID de usuario ya está registrado");
             }
 
-            // Validar longitud mínima de password
-            if (strlen($objeto->password) < 6) {
-                throw new Exception("La contraseña debe tener al menos 6 caracteres");
-            }
-
             // Hash de la contraseña
             $hashedPassword = hash('sha256', $objeto->password);
 
             // Defaults
             $disponibilidad = isset($objeto->disponibilidad) ? (bool)$objeto->disponibilidad : true;
             $cargaTrabajo = isset($objeto->carga_trabajo) ? (int)$objeto->carga_trabajo : 0;
+            $idRol = isset($objeto->id_rol) ? (int)$objeto->id_rol : 2; // Default a técnico (id_rol 2)
 
-            // --- 1. Crear el usuario con prepared statement ---
+            // --- 1. Crear el usuario ---
             $sqlUsuario = "INSERT INTO usuario (id_usuario, nombre, correo, password, id_rol)
-                       VALUES (?, ?, ?, ?, 2)";
-            $this->enlace->executePrepared($sqlUsuario, 'ssss', [
+                       VALUES (?, ?, ?, ?, ?)";
+            $this->enlace->executePrepared($sqlUsuario, 'ssssi', [
                 $objeto->id_usuario,
                 $objeto->nombre,
                 $objeto->correo,
-                $hashedPassword
+                $hashedPassword,
+                $idRol
             ]);
 
-            // --- 2. Crear el técnico asociado ---
-            $sqlTecnico = "INSERT INTO tecnico (id_usuario, disponibilidad, carga_trabajo)
-                       VALUES (?, ?, ?)";
-            $this->enlace->executePrepared($sqlTecnico, 'sii', [
-                $objeto->id_usuario,
-                $disponibilidad ? 1 : 0,
-                $cargaTrabajo
-            ]);
+            // --- 2. Si es técnico, crear el técnico asociado ---
+            if ($idRol == 2) {
+                $sqlTecnico = "INSERT INTO tecnico (id_usuario, disponibilidad, carga_trabajo)
+                           VALUES (?, ?, ?)";
+                $this->enlace->executePrepared($sqlTecnico, 'sii', [
+                    $objeto->id_usuario,
+                    $disponibilidad ? 1 : 0,
+                    $cargaTrabajo
+                ]);
 
-            // --- 3. Obtener el id_tecnico recién creado ---
-            $sqlGetId = "SELECT id_tecnico FROM tecnico WHERE id_usuario = ?";
-            $result = $this->enlace->executePrepared($sqlGetId, 's', [$objeto->id_usuario]);
-            $idTecnico = $result[0]->id_tecnico;
+                // --- 3. Obtener el id_tecnico recién creado ---
+                $sqlGetId = "SELECT id_tecnico FROM tecnico WHERE id_usuario = ?";
+                $result = $this->enlace->executePrepared($sqlGetId, 's', [$objeto->id_usuario]);
+                $idTecnico = $result[0]->id_tecnico;
 
-            // --- 4. Insertar especialidades del técnico ---
-            if (isset($objeto->especialidades) && is_array($objeto->especialidades) && !empty($objeto->especialidades)) {
-                foreach ($objeto->especialidades as $id_especialidad) {
-                    $sqlEsp = "INSERT INTO tecnico_especialidad (id_tecnico, id_especialidad) VALUES (?, ?)";
-                    $this->enlace->executePrepared($sqlEsp, 'ii', [
-                        (int)$idTecnico,
-                        (int)$id_especialidad
-                    ]);
+                // --- 4. Insertar especialidades del técnico ---
+                if (isset($objeto->especialidades) && is_array($objeto->especialidades) && !empty($objeto->especialidades)) {
+                    foreach ($objeto->especialidades as $id_especialidad) {
+                        $sqlEsp = "INSERT INTO tecnico_especialidad (id_tecnico, id_especialidad) VALUES (?, ?)";
+                        $this->enlace->executePrepared($sqlEsp, 'ii', [
+                            (int)$idTecnico,
+                            (int)$id_especialidad
+                        ]);
+                    }
                 }
-            }
 
-            // --- 5. Retornar el técnico recién creado ---
-            return $this->get($idTecnico);
+                // --- 5. Retornar el técnico recién creado ---
+                return $this->get($idTecnico);
+            } else {
+                // Si no es técnico, retornar usuario creado
+                $usuarioModel = new UsuarioModel();
+                return $usuarioModel->get($objeto->id_usuario);
+            }
         } catch (Exception $e) {
             handleException($e);
         }
@@ -185,70 +191,11 @@ class TecnicoModel
     {
         try {
             // --- Validaciones ---
-            if (empty($objeto->id_tecnico) || empty($objeto->id_usuario)) {
-                throw new Exception("Campos requeridos: id_tecnico, id_usuario");
+            if (empty($objeto->id_tecnico)) {
+                throw new Exception("Campos requerido: id_tecnico");
             }
 
-            // Validar longitud de nombre si se proporciona
-            if (isset($objeto->nombre) && (strlen($objeto->nombre) < 3 || strlen($objeto->nombre) > 150)) {
-                throw new Exception("El nombre debe tener entre 3 y 150 caracteres");
-            }
-
-            // Validar formato de correo si se proporciona
-            if (isset($objeto->correo) && !filter_var($objeto->correo, FILTER_VALIDATE_EMAIL)) {
-                throw new Exception("Formato de correo inválido");
-            }
-
-            // Validar unicidad del correo si se está actualizando
-            if (isset($objeto->correo)) {
-                $sqlCheckEmail = "SELECT COUNT(*) as count FROM usuario WHERE correo = ? AND id_usuario != ?";
-                $resultEmail = $this->enlace->executePrepared($sqlCheckEmail, 'ss', [$objeto->correo, $objeto->id_usuario]);
-                if ($resultEmail[0]->count > 0) {
-                    throw new Exception("El correo ya está registrado por otro usuario");
-                }
-            }
-
-            // Hash de la contraseña si se proporciona una nueva
-            $updatePassword = false;
-            $hashedPassword = null;
-            if (isset($objeto->password) && !empty($objeto->password)) {
-                if (strlen($objeto->password) < 6) {
-                    throw new Exception("La contraseña debe tener al menos 6 caracteres");
-                }
-                $hashedPassword = hash('sha256', $objeto->password);
-                $updatePassword = true;
-            }
-
-            // --- 1. Actualizar datos del usuario ---
-            if (isset($objeto->nombre) || isset($objeto->correo) || $updatePassword) {
-                $updates = [];
-                $types = '';
-                $params = [];
-
-                if (isset($objeto->nombre)) {
-                    $updates[] = "nombre = ?";
-                    $types .= 's';
-                    $params[] = $objeto->nombre;
-                }
-                if (isset($objeto->correo)) {
-                    $updates[] = "correo = ?";
-                    $types .= 's';
-                    $params[] = $objeto->correo;
-                }
-                if ($updatePassword) {
-                    $updates[] = "password = ?";
-                    $types .= 's';
-                    $params[] = $hashedPassword;
-                }
-
-                $types .= 's';
-                $params[] = $objeto->id_usuario;
-
-                $sqlUsuario = "UPDATE usuario SET " . implode(', ', $updates) . " WHERE id_usuario = ?";
-                $this->enlace->executePrepared($sqlUsuario, $types, $params);
-            }
-
-            // --- 2. Actualizar datos del técnico ---
+            // --- 1. Actualizar disponibilidad del técnico ---
             if (isset($objeto->disponibilidad)) {
                 $sqlTecnico = "UPDATE tecnico SET disponibilidad = ? WHERE id_tecnico = ?";
                 $this->enlace->executePrepared($sqlTecnico, 'ii', [
@@ -257,7 +204,7 @@ class TecnicoModel
                 ]);
             }
 
-            // --- 3. Actualizar especialidades del técnico ---
+            // --- 2. Actualizar especialidades del técnico ---
             if (isset($objeto->especialidades) && is_array($objeto->especialidades)) {
                 // Eliminar especialidades anteriores
                 $sqlDelete = "DELETE FROM tecnico_especialidad WHERE id_tecnico = ?";

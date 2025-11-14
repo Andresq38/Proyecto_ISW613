@@ -78,25 +78,133 @@ public function get($id)
         }
     }
 
-    
-     //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
-    /*Obtener los actores de una pelicula */
-    /*/public function getActorMovie($idMovie)
+    public function create($objeto)
     {
         try {
-            //Consulta SQL
-            $vSQL = "SELECT g.id, g.fname, g.lname, mg.role".
-            " FROM actor g, movie_cast mg".
-            " where g.id=mg.actor_id and mg.movie_id=$idMovie;";
-            //Establecer conexión
-            
-            //Ejecutar la consulta
-            $vResultado = $this->enlace->executeSQL($vSQL);
-            //Retornar el resultado
-            return $vResultado;
+            if (empty($objeto->id_usuario) || empty($objeto->nombre) || empty($objeto->correo) || empty($objeto->password)) {
+                throw new Exception("Campos requeridos: id_usuario, nombre, correo, password");
+            }
+            if (strlen($objeto->nombre) < 3 || strlen($objeto->nombre) > 150) {
+                throw new Exception("El nombre debe tener entre 3 y 150 caracteres");
+            }
+            if (!filter_var($objeto->correo, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception("Formato de correo inválido");
+            }
+            $sqlCheckEmail = "SELECT COUNT(*) as count FROM usuario WHERE correo = ?";
+            $resultEmail = $this->enlace->executePrepared($sqlCheckEmail, 's', [$objeto->correo]);
+            if ($resultEmail[0]->count > 0) {
+                throw new Exception("El correo ya está registrado");
+            }
+            $sqlCheckId = "SELECT COUNT(*) as count FROM usuario WHERE id_usuario = ?";
+            $resultId = $this->enlace->executePrepared($sqlCheckId, 's', [$objeto->id_usuario]);
+            if ($resultId[0]->count > 0) {
+                throw new Exception("El ID de usuario ya está registrado");
+            }
+            if (strlen($objeto->password) < 6) {
+                throw new Exception("La contraseña debe tener al menos 6 caracteres");
+            }
+            $hashedPassword = hash('sha256', $objeto->password);
+            $idRol = isset($objeto->id_rol) ? (int)$objeto->id_rol : 1;
+            $sqlIns = "INSERT INTO usuario (id_usuario, nombre, correo, password, id_rol) VALUES (?, ?, ?, ?, ?)";
+            $this->enlace->executePrepared($sqlIns, 'ssssi', [
+                $objeto->id_usuario,
+                $objeto->nombre,
+                $objeto->correo,
+                $hashedPassword,
+                $idRol
+            ]);
+            return $this->get($objeto->id_usuario);
         } catch (Exception $e) {
             handleException($e);
         }
-    }*/
-    
+    }
+
+    public function update($objeto)
+    {
+        try {
+            if (empty($objeto->id_usuario)) {
+                throw new Exception("id_usuario es requerido");
+            }
+            if (isset($objeto->nombre) && (strlen($objeto->nombre) < 3 || strlen($objeto->nombre) > 150)) {
+                throw new Exception("El nombre debe tener entre 3 y 150 caracteres");
+            }
+            if (isset($objeto->correo) && !filter_var($objeto->correo, FILTER_VALIDATE_EMAIL)) {
+                throw new Exception("Formato de correo inválido");
+            }
+            if (isset($objeto->correo)) {
+                $sqlCheckEmail = "SELECT COUNT(*) as count FROM usuario WHERE correo = ? AND id_usuario != ?";
+                $resultEmail = $this->enlace->executePrepared($sqlCheckEmail, 'ss', [$objeto->correo, $objeto->id_usuario]);
+                if ($resultEmail[0]->count > 0) {
+                    throw new Exception("El correo ya está registrado por otro usuario");
+                }
+            }
+            $updatePassword = false;
+            $hashedPassword = null;
+            if (isset($objeto->password) && !empty($objeto->password)) {
+                if (strlen($objeto->password) < 6) {
+                    throw new Exception("La contraseña debe tener al menos 6 caracteres");
+                }
+                $hashedPassword = hash('sha256', $objeto->password);
+                $updatePassword = true;
+            }
+            $updates = [];
+            $types = '';
+            $params = [];
+            if (isset($objeto->nombre)) {
+                $updates[] = "nombre = ?";
+                $types .= 's';
+                $params[] = $objeto->nombre;
+            }
+            if (isset($objeto->correo)) {
+                $updates[] = "correo = ?";
+                $types .= 's';
+                $params[] = $objeto->correo;
+            }
+            if ($updatePassword) {
+                $updates[] = "password = ?";
+                $types .= 's';
+                $params[] = $hashedPassword;
+            }
+            if (isset($objeto->id_rol)) {
+                $updates[] = "id_rol = ?";
+                $types .= 'i';
+                $params[] = (int)$objeto->id_rol;
+            }
+            if (!empty($updates)) {
+                $types .= 's';
+                $params[] = $objeto->id_usuario;
+                $sqlUpd = "UPDATE usuario SET " . implode(', ', $updates) . " WHERE id_usuario = ?";
+                $this->enlace->executePrepared($sqlUpd, $types, $params);
+            }
+            return $this->get($objeto->id_usuario);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    public function delete($id_usuario)
+    {
+        try {
+            if (empty($id_usuario)) {
+                throw new Exception('id_usuario requerido');
+            }
+            $sqlTecnico = "SELECT id_tecnico FROM tecnico WHERE id_usuario = ?";
+            $resTecnico = $this->enlace->executePrepared($sqlTecnico, 's', [(string)$id_usuario]);
+            if (!empty($resTecnico)) {
+                $idTecnico = $resTecnico[0]->id_tecnico;
+                $sqlCount = "SELECT COUNT(*) AS total FROM ticket WHERE id_tecnico = ?";
+                $resCount = $this->enlace->executePrepared($sqlCount, 'i', [(int)$idTecnico]);
+                $total = (int)($resCount[0]->total ?? 0);
+                if ($total > 0) {
+                    throw new Exception('No se puede eliminar: técnico con tickets asociados');
+                }
+                $this->enlace->executePrepared_DML('DELETE FROM tecnico_especialidad WHERE id_tecnico = ?', 'i', [(int)$idTecnico]);
+                $this->enlace->executePrepared_DML('DELETE FROM tecnico WHERE id_tecnico = ?', 'i', [(int)$idTecnico]);
+            }
+            $this->enlace->executePrepared_DML('DELETE FROM usuario WHERE id_usuario = ?', 's', [(string)$id_usuario]);
+            return (object)[ 'deleted' => true, 'id_usuario' => $id_usuario, 'message' => 'Usuario eliminado correctamente' ];
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }

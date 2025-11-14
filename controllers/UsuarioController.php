@@ -26,18 +26,55 @@ class usuario
             handleException($e);
         }
     }
-    //POR EL MOMENTO PUESTO EN COMENTARIO POR PRUEBAS
-    /*public function getActorMovie($id)
+
+    public function create()
     {
         try {
+            $request = new Request();
             $response = new Response();
-            $genero = new Categoria_ticketModel;
-            $result = $genero->getActorMovie($id);
+            //Obtener json enviado
+            $inputJSON = $request->getJSON();
+            //Instancia del modelo
+            $usuario = new UsuarioModel();
+            //Acción del modelo a ejecutar
+            $result = $usuario->create($inputJSON);
             //Dar respuesta
             $response->toJSON($result);
         } catch (Exception $e) {
             handleException($e);
         }
     }
-    */
+
+    public function update()
+    {
+        try {
+            $request = new Request();
+            $response = new Response();
+            //Obtener json enviado
+            $inputJSON = $request->getJSON();
+            //Instancia del modelo
+            $usuario = new UsuarioModel();
+            //Acción del modelo a ejecutar
+            $result = $usuario->update($inputJSON);
+            //Dar respuesta
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    public function delete($id = null)
+    {
+        try {
+            if (empty($id)) {
+                throw new Exception('id_usuario requerido');
+            }
+            $response = new Response();
+            $usuario = new UsuarioModel();
+            $result = $usuario->delete((int)$id);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
 }
