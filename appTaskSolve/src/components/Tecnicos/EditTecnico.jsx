@@ -505,6 +505,10 @@ export default function EditTecnico() {
                         placeholder="Seleccione especialidades"
                         error={Boolean(errors.especialidades)}
                         helperText={errors.especialidades ? errors.especialidades.message : `${(field.value || []).length} seleccionada(s)`}
+                        InputProps={{
+                          ...params.InputProps,
+                          startAdornment: (<InputAdornment position="start"><WorkIcon color="action" /></InputAdornment>)
+                        }}
                       />
                     )}
                     ListboxProps={{

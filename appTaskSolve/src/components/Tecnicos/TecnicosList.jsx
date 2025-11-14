@@ -42,7 +42,13 @@ export default function TecnicosList() {
         
         // Manejar diferentes formatos de respuesta
         const tecnicosData = Array.isArray(res.data) ? res.data : (res.data?.data || []);
-        setItems(tecnicosData);
+        // Ordenar ascendente por id_tecnico para mostrar en lista
+        const sorted = (tecnicosData || []).slice().sort((a, b) => {
+          const ai = (a?.id_tecnico ?? a?.id) || 0;
+          const bi = (b?.id_tecnico ?? b?.id) || 0;
+          return Number(ai) - Number(bi);
+        });
+        setItems(sorted);
       } catch (e) {
         if (e.name !== 'AbortError' && e.code !== 'ERR_CANCELED') {
           console.error('Error al cargar técnicos:', e);
