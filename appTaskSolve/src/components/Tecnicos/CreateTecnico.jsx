@@ -46,6 +46,11 @@ const schema = yup.object({
     .required('La contraseña es requerida')
     .min(6, 'La contraseña debe tener al menos 6 caracteres')
     .max(50, 'La contraseña no puede exceder 50 caracteres'),
+    confirm_password: yup.string().when('password', {
+      is: (val) => val && val.length > 0,
+      then: yup.string().oneOf([yup.ref('password')], 'Las contraseñas deben coincidir'),
+      otherwise: yup.string().nullable(),
+    }),
   disponibilidad: yup.boolean().nullable(),
   especialidad: yup.mixed().nullable(),
   carga_trabajo: yup.number(),
@@ -60,6 +65,7 @@ export default function CreateTecnico() {
       nombre: '',
       correo: '',
       password: '',
+      confirm_password: '',
       disponibilidad: true,
       especialidad: null,
       carga_trabajo: 0,
@@ -76,6 +82,9 @@ export default function CreateTecnico() {
   
   const selectedRol = watch('id_rol');
   const isTecnico = selectedRol === 2;
+  const pwd = watch('password');
+  const pwdConfirm = watch('confirm_password');
+  const passwordsMatch = pwdConfirm === '' ? null : pwd === pwdConfirm;
 
   // Ordenar roles por ID ascendente
   const sortedRoles = (roles || []).slice().sort((a, b) => {
@@ -305,6 +314,34 @@ export default function CreateTecnico() {
                     }}
                   />
                 )} />
+
+              </FormControl>
+            </Grid>
+
+            {/* Confirmar contraseña */}
+            <Grid item xs={12} md={6}>
+              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
+                <Controller name="confirm_password" control={control} render={({ field }) => (
+                  <TextField
+                    {...field}
+                    id="confirm_password"
+                    label="Confirmar Contraseña"
+                    type="password"
+                    error={Boolean(errors.confirm_password) || (passwordsMatch === false)}
+                    helperText={
+                      errors.confirm_password ? errors.confirm_password.message
+                        : (passwordsMatch === null ? 'Repita la contraseña' : (passwordsMatch ? 'Contraseñas coinciden' : 'Las contraseñas no coinciden'))
+                    }
+                    FormHelperTextProps={{ sx: { color: passwordsMatch === true ? 'success.main' : passwordsMatch === false ? 'error.main' : 'text.secondary' } }}
+                    InputProps={{
+                      startAdornment: (<InputAdornment position="start"><LockIcon color="action" /></InputAdornment>)
+                    }}
+                    sx={{
+                      '& .MuiInput-underline:after': { borderBottomColor: passwordsMatch === true ? 'success.main' : undefined },
+                      '& .MuiInput-underline:before': { borderBottomColor: passwordsMatch === true ? 'success.light' : undefined },
+                    }}
+                  />
+                )} />
               </FormControl>
             </Grid>
           </Grid>
@@ -371,20 +408,20 @@ export default function CreateTecnico() {
                 <Grid item xs={12} md={6}>
                   <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
                     <Controller name="carga_trabajo" control={control} render={({ field }) => (
-                      <TextField
-                        {...field}
-                        id="carga_trabajo"
-                        label="Carga Actual"
-                        type="number"
-                        value={0}
-                        InputProps={{
-                          readOnly: true,
-                          startAdornment: (<InputAdornment position="start"><AssignmentIcon color="action" /></InputAdornment>)
-                        }}
-                        helperText="Se inicializa en 0 para nuevos técnicos"
-                        disabled
-                      />
-                    )} />
+                          <TextField
+                            {...field}
+                            id="carga_trabajo"
+                            label="Carga Actual"
+                            type="number"
+                            value={field.value ?? 0}
+                            InputProps={{
+                              readOnly: true,
+                              startAdornment: (<InputAdornment position="start"><AssignmentIcon color="action" /></InputAdornment>)
+                            }}
+                            helperText="Se inicializa en 0 para nuevos técnicos"
+                            disabled
+                          />
+                        )} />
                   </FormControl>
                 </Grid>
               </Grid>

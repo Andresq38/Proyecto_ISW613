@@ -17,6 +17,7 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import AssignmentIcon from '@mui/icons-material/Assignment';
 import EditIcon from '@mui/icons-material/Edit';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
+import SecurityIcon from '@mui/icons-material/Security';
 import TecnicoService from '../../services/TecnicoService';
 
 const apiBase = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE) || 'http://localhost:81';
@@ -44,6 +45,9 @@ const schema = yup.object({
     .min(6, 'La contraseña debe tener al menos 6 caracteres')
     .max(50, 'La contraseña no puede exceder 50 caracteres')
     .optional(),
+  confirm_password: yup.string().when('password', (pw, schema) => (
+    pw ? schema.required('Confirme la contraseña').oneOf([yup.ref('password')], 'Las contraseñas deben coincidir') : schema
+  )),
   disponibilidad: yup.boolean().required('Debe seleccionar la disponibilidad'),
   especialidad: yup.mixed().required('Debe seleccionar una especialidad'),
   carga_trabajo: yup.number().min(0, 'La carga debe ser 0 o mayor').optional(),
@@ -54,14 +58,28 @@ export default function EditTecnico() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
-  const { control, handleSubmit, reset, formState: { errors } } = useForm({
+  const { control, handleSubmit, reset, formState: { errors }, watch } = useForm({
     defaultValues: {
-      id_usuario: '', nombre: '', correo: '', password: '', disponibilidad: true, especialidad: null, carga_trabajo: 0,
+      id_rol: 0, id_usuario: '', nombre: '', correo: '', password: '', confirm_password: '', disponibilidad: true, especialidad: null, carga_trabajo: 0,
     }, resolver: yupResolver(schema),
   });
+  const pwd = watch('password');
+  const pwdConfirm = watch('confirm_password');
+  const passwordsMatch = pwdConfirm === '' ? null : pwd === pwdConfirm;
   const [especialidades, setEspecialidades] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [successOpen, setSuccessOpen] = useState(false);
+
+  // Ordenar roles por ID ascendente
+  const sortedRoles = (roles || []).slice().sort((a, b) => {
+    const ai = a?.id_rol;
+    const bi = b?.id_rol;
+    if (ai != null && bi != null) return Number(ai) - Number(bi);
+    if (ai != null) return -1;
+    if (bi != null) return 1;
+    return 0;
+  });
 
   // Cargar datos del técnico y catálogos
   useEffect(() => {
@@ -69,13 +87,15 @@ export default function EditTecnico() {
     (async () => {
       try {
         setLoading(true);
-        // Cargar catálogos y datos del técnico en paralelo
-        const [espRes, tecnicoRes] = await Promise.all([
+        // Cargar catálogos, roles y datos del técnico en paralelo
+        const [espRes, rolesRes, tecnicoRes] = await Promise.all([
           fetch(`${apiBase}/apiticket/especialidad`),
+          fetch(`${apiBase}/apiticket/rol`),
           TecnicoService.getTecnicoById(id),
         ]);
 
         const especialidadesData = await espRes.json();
+        const rolesData = await rolesRes.json();
         
         // Debug: Ver qué devuelve la API
         console.log('Respuesta completa de la API:', tecnicoRes.data);
@@ -91,6 +111,7 @@ export default function EditTecnico() {
         if (!isMounted) return;
 
         setEspecialidades(especialidadesData);
+        setRoles(rolesData || []);
 
         // Verificar si se encontró el técnico
         if (!tecnicoData) {
@@ -106,7 +127,20 @@ export default function EditTecnico() {
             ? tecnicoData.especialidades[0]
             : null;
 
+          // Obtener info del usuario para obtener rol
+          let userRole = 0;
+          try {
+            const userRes = await fetch(`${apiBase}/apiticket/usuario/${tecnicoData.id_usuario}`);
+            const userData = await userRes.json();
+            // userData puede ser objeto o array
+            const u = Array.isArray(userData) ? (userData[0] || null) : userData;
+            if (u && (u.id_rol || u.id_rol === 0)) userRole = u.id_rol;
+          } catch (e) {
+            // ignore
+          }
+
           reset({
+            id_rol: userRole || 0,
             id_usuario: tecnicoData.id_usuario || '',
             nombre: tecnicoData.nombre_usuario || tecnicoData.nombre || '',
             correo: tecnicoData.correo_usuario || tecnicoData.correo || '',
@@ -229,11 +263,11 @@ export default function EditTecnico() {
       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Box sx={{ textAlign: 'left' }}>
           <Typography variant="h4" sx={{ fontWeight: 800, lineHeight: 1 }}>Editar Técnico</Typography>
-          <Typography variant="body2" color="text.secondary">Actualice la información del técnico</Typography>
+          <Typography variant="body2" color="text.secondary">Visualice y edite solo los campos permitidos</Typography>
         </Box>
         <Button variant="text" onClick={() => navigate(-1)}>&larr; Volver</Button>
       </Box>
-      <Paper elevation={2} sx={{ p: 3, borderTop: 4, borderTopColor: 'warning.main', borderRadius: 2, bgcolor: 'background.paper', position: 'relative' }}>
+      <Paper elevation={2} sx={{ p: 3, borderTop: 4, borderTopColor: 'primary.main', borderRadius: 2, bgcolor: 'background.paper', position: 'relative' }}>
         <SuccessOverlay
           open={successOpen}
           mode="update"
@@ -248,6 +282,28 @@ export default function EditTecnico() {
         <form onSubmit={handleSubmit(onSubmit, onError)} noValidate>
           <Typography variant="h6" sx={{ mt: 1, mb: 2, fontWeight: 700 }}>Datos personales</Typography>
           <Grid container spacing={3}>
+            <Grid item xs={12} md={6}>
+              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
+                <Controller name="id_rol" control={control} render={({ field }) => (
+                  <TextField
+                    {...field}
+                    id="id_rol"
+                    label="Rol"
+                    select
+                    value={field.value || 0}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                    helperText={'Seleccione el rol del usuario'}
+                    InputProps={{ startAdornment: (<InputAdornment position="start"><SecurityIcon color="action" /></InputAdornment>) }}
+                    disabled
+                  >
+                    <MenuItem value={0}>-- Seleccionar Rol --</MenuItem>
+                    {sortedRoles.map(role => (
+                      <MenuItem key={role.id_rol} value={role.id_rol}>{role.descripcion}</MenuItem>
+                    ))}
+                  </TextField>
+                )} />
+              </FormControl>
+            </Grid>
             <Grid item xs={12} md={6}>
               <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
                 <Controller name="id_usuario" control={control} render={({ field }) => (
@@ -275,8 +331,9 @@ export default function EditTecnico() {
                     label="Nombre Completo" 
                     placeholder="Juan Pérez González"
                     error={Boolean(errors.nombre)} 
-                    helperText={errors.nombre ? errors.nombre.message : 'Ingrese nombre y apellido(s) completos'} 
+                    helperText={errors.nombre ? errors.nombre.message : 'Campo de solo lectura - No editable'} 
                     InputProps={{ 
+                      readOnly: true,
                       startAdornment: (<InputAdornment position="start"><PersonIcon color="action" /></InputAdornment>) 
                     }} 
                   />
@@ -318,6 +375,31 @@ export default function EditTecnico() {
                 )} />
               </FormControl>
             </Grid>
+
+            {/* Confirmar contraseña */}
+            <Grid item xs={12} md={6}>
+              <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
+                <Controller name="confirm_password" control={control} render={({ field }) => (
+                  <TextField
+                    {...field}
+                    id="confirm_password"
+                    label="Confirmar Contraseña"
+                    type="password"
+                    error={Boolean(errors.confirm_password) || (passwordsMatch === false)}
+                    helperText={
+                      errors.confirm_password ? errors.confirm_password.message
+                        : (passwordsMatch === null ? 'Repita la contraseña' : (passwordsMatch ? 'Contraseñas coinciden' : 'Las contraseñas no coinciden'))
+                    }
+                    FormHelperTextProps={{ sx: { color: passwordsMatch === true ? 'success.main' : passwordsMatch === false ? 'error.main' : 'text.secondary' } }}
+                    InputProps={{ startAdornment: (<InputAdornment position="start"><LockIcon color="action" /></InputAdornment>) }}
+                    sx={{
+                      '& .MuiInput-underline:after': { borderBottomColor: passwordsMatch === true ? 'success.main' : undefined },
+                      '& .MuiInput-underline:before': { borderBottomColor: passwordsMatch === true ? 'success.light' : undefined },
+                    }}
+                  />
+                )} />
+              </FormControl>
+            </Grid>
           </Grid>
           <Divider sx={{ my: 3 }} />
           <Typography variant="h6" sx={{ mt: 1, mb: 2, fontWeight: 700 }}>Datos técnicos</Typography>
@@ -332,7 +414,9 @@ export default function EditTecnico() {
                     select 
                     value={field.value ? 'true' : 'false'} 
                     onChange={(e) => field.onChange(e.target.value === 'true')}
-                    helperText="Indica si el técnico está disponible para recibir tickets"
+                    helperText={errors.disponibilidad ? errors.disponibilidad.message : 'Campo de solo lectura - No editable'}
+                    InputProps={{ readOnly: true }}
+                    disabled
                   >
                     <MenuItem value="true">
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -378,6 +462,7 @@ export default function EditTecnico() {
                     id="carga_trabajo" 
                     label="Carga Actual" 
                     type="number" 
+                    value={field.value ?? 0}
                     InputProps={{ 
                       readOnly: true,
                       startAdornment: (<InputAdornment position="start"><AssignmentIcon color="action" /></InputAdornment>) 

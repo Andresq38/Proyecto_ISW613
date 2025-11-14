@@ -64,14 +64,14 @@ class TecnicoModel
             }
             $tec = $vResultado[0];
 
-            // Carga de trabajo por estado
+            // Carga de trabajo por estado (detalle) — no sobrescribir la columna numérica `carga_trabajo`
             $sqlCarga = "SELECT e.nombre AS estado, COUNT(*) AS total
                          FROM ticket t
                          JOIN estado e ON e.id_estado = t.id_estado
                          WHERE t.id_tecnico = ?
                          GROUP BY e.nombre";
             $carga = $this->enlace->executePrepared($sqlCarga, 'i', [(int)$id]);
-            $tec->carga_trabajo = $carga ?: [];
+            $tec->carga_por_estado = $carga ?: [];
 
             // Disponibilidad: usar columna y una calculada segun tickets abiertos (Asignado/En Proceso)
             $sqlAbiertos = "SELECT COUNT(*) AS abiertos FROM ticket WHERE id_tecnico = ? AND id_estado IN (2,3)";
@@ -200,6 +200,15 @@ class TecnicoModel
                 $sqlTecnico = "UPDATE tecnico SET disponibilidad = ? WHERE id_tecnico = ?";
                 $this->enlace->executePrepared($sqlTecnico, 'ii', [
                     $objeto->disponibilidad ? 1 : 0,
+                    (int)$objeto->id_tecnico
+                ]);
+            }
+
+            // --- 1.b Actualizar carga_trabajo del técnico ---
+            if (isset($objeto->carga_trabajo)) {
+                $sqlCargaUpd = "UPDATE tecnico SET carga_trabajo = ? WHERE id_tecnico = ?";
+                $this->enlace->executePrepared($sqlCargaUpd, 'ii', [
+                    (int)$objeto->carga_trabajo,
                     (int)$objeto->id_tecnico
                 ]);
             }

@@ -36,7 +36,7 @@ export default function MantenimientosHome() {
     {
       key: 'categorias',
       title: 'Categorías',
-      description: 'Gestionar categorías y asociar etiquetas (taxonomía).',
+      description: 'Gestionar categorías y asociar etiquetas.',
       // Abrir módulo ahora lleva al catálogo (listado)
       primary: '/categorias',
       // Crear nuevo abre la vista de mantenimiento con el formulario
