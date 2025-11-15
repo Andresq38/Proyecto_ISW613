@@ -57,6 +57,7 @@ export default function EditTicket() {
 
   const [prioridades, setPrioridades] = useState([]);
   const [etiquetas, setEtiquetas] = useState([]);
+  const [estados, setEstados] = useState([]);
   const [categoriaPreview, setCategoriaPreview] = useState(null);
 
   const [form, setForm] = useState({
@@ -65,6 +66,7 @@ export default function EditTicket() {
     prioridad: 'Media',
     id_usuario: '',
     id_etiqueta: '',
+    id_estado: '',
     estado: ''
   });
   const [usuarioInfo, setUsuarioInfo] = useState(null);
@@ -126,16 +128,18 @@ export default function EditTicket() {
         setLoadingData(true);
         setLoadError('');
         
-        // Cargar ticket completo, prioridades y etiquetas
-        const [ticketRes, pRes, eRes] = await Promise.all([
+        // Cargar ticket completo, prioridades, etiquetas y estados
+        const [ticketRes, pRes, eRes, stRes] = await Promise.all([
           axios.get(`${apiBase}/ticket/getTicketCompletoById/${id}`, { signal: controller.signal }),
           axios.get(`${apiBase}/ticket/prioridades`, { signal: controller.signal }),
-          axios.get(`${apiBase}/etiqueta`, { signal: controller.signal })
+          axios.get(`${apiBase}/etiqueta`, { signal: controller.signal }),
+          axios.get(`${apiBase}/estado`, { signal: controller.signal })
         ]);
 
         const ticketData = ticketRes.data;
         setPrioridades(Array.isArray(pRes.data) ? pRes.data : []);
         setEtiquetas(Array.isArray(eRes.data) ? eRes.data : (eRes.data?.data || []));
+        setEstados(Array.isArray(stRes.data) ? stRes.data : (stRes.data?.data || []));
 
         if (ticketData) {
           // Precargar datos del ticket
@@ -145,6 +149,7 @@ export default function EditTicket() {
             prioridad: ticketData.prioridad || 'Media',
             id_usuario: ticketData.id_usuario || '',
             id_etiqueta: ticketData.etiquetas?.[0]?.id_etiqueta || ticketData.id_etiqueta || '',
+            id_estado: ticketData.id_estado || '',
             estado: ticketData.estado?.nombre || ticketData.nombre_estado || 'Pendiente'
           });
 
@@ -278,7 +283,8 @@ export default function EditTicket() {
         titulo: form.titulo,
         descripcion: form.descripcion,
         prioridad: form.prioridad,
-        id_etiqueta: form.id_etiqueta ? Number(form.id_etiqueta) : undefined
+        id_etiqueta: form.id_etiqueta ? Number(form.id_etiqueta) : undefined,
+        id_estado: form.id_estado ? Number(form.id_estado) : undefined
       });
 
       // Eliminar imágenes marcadas
@@ -457,15 +463,20 @@ export default function EditTicket() {
 
             <Grid item xs={12} md={6}>
               <TextField
+                select
                 fullWidth
                 label="Estado"
-                value={form.estado || 'Pendiente'}
-                disabled
+                name="id_estado"
+                value={form.id_estado}
+                onChange={handleChange}
                 InputProps={{
-                  readOnly: true,
                   startAdornment: <FlagOutlinedIcon sx={{ mr: 1, color: 'info.main' }} />
                 }}
-              />
+              >
+                {estados.map((est) => (
+                  <MenuItem key={est.id_estado} value={est.id_estado}>{est.nombre}</MenuItem>
+                ))}
+              </TextField>
             </Grid>
 
             <Grid item xs={12}>
