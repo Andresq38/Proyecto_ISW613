@@ -446,7 +446,7 @@ export default function CreateTicket() {
                     error={Boolean(touched.id_usuario && errors.id_usuario)}
                     helperText={
                       touched.id_usuario && errors.id_usuario
-                        || `Solo se muestran usuarios con rol Cliente${clienteRolId ? ` (ID rol ${clienteRolId})` : ''}`
+                        || `Clientes`
                     }
                     InputProps={{
                       ...params.InputProps,

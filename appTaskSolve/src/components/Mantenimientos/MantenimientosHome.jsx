@@ -27,7 +27,7 @@ export default function MantenimientosHome() {
     {
       key: 'tecnicos',
       title: 'Usuarios',
-      description: 'Administrar perfiles, especialidades y carga de trabajo.',
+      description: 'Crear usuarios (Administrador, Cliente y Técnico).',
       primary: '/tecnicos/listado',
       create: '/tecnicos/crear',
       color: 'info',
@@ -47,7 +47,7 @@ export default function MantenimientosHome() {
     {
       key: 'tickets',
       title: 'Tickets',
-      description: 'Crear tickets internos de prueba y validar flujos.',
+      description: 'Crear Tickets.',
       // Panel ahora apunta al inicio (home) solicitado
       primary: '/',
       create: '/tickets/crear',

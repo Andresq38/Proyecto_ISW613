@@ -370,7 +370,7 @@ export default function CreateTecnico() {
                           readOnly: true,
                           startAdornment: (<InputAdornment position="start"><CheckCircleOutlineIcon color="success" /></InputAdornment>)
                         }}
-                        helperText="Se inicializa en Disponible - No editable"
+                        helperText="Se inicializa en Disponible"
                         disabled
                       >
                         <MenuItem value="true">
