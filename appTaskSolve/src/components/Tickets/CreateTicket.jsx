@@ -305,6 +305,20 @@ export default function CreateTicket() {
               </TextField>
             </Grid>
 
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Estado"
+                value="Pendiente"
+                disabled
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: <FlagOutlinedIcon sx={{ mr: 1, color: 'info.main' }} />
+                }}
+                helperText="Se asigna automáticamente al crear"
+              />
+            </Grid>
+
             <Grid item xs={12}>
               <TextField
                 fullWidth

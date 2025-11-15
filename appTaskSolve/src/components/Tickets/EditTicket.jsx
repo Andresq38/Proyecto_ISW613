@@ -64,7 +64,8 @@ export default function EditTicket() {
     descripcion: '',
     prioridad: 'Media',
     id_usuario: '',
-    id_etiqueta: ''
+    id_etiqueta: '',
+    estado: ''
   });
   const [usuarioInfo, setUsuarioInfo] = useState(null);
   const [fechaCreacion, setFechaCreacion] = useState('');
@@ -143,7 +144,8 @@ export default function EditTicket() {
             descripcion: ticketData.descripcion || '',
             prioridad: ticketData.prioridad || 'Media',
             id_usuario: ticketData.id_usuario || '',
-            id_etiqueta: ticketData.etiquetas?.[0]?.id_etiqueta || ticketData.id_etiqueta || ''
+            id_etiqueta: ticketData.etiquetas?.[0]?.id_etiqueta || ticketData.id_etiqueta || '',
+            estado: ticketData.estado?.nombre || ticketData.nombre_estado || 'Pendiente'
           });
 
           // Usuario solicitante
@@ -451,6 +453,19 @@ export default function EditTicket() {
                   <MenuItem key={p} value={p}>{p}</MenuItem>
                 ))}
               </TextField>
+            </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Estado"
+                value={form.estado || 'Pendiente'}
+                disabled
+                InputProps={{
+                  readOnly: true,
+                  startAdornment: <FlagOutlinedIcon sx={{ mr: 1, color: 'info.main' }} />
+                }}
+              />
             </Grid>
 
             <Grid item xs={12}>
