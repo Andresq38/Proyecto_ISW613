@@ -315,7 +315,7 @@ export default function CreateTicket() {
                   readOnly: true,
                   startAdornment: <FlagOutlinedIcon sx={{ mr: 1, color: 'info.main' }} />
                 }}
-                helperText="Se asigna automáticamente al crear"
+                helperText="Pendiente Estado inicial"
               />
             </Grid>
 
