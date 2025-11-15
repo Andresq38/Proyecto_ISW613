@@ -49,11 +49,14 @@ const schema = yup.object({
     .required('La contraseña es requerida')
     .min(6, 'La contraseña debe tener al menos 6 caracteres')
     .max(50, 'La contraseña no puede exceder 50 caracteres'),
-    confirm_password: yup.string().when('password', {
-      is: (val) => val && val.length > 0,
-      then: yup.string().oneOf([yup.ref('password')], 'Las contraseñas deben coincidir'),
-      otherwise: yup.string().nullable(),
-    }),
+    
+  confirm_password: yup.string().when('password', (password, schema) => {
+  if (password && password.length > 0) {
+    return schema.oneOf([yup.ref('password')], 'Las contraseñas deben coincidir');
+  }
+  return schema.nullable();
+  }),
+  
   disponibilidad: yup.boolean().nullable(),
   especialidades: yup.array().of(yup.object()).nullable(),
   carga_trabajo: yup.number(),
@@ -355,8 +358,8 @@ export default function CreateTecnico() {
               <Divider sx={{ my: 3 }} />
               <Typography variant="h6" sx={{ mt: 1, mb: 2, fontWeight: 700 }}>Datos técnicos</Typography>
               <Grid container spacing={3}>
-                {/* Disponibilidad */}
-                <Grid item xs={12} md={4}>
+                 {/* Disponibilidad */}
+                <Grid item xs={12} md={6}>
                   <FormControl variant="standard" fullWidth sx={{ m: 1 }}>
                     <Controller name="disponibilidad" control={control} render={({ field }) => (
                       <TextField
@@ -366,16 +369,11 @@ export default function CreateTecnico() {
                         select
                         value={field.value ? 'true' : 'false'}
                         onChange={(e) => field.onChange(e.target.value === 'true')}
-                        InputProps={{
-                          readOnly: true,
-                          startAdornment: (<InputAdornment position="start"><CheckCircleOutlineIcon color="success" /></InputAdornment>)
-                        }}
-                        helperText="Se inicializa en Disponible"
-                        disabled
+                        helperText="Indica si el técnico está disponible para recibir tickets"
                       >
                         <MenuItem value="true">
                           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            Disponible
+                            <CheckCircleOutlineIcon color="success" fontSize="small" /> Disponible
                           </Box>
                         </MenuItem>
                         <MenuItem value="false">
