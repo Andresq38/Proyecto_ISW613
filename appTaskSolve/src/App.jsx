@@ -24,8 +24,10 @@ const CreateCategoria = lazy(() => import('./components/Categorias/CreateCategor
 const EditCategoria = lazy(() => import('./components/Categorias/EditCategoria'));
 const Dashboard = lazy(() => import('./components/Dashboard/Dashboard'));
 const AsignacionesTecnicos = lazy(() => import('./components/Asignaciones/AsignacionesTecnicos'));
+const AsignacionManager = lazy(() => import('./components/Asignaciones/AsignacionManager'));
 const MantenimientosHome = lazy(() => import('./components/Mantenimientos/MantenimientosHome'));
 const MantenimientosCategorias = lazy(() => import('./components/Mantenimientos/MantenimientosCategorias'));
+const NotificacionesPage = lazy(() => import('./components/common/NotificacionesPage'));
 
 export default function App() {
   return (
@@ -51,6 +53,7 @@ export default function App() {
               <Route path="tickets" element={<TicketsPorTecnico />} />
               <Route path="crear" element={<CreateTecnico />} />
             </Route>
+            <Route path="/asignaciones/gestionar" element={<AsignacionManager />} />
             <Route path="/tecnicos/:id" element={<TecnicoDetalle />} />
             <Route path="/tecnicos/editar/:id" element={<EditTecnico />} />
             <Route path="/categorias" element={<CategoriasList />} />
@@ -59,6 +62,7 @@ export default function App() {
             <Route path="/categorias/editar/:id" element={<EditCategoria />} />
             <Route path="/mantenimientos" element={<MantenimientosHome />} />
             <Route path="/mantenimientos/categorias" element={<MantenimientosCategorias />} />
+            <Route path="/notificaciones" element={<NotificacionesPage />} />
             <Route path="*" element={<PageNotFound />} />
           </Routes>
         </Suspense>

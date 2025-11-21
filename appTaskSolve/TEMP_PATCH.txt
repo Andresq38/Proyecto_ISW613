@@ -1,0 +1,4 @@
+Cambios a realizar:
+
+1. Línea 189-193: Reemplazar getTecnicosConEspecialidad con versión mejorada con logging
+2. Línea 909-923: Reemplazar Select con versión que muestre mensaje cuando no hay técnicos

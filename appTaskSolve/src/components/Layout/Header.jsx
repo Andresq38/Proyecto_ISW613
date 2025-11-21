@@ -1,11 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppBar, Toolbar, Typography, Button, Box, Menu, MenuItem } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import NotificacionesBadge from '../common/NotificacionesBadge';
 
 const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [userId, setUserId] = useState(null);
+
+  // Obtener userId del localStorage
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setUserId(user.id);
+      } catch (e) {
+        console.error('Error al parsear usuario:', e);
+      }
+    }
+  }, []);
+
+  const getUserId = () => userId;
 
   // Función para verificar si una ruta está activa
   const isActive = (path) => {
@@ -200,6 +217,9 @@ const Header = () => {
 
         {/* Spacer to push any future items to the right */}
         <Box sx={{ flexGrow: 1 }} />
+
+        {/* Badge de Notificaciones */}
+        <NotificacionesBadge userId={getUserId()} />
 
         <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleClose}>
           <MenuItem onClick={() => handleTicketOption('Administrador')}>Administrador</MenuItem>

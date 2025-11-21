@@ -35,6 +35,7 @@ require_once "controllers/core/Response.php";
 require_once "controllers/core/AuthMiddleware.php";
 
 /***--- Agregar todos los modelos*/
+require_once "models/AsignacionModel.php";
 require_once "models/Categoria_etiquetaModel.php";
 require_once "models/Categoria_ticketModel.php";
 require_once "models/EspecialidadModel.php";
@@ -51,6 +52,7 @@ require_once "models/UsuarioModel.php";
 
 
 /***--- Agregar todos los controladores*/
+require_once "controllers/AsignacionController.php";
 require_once "controllers/Categoria_etiquetaController.php";
 require_once "controllers/Categoria_ticketController.php";
 require_once "controllers/EspecialidadController.php";

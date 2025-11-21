@@ -16,6 +16,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import ErrorIcon from '@mui/icons-material/Error';
 import { getApiOrigin } from '../../utils/apiBase';
 import { formatDateTime } from '../../utils/format';
+import CambiarEstadoDialog from '../common/CambiarEstadoDialog';
 
 export default function DetalleTicket() {
   const { id } = useParams();
@@ -93,16 +94,40 @@ export default function DetalleTicket() {
       return;
     }
 
+    // VALIDACIÓN OBLIGATORIA DE OBSERVACIONES
+    if (!observaciones || observaciones.trim() === '') {
+      setSnackbar({ 
+        open: true, 
+        message: 'Las observaciones son obligatorias para cambiar el estado del ticket', 
+        severity: 'error' 
+      });
+      return;
+    }
+
     try {
       const apiBase = getApiBase();
+      
+      // Obtener el ID del usuario desde localStorage
+      let idUsuarioRemitente = null;
+      try {
+        const userStr = localStorage.getItem('user');
+        if (userStr) {
+          const user = JSON.parse(userStr);
+          idUsuarioRemitente = user.id;
+        }
+      } catch (e) {
+        console.error('Error al obtener usuario:', e);
+      }
+
       const response = await axios.post(`${apiBase}/apiticket/ticket/cambiarEstado`, {
         id_ticket: parseInt(id),
         id_estado: parseInt(nuevoEstado),
-        observaciones: observaciones || null
+        observaciones: observaciones.trim(),
+        id_usuario_remitente: idUsuarioRemitente
       });
 
       if (response.data.success) {
-        setSnackbar({ open: true, message: 'Estado actualizado correctamente', severity: 'success' });
+        setSnackbar({ open: true, message: response.data.message || 'Estado actualizado correctamente', severity: 'success' });
         handleCloseDialog();
         
         // Recargar el ticket para reflejar los cambios
@@ -114,7 +139,8 @@ export default function DetalleTicket() {
       }
     } catch (err) {
       console.error('Error al cambiar estado:', err);
-      setSnackbar({ open: true, message: 'Error al cambiar el estado del ticket', severity: 'error' });
+      const errorMessage = err.response?.data?.message || err.message || 'Error al cambiar el estado del ticket';
+      setSnackbar({ open: true, message: errorMessage, severity: 'error' });
     }
   };
 
@@ -607,57 +633,22 @@ export default function DetalleTicket() {
 
         
       {/* Diálogo para cambiar estado */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
-        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white', display: 'flex', alignItems: 'center', gap: 1 }}>
-          <ChangeCircleIcon />
-          Cambiar Estado del Ticket
-        </DialogTitle>
-        <DialogContent sx={{ mt: 3 }}>
-          <FormControl fullWidth sx={{ mb: 3 }}>
-            <InputLabel id="estado-select-label">Nuevo Estado</InputLabel>
-            <Select
-              labelId="estado-select-label"
-              value={nuevoEstado}
-              label="Nuevo Estado"
-              onChange={(e) => setNuevoEstado(e.target.value)}
-              disabled={loadingEstados}
-            >
-              {estadosDisponibles.map((estado) => (
-                <MenuItem key={estado.id_estado} value={estado.id_estado}>
-                  {estado.nombre}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <TextField
-            fullWidth
-            multiline
-            minRows={4}
-            label="Observaciones"
-            placeholder="Ingresa observaciones sobre el cambio de estado (opcional)"
-            value={observaciones}
-            onChange={(e) => setObservaciones(e.target.value)}
-          />
-
-          <Alert severity="info" sx={{ mt: 2 }}>
-            Este cambio se registrará en el historial del ticket con la fecha y hora actual.
-          </Alert>
-        </DialogContent>
-        <DialogActions sx={{ p: 2 }}>
-          <Button onClick={handleCloseDialog} color="inherit">
-            Cancelar
-          </Button>
-          <Button 
-            onClick={handleCambiarEstado} 
-            variant="contained" 
-            color="primary"
-            disabled={!nuevoEstado}
-          >
-            Confirmar Cambio
-          </Button>
-        </DialogActions>
-      </Dialog>
+      {/* Nuevo diálogo con carga de imágenes obligatoria */}
+      <CambiarEstadoDialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        ticket={ticket}
+        estadoActual={ticket?.id_estado}
+        onSuccess={() => {
+          setSnackbar({ 
+            open: true, 
+            message: 'Estado actualizado correctamente con imágenes adjuntas', 
+            severity: 'success' 
+          });
+          // Recargar ticket después de 1.5s
+          setTimeout(() => window.location.reload(), 1500);
+        }}
+      />
 
       {/* Snackbar para notificaciones */}
       <Snackbar

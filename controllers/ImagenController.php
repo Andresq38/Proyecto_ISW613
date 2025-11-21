@@ -1,5 +1,5 @@
 <?php
-class imagen
+class Imagen
 {
     public function index()
     {
@@ -84,5 +84,66 @@ class imagen
         }
     }
 
+    /**
+     * Endpoint para subir imágenes asociadas a cambios de estado (historial)
+     * Requiere: file (archivo), id_ticket, id_historial (opcional)
+     * POST /apiticket/imagen/uploadHistorial
+     */
+    public function uploadHistorial()
+    {
+        try {
+            $response = new Response();
+            $imagen = new ImagenModel();
+            
+            // Validar parámetros requeridos
+            if (!isset($_FILES['file'])) {
+                $response->toJSON(['success' => false, 'message' => 'Archivo requerido']);
+                return;
+            }
+            
+            if (empty($_POST['id_ticket'])) {
+                $response->toJSON(['success' => false, 'message' => 'ID de ticket requerido']);
+                return;
+            }
+            
+            $idTicket = (int)$_POST['id_ticket'];
+            $idHistorial = isset($_POST['id_historial']) ? (int)$_POST['id_historial'] : null;
+            
+            // Subir archivo y asociar al historial
+            $result = $imagen->uploadForHistorial($_FILES['file'], $idTicket, $idHistorial);
+            
+            if ($result['success']) {
+                $response->toJSON([
+                    'success' => true,
+                    'message' => 'Imagen subida y asociada al historial correctamente',
+                    'id_imagen' => $result['id_imagen'],
+                    'filename' => $result['filename']
+                ]);
+            } else {
+                $response->toJSON([
+                    'success' => false,
+                    'message' => $result['message'] ?? 'Error al subir la imagen'
+                ]);
+            }
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
+
+    /**
+     * Obtener imágenes asociadas a un historial específico
+     * GET /apiticket/imagen/historial/{id_historial}
+     */
+    public function historial($idHistorial)
+    {
+        try {
+            $response = new Response();
+            $imagen = new ImagenModel();
+            $result = $imagen->getByHistorial((int)$idHistorial);
+            $response->toJSON($result);
+        } catch (Exception $e) {
+            handleException($e);
+        }
+    }
     
 }

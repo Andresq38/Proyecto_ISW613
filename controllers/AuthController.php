@@ -49,9 +49,6 @@ class Auth
             // Actualizar último login (ignorar errores)
             try { $usuarioModel->actualizarUltimoLogin($user->id_usuario); } catch (\Throwable $e) {}
 
-            // Actualizar último login (ignorar errores)
-            try { $usuarioModel->actualizarUltimoLogin($user->id_usuario); } catch (\Throwable $e) {}
-
             // Iniciar sesión server-side
             if (session_status() !== PHP_SESSION_ACTIVE) session_start();
             session_regenerate_id(true);
@@ -61,6 +58,15 @@ class Auth
                 'rol' => $user->rol ?? null,
                 'name' => $user->nombre ?? null,
             ];
+
+            // Generar notificación de inicio de sesión
+            try {
+                $notifModel = new NotificacionModel();
+                $notifModel->notificarInicioSesion($user->id_usuario);
+            } catch (\Throwable $e) {
+                // No fallar el login si falla la notificación
+                error_log("Error al crear notificación de login: " . $e->getMessage());
+            }
 
             return $response->toJSON([
                 'success' => true,

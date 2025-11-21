@@ -108,12 +108,22 @@ class ticket
                 ]);
                 return;
             }
+
+            // Validar observaciones obligatorias
+            if (!isset($data->observaciones) || trim($data->observaciones) === '') {
+                $response->toJSON([
+                    'success' => false,
+                    'message' => 'Las observaciones son obligatorias para cambiar el estado del ticket'
+                ]);
+                return;
+            }
             
             $ticket = new TicketModel();
             $result = $ticket->cambiarEstado(
                 $data->id_ticket,
                 $data->id_estado,
-                $data->observaciones ?? null
+                $data->observaciones,
+                $data->id_usuario_remitente ?? null
             );
             
             $response->toJSON($result);

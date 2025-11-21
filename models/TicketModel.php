@@ -161,37 +161,89 @@ class TicketModel
         }
     }
 
-    /*Cambiar estado del ticket */
-    public function cambiarEstado($idTicket, $nuevoEstado, $observaciones = null)
+    /*Cambiar estado del ticket con validaciones estrictas */
+    public function cambiarEstado($idTicket, $nuevoEstado, $observaciones = null, $idUsuarioRemitente = null)
     {
         try {
-            // 1. Actualizar el estado actual del ticket
-            $sqlUpdate = "UPDATE ticket SET id_estado = ? WHERE id_ticket = ?";
-            $this->enlace->executePrepared_DML($sqlUpdate, 'ii', [(int)$nuevoEstado, (int)$idTicket]);
+            // VALIDACIONES CRÍTICAS
+            
+            // 1. Validar que existan observaciones (comentario obligatorio)
+            if (!$observaciones || trim($observaciones) === '') {
+                throw new Exception('Las observaciones son obligatorias para cambiar el estado del ticket');
+            }
 
-            // 2. Insertar en historial_estados
+            // 2. Obtener ticket actual
+            $ticket = $this->get($idTicket);
+            if (!$ticket) {
+                throw new Exception('Ticket no encontrado');
+            }
+
+            $estadoActual = (int)$ticket->id_estado;
+            $nuevoEstado = (int)$nuevoEstado;
+
+            // 3. Mapeo de estados: 1=Pendiente, 2=Asignado, 3=En Proceso, 4=Resuelto, 5=Cerrado
+            $estadosValidos = [1 => 'Pendiente', 2 => 'Asignado', 3 => 'En Proceso', 4 => 'Resuelto', 5 => 'Cerrado'];
+            
+            if (!isset($estadosValidos[$nuevoEstado])) {
+                throw new Exception('Estado de destino no válido');
+            }
+
+            // 4. VALIDAR FLUJO ESTRICTO DE ESTADOS (no permitir saltos)
+            $transicionesValidas = [
+                1 => [2],           // Pendiente → solo puede ir a Asignado
+                2 => [3],           // Asignado → solo puede ir a En Proceso
+                3 => [4],           // En Proceso → solo puede ir a Resuelto
+                4 => [5],           // Resuelto → solo puede ir a Cerrado
+                5 => []             // Cerrado → no puede cambiar (estado final)
+            ];
+
+            if (!in_array($nuevoEstado, $transicionesValidas[$estadoActual])) {
+                $nombreActual = $estadosValidos[$estadoActual];
+                $nombreNuevo = $estadosValidos[$nuevoEstado];
+                throw new Exception("Transición no permitida: no se puede cambiar de '{$nombreActual}' a '{$nombreNuevo}'. Debe seguir el flujo: Pendiente → Asignado → En Proceso → Resuelto → Cerrado");
+            }
+
+            // 5. VALIDAR TÉCNICO ASIGNADO (excepto en estado Pendiente)
+            if ($nuevoEstado > 1 && empty($ticket->id_tecnico)) {
+                throw new Exception('No se puede avanzar el ticket sin un técnico asignado. Asigne un técnico primero.');
+            }
+
+            // 6. Actualizar el estado actual del ticket
+            $sqlUpdate = "UPDATE ticket SET id_estado = ? WHERE id_ticket = ?";
+            $this->enlace->executePrepared_DML($sqlUpdate, 'ii', [$nuevoEstado, (int)$idTicket]);
+
+            // 7. Insertar en historial_estados
             $sqlHistorial = "INSERT INTO historial_estados (id_ticket, id_estado, observaciones) VALUES (?, ?, ?)";
             $this->enlace->executePrepared_DML($sqlHistorial, 'iis', [
                 (int)$idTicket,
-                (int)$nuevoEstado,
+                $nuevoEstado,
                 $observaciones
             ]);
 
-            // 3. Si el nuevo estado es "Cerrado" (id_estado = 5), actualizar fecha_cierre
-            if ((int)$nuevoEstado === 5) {
+            // 8. Si el nuevo estado es "Cerrado" (id_estado = 5), actualizar fecha_cierre
+            if ($nuevoEstado === 5) {
                 $sqlCierre = "UPDATE ticket SET fecha_cierre = NOW() WHERE id_ticket = ?";
                 $this->enlace->executePrepared_DML($sqlCierre, 'i', [(int)$idTicket]);
             }
 
+            // 9. GENERAR NOTIFICACIONES
+            try {
+                $notifModel = new NotificacionModel();
+                $nombreEstado = $estadosValidos[$nuevoEstado];
+                $notifModel->notificarCambioEstado($idTicket, $idUsuarioRemitente, $nombreEstado, $observaciones);
+            } catch (Exception $e) {
+                // No fallar la operación si falla la notificación, solo registrar
+                error_log("Error al generar notificaciones: " . $e->getMessage());
+            }
+
             return [
                 'success' => true,
-                'message' => 'Estado del ticket actualizado correctamente'
+                'message' => 'Estado del ticket actualizado correctamente a: ' . $estadosValidos[$nuevoEstado]
             ];
         } catch (Exception $e) {
-            handleException($e);
             return [
                 'success' => false,
-                'message' => 'Error al actualizar el estado del ticket'
+                'message' => $e->getMessage()
             ];
         }
     }
